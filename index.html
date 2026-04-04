@@ -395,10 +395,9 @@ function calcSalary(desig, school, lmsExp, otherExp, wh, tui){
   const esiE =ns<21000?fl(ns*0.0325):0;
   const esiEe=ns<21000?fl(ns*0.0075):0;
   const totEsi=esiE+esiEe;
-  const cti=ns+epfE+pfE+esiE;
-  const rrf1=Math.ceil(cti*0.12),rrf2=Math.ceil(cti*0.09),rrf3=Math.ceil(cti*0.06);
-  // Tuition: added to earnings side, deducted from net pay
   const tuiFee=tui||0;
+  const cti=ns+epfE+pfE+esiE+tuiFee;
+  const rrf1=Math.ceil(cti*0.12),rrf2=Math.ceil(cti*0.09),rrf3=Math.ceil(cti*0.06);
   return{inc,nb,da,ada,ns,epfE,pfE,esiE,totEpf,totEsi,cti,rrf1,rrf2,rrf3,tuiFee,
     y1:cti-rrf1-totEpf-totEsi,y2:cti-rrf2-totEpf-totEsi,y3:cti-rrf3-totEpf-totEsi};
 }
