@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMCS Hiring Dashboard 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#e8edf4;color:#1a202c;font-size:12px;min-height:100vh}
+
+.hdr{background:linear-gradient(135deg,#1a3c6e,#2563a8 60%,#1e4f8c);color:#fff;padding:7px 16px;display:flex;align-items:center;justify-content:space-between}
+.hdr-brand{display:flex;align-items:center;gap:8px}
+.hdr-logo{background:#fff;border-radius:5px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:800;font-size:12px;color:#1a3c6e}
+.hdr h1{font-family:'Poppins',sans-serif;font-size:13px;font-weight:700}
+.hdr p{font-size:9.5px;opacity:.7;margin-top:1px}
+.hdr-meta{font-size:9.5px;opacity:.65;text-align:right}
+.hdr-meta strong{font-size:10.5px;opacity:1;display:block}
+
+.lgnd{background:#fff;border-bottom:1px solid #dde3ec;padding:3px 16px;display:flex;align-items:center;gap:12px;font-size:10px;color:#4a5568}
+.lgnd-dot{width:7px;height:7px;border-radius:2px;display:inline-block;margin-right:3px}
+.ld-m{background:#fbbf24}.ld-d{background:#86efac}.ld-t{background:#93c5fd}
+
+/* LAYOUT: 2 cols — left narrow, right wide */
+.main{padding:8px 16px;display:grid;grid-template-columns:220px 1fr;gap:8px;align-items:start}
+
+/* LEFT: Employee Detail tall + Tuition below */
+.left-col{display:flex;flex-direction:column;gap:8px}
+
+/* RIGHT: Job Role top + Salary below */
+.right-col{display:flex;flex-direction:column;gap:8px}
+
+/* CARDS */
+.card{background:#fff;border-radius:7px;border:1px solid #dde3ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.ch{padding:5px 10px;display:flex;align-items:center;gap:5px;font-family:'Poppins',sans-serif;font-weight:700;font-size:9px;letter-spacing:.5px;text-transform:uppercase}
+.cb{padding:8px 10px}
+.ch-blue{background:#1e40af;color:#fff}
+.ch-green{background:#065f46;color:#fff}
+.ch-amber{background:#92400e;color:#fff}
+.ch-teal{background:#134e4a;color:#fff}
+
+/* FORM */
+.fg{display:flex;flex-direction:column;gap:2px;margin-bottom:5px}
+.fg:last-child{margin-bottom:0}
+/* Inline row: label left, control right */
+.fg-row{display:grid;grid-template-columns:1fr 1fr;gap:5px;align-items:center;margin-bottom:5px}
+.fg-row:last-child{margin-bottom:0}
+.fg-row .fl{margin-bottom:0}
+
+.fl{font-size:9.5px;font-weight:600;color:#374151;text-transform:uppercase;letter-spacing:.3px;display:flex;align-items:center;gap:3px}
+.fd{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.fm .fd{background:#f59e0b}.fd2 .fd{background:#22c55e}.ft .fd{background:#3b82f6}
+
+select,input[type=number]{width:100%;background:#f8fafc;border:1.5px solid #d1d5db;border-radius:4px;color:#1a202c;font-family:'Inter',sans-serif;font-size:11px;padding:3px 7px;outline:none;transition:border-color .12s;appearance:none}
+select:focus,input:focus{border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.1)}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%236b7280'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center;padding-right:20px}
+.must{border-color:#f59e0b!important}
+.exp-dirty{border-color:#dc2626!important;background:#fff5f5!important}
+
+/* KID ROW: class + fee on one line */
+.kid-row{display:grid;grid-template-columns:1fr auto;gap:5px;align-items:center;margin-bottom:5px}
+.kid-fee{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;padding:3px 7px;font-size:11px;color:#166534;font-weight:600;font-family:'Inter',monospace;white-space:nowrap}
+.kid-fee.na{background:#f9fafb;border-color:#e5e7eb;color:#9ca3af;font-style:italic}
+
+/* REFRESH ROW */
+.rfrow{background:#f8fafc;border:1px solid #e5e7eb;border-radius:5px;padding:5px 8px;margin:5px 0;display:flex;align-items:center;justify-content:space-between;gap:6px}
+.rfinfo{font-size:9.5px;color:#6b7280;line-height:1.4}
+.rfinfo strong{color:#374151;font-size:10px}
+.dirty-msg{color:#dc2626;font-weight:600;display:none;font-size:9px}
+.rfbtns{display:flex;gap:5px;flex-shrink:0}
+.btn-rf{background:#1e40af;color:#fff;border:none;border-radius:5px;cursor:pointer;font-family:'Poppins',sans-serif;font-size:9.5px;font-weight:700;padding:4px 9px;display:flex;align-items:center;gap:4px;transition:background .12s}
+.btn-rf:hover{background:#1d4ed8}
+.btn-rf.dirty{background:#dc2626;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 2px rgba(220,38,38,.2)}50%{box-shadow:0 0 0 5px rgba(220,38,38,.06)}}
+.btn-rst{background:#f3f4f6;color:#374151;border:1.5px solid #d1d5db;border-radius:5px;cursor:pointer;font-size:10px;font-weight:600;padding:4px 8px;transition:background .12s}
+.btn-rst:hover{background:#e5e7eb}
+
+/* SALARY */
+.sal-title{font-family:'Poppins',sans-serif;font-weight:700;font-size:10.5px;color:#1e40af;margin-bottom:7px;padding:4px 8px;background:#eff6ff;border-radius:4px;border-left:3px solid #3b82f6;line-height:1.3}
+
+/* Salary uses 2-col layout inside right panel */
+.sal-inner{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* Summary boxes */
+.sal-summary{display:flex;flex-direction:column;gap:5px}
+.sb{background:#f8fafc;border:1px solid #e2e8f0;border-radius:5px;padding:5px 8px}
+.sb.hl{background:#1e40af;border-color:#1e40af}
+.sb.hl .sl{color:rgba(255,255,255,.7)}.sb.hl .sv{color:#fbbf24}
+.sl{font-size:8.5px;color:#6b7280;font-weight:500;margin-bottom:1px}
+.sv{font-family:'Inter',monospace;font-weight:700;font-size:12px;color:#1a202c}
+.sn{font-size:8px;color:#9ca3af;margin-top:1px}
+
+/* Year boxes */
+.yc{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:5px}
+.yb{text-align:center;background:#f0f9ff;border:1px solid #bae6fd;border-radius:5px;padding:4px 3px}
+.yb.y1{background:#1e40af;border-color:#1e40af;color:#fff}
+.ylbl{font-size:8px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;margin-bottom:1px}
+.yval{font-family:'Inter',monospace;font-size:12px;font-weight:800}
+.yval.y1c{color:#fbbf24}.yval.y2c,.yval.y3c{color:#0c4a6e}
+
+/* ED table */
+.ed-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:0}
+.edsec h4{font-size:8.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#374151;margin-bottom:3px;padding-bottom:2px;border-bottom:2px solid #e5e7eb}
+.edr{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #f1f5f9;font-size:10.5px}
+.edr:last-child{border-bottom:none}
+.ek{color:#4b5563}
+.ev{font-family:'Inter',monospace;font-weight:600;color:#1a202c}
+.ev.ded{color:#dc2626}.ev.na{color:#9ca3af;font-weight:400;font-style:italic}
+.ev.tui{color:#166534}
+.edr.total{border-top:2px solid #e5e7eb;margin-top:2px;padding-top:3px}
+.edr.earnable-hdr{padding-top:4px;border-top:1px solid #fecaca;margin-top:2px}
+
+/* JRD */
+.jrd-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.ji{background:#f8fafc;border:1px solid #e5e7eb;border-radius:4px;padding:4px 7px}
+.jlbl{font-size:8.5px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;color:#6b7280;margin-bottom:1px}
+.jval{font-size:10.5px;color:#1a202c;font-weight:500;line-height:1.3}
+.ji.full{grid-column:1/-1}
+
+/* TUITION */
+.tui-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}
+.ti{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:3px;padding:3px 4px;text-align:center}
+.tc{font-size:8px;font-weight:700;color:#166534;text-transform:uppercase}
+.tf{font-family:'Inter',monospace;font-size:10.5px;font-weight:700;color:#15803d}
+.ti.na{background:#f9fafb;border-color:#e5e7eb}.ti.na .tc,.ti.na .tf{color:#9ca3af}
+
+.divider{height:1px;background:#e5e7eb;margin:6px 0}
+.sec-lbl{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#374151;margin-bottom:4px;margin-top:6px}
+.sec-lbl:first-of-type{margin-top:0}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-logo">LM</div>
+    <div>
+      <h1>La Montessori Chain of Schools</h1>
+      <p>Principal Hiring Dashboard &mdash; Pay Scale 2026</p>
+    </div>
+  </div>
+  <div class="hdr-meta"><strong>Confidential &middot; Internal Use Only</strong>Academic Year 2025&ndash;26</div>
+</div>
+
+<div class="lgnd">
+  <strong style="color:#374151;margin-right:2px">Legend:</strong>
+  <span><span class="lgnd-dot ld-m"></span>Must Fill</span>
+  <span><span class="lgnd-dot ld-d"></span>Can Discuss</span>
+  <span><span class="lgnd-dot ld-t"></span>Must Tell</span>
+</div>
+
+<div class="main">
+
+  <!-- LEFT COLUMN: Employee Detail + Tuition Fee -->
+  <div class="left-col">
+
+    <!-- EMPLOYEE DETAIL -->
+    <div class="card">
+      <div class="ch ch-blue">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Employee Details
+      </div>
+      <div class="cb">
+
+        <div class="fg">
+          <label class="fl fm"><div class="fd"></div>School</label>
+          <select id="inp-school" class="must" onchange="onSchoolChange()">
+            <option value="">-- Select --</option>
+            <option>HES</option><option>LMS 1</option><option>LMS 2</option>
+            <option>LMS 3</option><option>LMS 4</option><option>LMS 5</option><option>LMS 6</option>
+          </select>
+        </div>
+
+        <div class="fg">
+          <label class="fl fm"><div class="fd"></div>Designation</label>
+          <select id="inp-designation" class="must" onchange="compute()">
+            <option value="">-- Select --</option>
+          </select>
+        </div>
+
+        <div class="fg">
+          <label class="fl fm"><div class="fd"></div>Working Hours</label>
+          <select id="inp-hours" class="must" onchange="compute()">
+            <option value="">Auto</option>
+            <option value="4">4.0 hrs</option>
+            <option value="4.5">4.5 hrs</option>
+            <option value="5">5.0 hrs</option>
+            <option value="5.5">5.5 hrs</option>
+            <option value="6">6.0 hrs</option>
+            <option value="6.5">6.5 hrs</option>
+            <option value="7">7.0 hrs</option>
+            <option value="7.5">7.5 hrs</option>
+            <option value="8">8.0 hrs</option>
+            <option value="8.5">8.5 hrs</option>
+            <option value="9">9.0 hrs</option>
+            <option value="9.5">9.5 hrs</option>
+            <option value="10">10.0 hrs</option>
+          </select>
+        </div>
+
+        <div class="fg">
+          <label class="fl fd2"><div class="fd"></div>EPF Enrolled</label>
+          <select id="inp-epf" onchange="compute()">
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+
+        <div class="fg">
+          <label class="fl ft"><div class="fd"></div>LMS Exp (yrs)</label>
+          <input type="number" id="inp-lms-exp" value="2" min="0" max="30" oninput="onExpInput()">
+        </div>
+
+        <div class="fg">
+          <label class="fl ft"><div class="fd"></div>Other Exp (yrs)</label>
+          <input type="number" id="inp-other-exp" value="0" min="0" max="30" oninput="onExpInput()">
+        </div>
+
+        <!-- REFRESH ROW -->
+        <div class="rfrow">
+          <div class="rfinfo">
+            <strong id="inc-display">Increments: 5</strong><br>
+            <span class="dirty-msg" id="dirty-msg">&#9888; Click Recalculate</span>
+          </div>
+          <div class="rfbtns">
+            <button class="btn-rst" onclick="resetExp()">&#8635;</button>
+            <button class="btn-rf" id="btn-refresh" onclick="applyAndCompute()">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Recalculate
+            </button>
+          </div>
+        </div>
+
+        <!-- KID 1: class + fee on one line -->
+        <label class="fl fd2" style="margin-bottom:3px"><div class="fd"></div>Kid 1</label>
+        <div class="kid-row">
+          <select id="inp-kid1" onchange="compute()">
+            <option value="N.A.">N.A.</option>
+            <option>M1</option><option>M2</option><option>M3</option>
+            <option>C1</option><option>C2</option><option>C3</option><option>C4</option>
+            <option>C5</option><option>C6</option><option>C7</option><option>C8</option>
+            <option>C9</option><option>C10</option>
+            <option>C11-Science</option><option>C11-Comm.</option><option>C11-Hum.</option>
+            <option>C12-Science</option><option>C12-Comm.</option><option>C12-Hum.</option>
+          </select>
+          <div id="kid1-fee" class="kid-fee na">N.A.</div>
+        </div>
+
+        <!-- KID 2: class + fee on one line -->
+        <label class="fl fd2" style="margin-bottom:3px"><div class="fd"></div>Kid 2</label>
+        <div class="kid-row" style="margin-bottom:0">
+          <select id="inp-kid2" onchange="compute()">
+            <option value="N.A.">N.A.</option>
+            <option>M1</option><option>M2</option><option>M3</option>
+            <option>C1</option><option>C2</option><option>C3</option><option>C4</option>
+            <option>C5</option><option>C6</option><option>C7</option><option>C8</option>
+            <option>C9</option><option>C10</option>
+            <option>C11-Science</option><option>C11-Comm.</option><option>C11-Hum.</option>
+            <option>C12-Science</option><option>C12-Comm.</option><option>C12-Hum.</option>
+          </select>
+          <div id="kid2-fee" class="kid-fee na">N.A.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TUITION FEE -->
+    <div class="card">
+      <div class="ch ch-teal">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        Tuition Fees &mdash; <span id="tui-school-title" style="font-weight:400;font-size:8.5px;opacity:.85">School</span>
+      </div>
+      <div class="cb">
+        <div id="tui-grid" class="tui-grid">
+          <div class="ti na"><div class="tc">N.A.</div><div class="tf">—</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end left-col -->
+
+  <!-- RIGHT COLUMN: Job Role + Salary -->
+  <div class="right-col">
+
+    <!-- JOB ROLE DETAIL -->
+    <div class="card">
+      <div class="ch ch-green">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8a2 2 0 0 0-2 2v2h12V5a2 2 0 0 0-2-2z"/></svg>
+        Job Role Details
+      </div>
+      <div class="cb">
+        <div id="jrd-content" class="jrd-grid">
+          <div class="ji full"><div class="jlbl">Status</div><div class="jval" style="color:#9ca3af">Select school &amp; designation</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SALARY BREAKDOWN -->
+    <div class="card">
+      <div class="ch ch-amber">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Salary Breakdown
+      </div>
+      <div class="cb">
+        <div id="salary-title" class="sal-title">Select school &amp; designation to view salary</div>
+
+        <!-- 2-col inner layout: summary left, detailed right -->
+        <div class="sal-inner">
+
+          <!-- LEFT: summary boxes + year transfer -->
+          <div>
+            <div class="sal-summary">
+              <div class="sb"><div class="sl">Net Basic</div><div class="sv" id="s-net-basic">&mdash;</div></div>
+              <div class="sb"><div class="sl">Net Salary</div><div class="sv" id="s-net-salary">&mdash;</div></div>
+              <div class="sb"><div class="sl">Govt. Savings (EPF+ESI)</div><div class="sv" id="s-govt-sav">&mdash;</div></div>
+              <div class="sb"><div class="sl">RRF Deduction (Y1)</div><div class="sv" id="s-rrf">&mdash;</div></div>
+              <div class="sb"><div class="sl">Total Deductions (Y1)</div><div class="sv" id="s-total-ded">&mdash;</div></div>
+              <div class="sb hl"><div class="sl">Cost to Institution</div><div class="sv" id="s-cti">&mdash;</div><div class="sn">Stable 3 yrs</div></div>
+            </div>
+            <div class="sec-lbl">Net Bank Transfer</div>
+            <div class="yc">
+              <div class="yb y1"><div class="ylbl" style="color:rgba(255,255,255,.7)">Year 1</div><div class="yval y1c" id="s-y1">&mdash;</div></div>
+              <div class="yb"><div class="ylbl y2c">Year 2</div><div class="yval y2c" id="s-y2">&mdash;</div></div>
+              <div class="yb"><div class="ylbl y3c">Year 3</div><div class="yval y3c" id="s-y3">&mdash;</div></div>
+            </div>
+          </div>
+
+          <!-- RIGHT: earnings + deductions detail -->
+          <div class="ed-wrap">
+            <div class="edsec">
+              <h4>Earnings</h4>
+              <div class="edr"><span class="ek">Basic</span><span class="ev" id="d-basic">&mdash;</span></div>
+              <div class="edr"><span class="ek">DA</span><span class="ev" id="d-da">&mdash;</span></div>
+              <div class="edr"><span class="ek">Add. Duty Allow.</span><span class="ev" id="d-ada">&mdash;</span></div>
+              <div class="edr"><span class="ek">EPF Employer</span><span class="ev" id="d-epf-emp">&mdash;</span></div>
+              <div class="edr"><span class="ek">PF Employer</span><span class="ev" id="d-pf-emp">&mdash;</span></div>
+              <div class="edr"><span class="ek">ESI Employer</span><span class="ev" id="d-esi-emp">&mdash;</span></div>
+              <div class="edr"><span class="ek">Tuition Fee (Added)</span><span class="ev tui" id="d-tui-add">&mdash;</span></div>
+              <div class="edr total"><span class="ek" style="font-weight:700">Net Bank Y1</span><span class="ev" id="d-nbt" style="color:#1e40af;font-size:13px">&mdash;</span></div>
+              <div class="edr"><span class="ek">Net Bank Y2</span><span class="ev" id="d-nbt2">&mdash;</span></div>
+              <div class="edr"><span class="ek">Net Bank Y3</span><span class="ev" id="d-nbt3">&mdash;</span></div>
+            </div>
+            <div class="edsec">
+              <h4>Deductions</h4>
+              <div class="edr"><span class="ek">Leave Deduction</span><span class="ev">&#8377;0</span></div>
+              <div class="edr"><span class="ek">EPF+PF (Employee)</span><span class="ev">&#8377;0</span></div>
+              <div class="edr"><span class="ek">Tuition (Deduction)</span><span class="ev ded" id="d-tui-ded">&mdash;</span></div>
+              <div class="edr earnable-hdr">
+                <span class="ek" style="font-weight:600;color:#6b7280;font-size:8.5px">EARNABLE DEDUCTIONS</span>
+              </div>
+              <div class="edr"><span class="ek">EPF to EPFO</span><span class="ev ded" id="d-epf-epfo">&mdash;</span></div>
+              <div class="edr"><span class="ek">ESI to ESIC</span><span class="ev ded" id="d-esi-esic">&mdash;</span></div>
+              <div class="edr"><span class="ek">RRF (Refundable)</span><span class="ev ded" id="d-rrf-ded">&mdash;</span></div>
+            </div>
+          </div>
+
+        </div><!-- end sal-inner -->
+      </div>
+    </div>
+
+  </div><!-- end right-col -->
+</div><!-- end main -->
+
+<script>
+const D = {"base": {"HelperHES": {"designation": "Helper", "school": "HES", "pre_basic": 4900, "gp": 1300, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/1"}, "SweeperHES": {"designation": "Sweeper", "school": "HES", "pre_basic": 4900, "gp": 1300, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/1"}, "Driver Cum DaftriHES": {"designation": "Driver Cum Daftri", "school": "HES", "pre_basic": 5910, "gp": 2000, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/2"}, "Driver Cum PeonHES": {"designation": "Driver Cum Peon", "school": "HES", "pre_basic": 5910, "gp": 2000, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/2"}, "Activity TeacherHES": {"designation": "Activity Teacher", "school": "HES", "pre_basic": 5910, "gp": 2600, "ideal_hours": 6, "classification": "Academic", "es": "ES/3"}, "NTTHES": {"designation": "NTT", "school": "HES", "pre_basic": 5910, "gp": 2600, "ideal_hours": 6, "classification": "Academic", "es": "ES/3"}, "TechnicianHES": {"designation": "Technician", "school": "HES", "pre_basic": 5910, "gp": 2600, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/3"}, "Clerk + PROHES": {"designation": "Clerk + PRO", "school": "HES", "pre_basic": 5910, "gp": 3200, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/3.5"}, "PRTHES": {"designation": "PRT", "school": "HES", "pre_basic": 5910, "gp": 3200, "ideal_hours": 6, "classification": "Academic", "es": "ES/3.5"}, "Games Teacher (PTI)HES": {"designation": "Games Teacher (PTI)", "school": "HES", "pre_basic": 5910, "gp": 3200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/3.5"}, "Computer TeacherHES": {"designation": "Computer Teacher", "school": "HES", "pre_basic": 10300, "gp": 3200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/4"}, "TGTHES": {"designation": "TGT", "school": "HES", "pre_basic": 10300, "gp": 3600, "ideal_hours": 6, "classification": "Academic", "es": "ES/4"}, "PTI (11, 12)HES": {"designation": "PTI (11, 12)", "school": "HES", "pre_basic": 10300, "gp": 4200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/4"}, "PGTHES": {"designation": "PGT", "school": "HES", "pre_basic": 10300, "gp": 4200, "ideal_hours": 6, "classification": "Academic", "es": "ES/4.5"}, "Vice PrincipalHES": {"designation": "Vice Principal", "school": "HES", "pre_basic": 10300, "gp": 4200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/4.5"}, "Head Master/ PrincipalHES": {"designation": "Head Master/ Principal", "school": "HES", "pre_basic": 10300, "gp": 5400, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/5"}, "HOD (Full Time)HES": {"designation": "HOD (Full Time)", "school": "HES", "pre_basic": 10300, "gp": 5400, "ideal_hours": 8, "classification": "Academic", "es": "ES/5"}, "Academic CoordinatorHES": {"designation": "Academic Coordinator", "school": "HES", "pre_basic": 10300, "gp": 5400, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/5"}, "Admin CoordinatorHES": {"designation": "Admin Coordinator", "school": "HES", "pre_basic": 10300, "gp": 5400, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/5"}, "Systems CoordinatorHES": {"designation": "Systems Coordinator", "school": "HES", "pre_basic": 10300, "gp": 5400, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/5"}, "School CoordinatorHES": {"designation": "School Coordinator", "school": "HES", "pre_basic": 10300, "gp": 5400, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/5"}, "IT Coordinator (Social Media)HES": {"designation": "IT Coordinator (Social Media)", "school": "HES", "pre_basic": 10300, "gp": 5400, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/5"}, "Academic HeadHES": {"designation": "Academic Head", "school": "HES", "pre_basic": 15600, "gp": 5400, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/6"}, "Finance HeadHES": {"designation": "Finance Head", "school": "HES", "pre_basic": 15600, "gp": 5400, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/6"}, "Systems HeadHES": {"designation": "Systems Head", "school": "HES", "pre_basic": 15600, "gp": 5400, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/6"}, "Human Resource HeadHES": {"designation": "Human Resource Head", "school": "HES", "pre_basic": 15600, "gp": 5400, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/6"}, "Marketing & PR HeadHES": {"designation": "Marketing & PR Head", "school": "HES", "pre_basic": 15600, "gp": 5400, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/6"}, "M.D. OperationsHES": {"designation": "M.D. Operations", "school": "HES", "pre_basic": 15600, "gp": 5400, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/7"}, "M.D. AcademicsHES": {"designation": "M.D. Academics", "school": "HES", "pre_basic": 15600, "gp": 5400, "ideal_hours": 8, "classification": "Academic", "es": "ES/7"}, "HelperLMS 1": {"designation": "Helper", "school": "LMS 1", "pre_basic": 4900, "gp": 1300, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/1"}, "SweeperLMS 1": {"designation": "Sweeper", "school": "LMS 1", "pre_basic": 4900, "gp": 1300, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/1"}, "Driver Cum DaftriLMS 1": {"designation": "Driver Cum Daftri", "school": "LMS 1", "pre_basic": 5910, "gp": 2000, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/2"}, "Driver Cum PeonLMS 1": {"designation": "Driver Cum Peon", "school": "LMS 1", "pre_basic": 5910, "gp": 2000, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/2"}, "Activity TeacherLMS 1": {"designation": "Activity Teacher", "school": "LMS 1", "pre_basic": 5910, "gp": 2600, "ideal_hours": 6, "classification": "Academic", "es": "ES/3"}, "NTTLMS 1": {"designation": "NTT", "school": "LMS 1", "pre_basic": 5910, "gp": 2600, "ideal_hours": 6, "classification": "Academic", "es": "ES/3"}, "TechnicianLMS 1": {"designation": "Technician", "school": "LMS 1", "pre_basic": 5910, "gp": 2600, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/3"}, "Clerk + PROLMS 1": {"designation": "Clerk + PRO", "school": "LMS 1", "pre_basic": 5910, "gp": 3200, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/3.5"}, "PRTLMS 1": {"designation": "PRT", "school": "LMS 1", "pre_basic": 5910, "gp": 3200, "ideal_hours": 6, "classification": "Academic", "es": "ES/3.5"}, "Games Teacher (PTI)LMS 1": {"designation": "Games Teacher (PTI)", "school": "LMS 1", "pre_basic": 5910, "gp": 3200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/3.5"}, "Computer TeacherLMS 1": {"designation": "Computer Teacher", "school": "LMS 1", "pre_basic": 10300, "gp": 3200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/4"}, "TGTLMS 1": {"designation": "TGT", "school": "LMS 1", "pre_basic": 10300, "gp": 3600, "ideal_hours": 6, "classification": "Academic", "es": "ES/4"}, "PTI (11, 12)LMS 1": {"designation": "PTI (11, 12)", "school": "LMS 1", "pre_basic": 10300, "gp": 4200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/4"}, "PGTLMS 1": {"designation": "PGT", "school": "LMS 1", "pre_basic": 10300, "gp": 4200, "ideal_hours": 6, "classification": "Academic", "es": "ES/4.5"}, "Vice PrincipalLMS 1": {"designation": "Vice Principal", "school": "LMS 1", "pre_basic": 10300, "gp": 4200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/4.5"}, "Head Master/ PrincipalLMS 1": {"designation": "Head Master/ Principal", "school": "LMS 1", "pre_basic": 10300, "gp": 5400, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/5"}, "HelperLMS 2": {"designation": "Helper", "school": "LMS 2", "pre_basic": 4900, "gp": 1300, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/1"}, "SweeperLMS 2": {"designation": "Sweeper", "school": "LMS 2", "pre_basic": 4900, "gp": 1300, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/1"}, "Driver Cum DaftriLMS 2": {"designation": "Driver Cum Daftri", "school": "LMS 2", "pre_basic": 5910, "gp": 2000, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/2"}, "Driver Cum PeonLMS 2": {"designation": "Driver Cum Peon", "school": "LMS 2", "pre_basic": 5910, "gp": 2000, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/2"}, "Activity TeacherLMS 2": {"designation": "Activity Teacher", "school": "LMS 2", "pre_basic": 5910, "gp": 2600, "ideal_hours": 6, "classification": "Academic", "es": "ES/3"}, "NTTLMS 2": {"designation": "NTT", "school": "LMS 2", "pre_basic": 5910, "gp": 2600, "ideal_hours": 6, "classification": "Academic", "es": "ES/3"}, "TechnicianLMS 2": {"designation": "Technician", "school": "LMS 2", "pre_basic": 5910, "gp": 2600, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/3"}, "Clerk + PROLMS 2": {"designation": "Clerk + PRO", "school": "LMS 2", "pre_basic": 5910, "gp": 3200, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/3.5"}, "PRTLMS 2": {"designation": "PRT", "school": "LMS 2", "pre_basic": 5910, "gp": 3200, "ideal_hours": 6, "classification": "Academic", "es": "ES/3.5"}, "Games Teacher (PTI)LMS 2": {"designation": "Games Teacher (PTI)", "school": "LMS 2", "pre_basic": 5910, "gp": 3200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/3.5"}, "Computer TeacherLMS 2": {"designation": "Computer Teacher", "school": "LMS 2", "pre_basic": 10300, "gp": 3200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/4"}, "TGTLMS 2": {"designation": "TGT", "school": "LMS 2", "pre_basic": 10300, "gp": 3600, "ideal_hours": 6, "classification": "Academic", "es": "ES/4"}, "PTI (11, 12)LMS 2": {"designation": "PTI (11, 12)", "school": "LMS 2", "pre_basic": 10300, "gp": 4200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/4"}, "PGTLMS 2": {"designation": "PGT", "school": "LMS 2", "pre_basic": 10300, "gp": 4200, "ideal_hours": 6, "classification": "Academic", "es": "ES/4.5"}, "Vice PrincipalLMS 2": {"designation": "Vice Principal", "school": "LMS 2", "pre_basic": 10300, "gp": 4200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/4.5"}, "Head Master/ PrincipalLMS 2": {"designation": "Head Master/ Principal", "school": "LMS 2", "pre_basic": 10300, "gp": 5400, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/5"}, "HelperLMS 3": {"designation": "Helper", "school": "LMS 3", "pre_basic": 4900, "gp": 1300, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/1"}, "SweeperLMS 3": {"designation": "Sweeper", "school": "LMS 3", "pre_basic": 4900, "gp": 1300, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/1"}, "Driver Cum DaftriLMS 3": {"designation": "Driver Cum Daftri", "school": "LMS 3", "pre_basic": 5910, "gp": 2000, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/2"}, "Driver Cum PeonLMS 3": {"designation": "Driver Cum Peon", "school": "LMS 3", "pre_basic": 5910, "gp": 2000, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/2"}, "Activity TeacherLMS 3": {"designation": "Activity Teacher", "school": "LMS 3", "pre_basic": 5910, "gp": 2600, "ideal_hours": 6, "classification": "Academic", "es": "ES/3"}, "NTTLMS 3": {"designation": "NTT", "school": "LMS 3", "pre_basic": 5910, "gp": 2600, "ideal_hours": 6, "classification": "Academic", "es": "ES/3"}, "TechnicianLMS 3": {"designation": "Technician", "school": "LMS 3", "pre_basic": 5910, "gp": 2600, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/3"}, "Clerk + PROLMS 3": {"designation": "Clerk + PRO", "school": "LMS 3", "pre_basic": 5910, "gp": 3200, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/3.5"}, "PRTLMS 3": {"designation": "PRT", "school": "LMS 3", "pre_basic": 5910, "gp": 3200, "ideal_hours": 6, "classification": "Academic", "es": "ES/3.5"}, "Games Teacher (PTI)LMS 3": {"designation": "Games Teacher (PTI)", "school": "LMS 3", "pre_basic": 5910, "gp": 3200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/3.5"}, "Computer TeacherLMS 3": {"designation": "Computer Teacher", "school": "LMS 3", "pre_basic": 10300, "gp": 3200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/4"}, "TGTLMS 3": {"designation": "TGT", "school": "LMS 3", "pre_basic": 10300, "gp": 3600, "ideal_hours": 6, "classification": "Academic", "es": "ES/4"}, "PTI (11, 12)LMS 3": {"designation": "PTI (11, 12)", "school": "LMS 3", "pre_basic": 10300, "gp": 4200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/4"}, "PGTLMS 3": {"designation": "PGT", "school": "LMS 3", "pre_basic": 10300, "gp": 4200, "ideal_hours": 6, "classification": "Academic", "es": "ES/4.5"}, "Vice PrincipalLMS 3": {"designation": "Vice Principal", "school": "LMS 3", "pre_basic": 10300, "gp": 4200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/4.5"}, "Head Master/ PrincipalLMS 3": {"designation": "Head Master/ Principal", "school": "LMS 3", "pre_basic": 10300, "gp": 5400, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/5"}, "HelperLMS 4": {"designation": "Helper", "school": "LMS 4", "pre_basic": 4900, "gp": 1300, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/1"}, "SweeperLMS 4": {"designation": "Sweeper", "school": "LMS 4", "pre_basic": 4900, "gp": 1300, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/1"}, "Driver Cum DaftriLMS 4": {"designation": "Driver Cum Daftri", "school": "LMS 4", "pre_basic": 5910, "gp": 2000, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/2"}, "Driver Cum PeonLMS 4": {"designation": "Driver Cum Peon", "school": "LMS 4", "pre_basic": 5910, "gp": 2000, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/2"}, "Activity TeacherLMS 4": {"designation": "Activity Teacher", "school": "LMS 4", "pre_basic": 5910, "gp": 2600, "ideal_hours": 6, "classification": "Academic", "es": "ES/3"}, "NTTLMS 4": {"designation": "NTT", "school": "LMS 4", "pre_basic": 5910, "gp": 2600, "ideal_hours": 6, "classification": "Academic", "es": "ES/3"}, "TechnicianLMS 4": {"designation": "Technician", "school": "LMS 4", "pre_basic": 5910, "gp": 2600, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/3"}, "Clerk + PROLMS 4": {"designation": "Clerk + PRO", "school": "LMS 4", "pre_basic": 5910, "gp": 3200, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/3.5"}, "PRTLMS 4": {"designation": "PRT", "school": "LMS 4", "pre_basic": 5910, "gp": 3200, "ideal_hours": 6, "classification": "Academic", "es": "ES/3.5"}, "Games Teacher (PTI)LMS 4": {"designation": "Games Teacher (PTI)", "school": "LMS 4", "pre_basic": 5910, "gp": 3200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/3.5"}, "Computer TeacherLMS 4": {"designation": "Computer Teacher", "school": "LMS 4", "pre_basic": 10300, "gp": 3200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/4"}, "TGTLMS 4": {"designation": "TGT", "school": "LMS 4", "pre_basic": 10300, "gp": 3600, "ideal_hours": 6, "classification": "Academic", "es": "ES/4"}, "PTI (11, 12)LMS 4": {"designation": "PTI (11, 12)", "school": "LMS 4", "pre_basic": 10300, "gp": 4200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/4"}, "PGTLMS 4": {"designation": "PGT", "school": "LMS 4", "pre_basic": 10300, "gp": 4200, "ideal_hours": " ", "classification": "Academic", "es": "ES/4.5"}, "Vice PrincipalLMS 4": {"designation": "Vice Principal", "school": "LMS 4", "pre_basic": 10300, "gp": 4200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/4.5"}, "Head Master/ PrincipalLMS 4": {"designation": "Head Master/ Principal", "school": "LMS 4", "pre_basic": 10300, "gp": 5400, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/5"}, "HelperLMS 5": {"designation": "Helper", "school": "LMS 5", "pre_basic": 4900, "gp": 1300, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/1"}, "SweeperLMS 5": {"designation": "Sweeper", "school": "LMS 5", "pre_basic": 4900, "gp": 1300, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/1"}, "Driver Cum DaftriLMS 5": {"designation": "Driver Cum Daftri", "school": "LMS 5", "pre_basic": 5910, "gp": 2000, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/2"}, "Driver Cum PeonLMS 5": {"designation": "Driver Cum Peon", "school": "LMS 5", "pre_basic": 5910, "gp": 2000, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/2"}, "Activity TeacherLMS 5": {"designation": "Activity Teacher", "school": "LMS 5", "pre_basic": 5910, "gp": 2600, "ideal_hours": 6, "classification": "Academic", "es": "ES/3"}, "NTTLMS 5": {"designation": "NTT", "school": "LMS 5", "pre_basic": 5910, "gp": 2600, "ideal_hours": 6, "classification": "Academic", "es": "ES/3"}, "TechnicianLMS 5": {"designation": "Technician", "school": "LMS 5", "pre_basic": 5910, "gp": 2600, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/3"}, "Clerk + PROLMS 5": {"designation": "Clerk + PRO", "school": "LMS 5", "pre_basic": 5910, "gp": 3200, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/3.5"}, "PRTLMS 5": {"designation": "PRT", "school": "LMS 5", "pre_basic": 5910, "gp": 3200, "ideal_hours": 6, "classification": "Academic", "es": "ES/3.5"}, "Games Teacher (PTI)LMS 5": {"designation": "Games Teacher (PTI)", "school": "LMS 5", "pre_basic": 5910, "gp": 3200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/3.5"}, "Computer TeacherLMS 5": {"designation": "Computer Teacher", "school": "LMS 5", "pre_basic": 10300, "gp": 3200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/4"}, "TGTLMS 5": {"designation": "TGT", "school": "LMS 5", "pre_basic": 10300, "gp": 3600, "ideal_hours": 6, "classification": "Academic", "es": "ES/4"}, "PTI (11, 12)LMS 5": {"designation": "PTI (11, 12)", "school": "LMS 5", "pre_basic": 10300, "gp": 4200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/4"}, "PGTLMS 5": {"designation": "PGT", "school": "LMS 5", "pre_basic": 10300, "gp": 4200, "ideal_hours": 6, "classification": "Academic", "es": "ES/4.5"}, "Vice PrincipalLMS 5": {"designation": "Vice Principal", "school": "LMS 5", "pre_basic": 10300, "gp": 4200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/4.5"}, "Head Master/ PrincipalLMS 5": {"designation": "Head Master/ Principal", "school": "LMS 5", "pre_basic": 10300, "gp": 5400, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/5"}, "HelperLMS 6": {"designation": "Helper", "school": "LMS 6", "pre_basic": 4900, "gp": 1300, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/1"}, "SweeperLMS 6": {"designation": "Sweeper", "school": "LMS 6", "pre_basic": 4900, "gp": 1300, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/1"}, "Driver Cum DaftriLMS 6": {"designation": "Driver Cum Daftri", "school": "LMS 6", "pre_basic": 5910, "gp": 2000, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/2"}, "Driver Cum PeonLMS 6": {"designation": "Driver Cum Peon", "school": "LMS 6", "pre_basic": 5910, "gp": 2000, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/2"}, "Activity TeacherLMS 6": {"designation": "Activity Teacher", "school": "LMS 6", "pre_basic": 5910, "gp": 2600, "ideal_hours": 6, "classification": "Academic", "es": "ES/3"}, "NTTLMS 6": {"designation": "NTT", "school": "LMS 6", "pre_basic": 5910, "gp": 2600, "ideal_hours": 6, "classification": "Academic", "es": "ES/3"}, "TechnicianLMS 6": {"designation": "Technician", "school": "LMS 6", "pre_basic": 5910, "gp": 2600, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/3"}, "Clerk + PROLMS 6": {"designation": "Clerk + PRO", "school": "LMS 6", "pre_basic": 5910, "gp": 3200, "ideal_hours": 8, "classification": "Non-Academic", "es": "ES/3.5"}, "PRTLMS 6": {"designation": "PRT", "school": "LMS 6", "pre_basic": 5910, "gp": 3200, "ideal_hours": 6, "classification": "Academic", "es": "ES/3.5"}, "Games Teacher (PTI)LMS 6": {"designation": "Games Teacher (PTI)", "school": "LMS 6", "pre_basic": 5910, "gp": 3200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/3.5"}, "Computer TeacherLMS 6": {"designation": "Computer Teacher", "school": "LMS 6", "pre_basic": 10300, "gp": 3200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/4"}, "TGTLMS 6": {"designation": "TGT", "school": "LMS 6", "pre_basic": 10300, "gp": 3600, "ideal_hours": 6, "classification": "Academic", "es": "ES/4"}, "PTI (11, 12)LMS 6": {"designation": "PTI (11, 12)", "school": "LMS 6", "pre_basic": 10300, "gp": 4200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/4"}, "PGTLMS 6": {"designation": "PGT", "school": "LMS 6", "pre_basic": 10300, "gp": 4200, "ideal_hours": 6, "classification": "Academic", "es": "ES/4.5"}, "Vice PrincipalLMS 6": {"designation": "Vice Principal", "school": "LMS 6", "pre_basic": 10300, "gp": 4200, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/4.5"}, "Head Master/ PrincipalLMS 6": {"designation": "Head Master/ Principal", "school": "LMS 6", "pre_basic": 10300, "gp": 5400, "ideal_hours": 8, "classification": "Hybrid", "es": "ES/5"}}, "norms": {"HelperHES": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm"}, "SweeperHES": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "As Per School Needs"}, "Driver Cum DaftriHES": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "Daily Bus Fare from Home to Stop, \nOutstation Rs. 500 per night + Expenses", "timing": "As Per School Needs, day duty in School Campus"}, "Activity TeacherLMS 1": {"vacations": "Full Vacation", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm"}, "Activity TeacherLMS 2": {"vacations": "Full Vacation", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm"}, "Activity TeacherLMS 3": {"vacations": "Full Vacation", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm"}, "Activity TeacherLMS 4": {"vacations": "Full Vacation", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm"}, "Activity TeacherLMS 5": {"vacations": "Full Vacation", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm"}, "Activity TeacherLMS 6": {"vacations": "Full Vacation", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm"}, "Driver Cum PeonHES": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "Daily Bus Fare from Home to Stop, \nOutstation Rs. 500 per night + Expenses", "timing": "As Per School Needs, day duty in School Campus"}, "Activity TeacherHES": {"vacations": "Full Vacation", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm"}, "Clerk + PROLMS 1": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 5 pm"}, "Clerk + PROLMS 2": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 5 pm"}, "Clerk + PROLMS 3": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 5 pm"}, "Clerk + PROLMS 4": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 5 pm"}, "Clerk + PROLMS 5": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 5 pm"}, "Clerk + PROLMS 6": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 5 pm"}, "NTTHES": {"vacations": "Full Vacation", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (With 1 subject/ activity)\n8:45 am to 1 pm (If only MW teacher)"}, "Computer TeacherLMS 1": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 5 pm"}, "Computer TeacherLMS 2": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 5 pm"}, "Computer TeacherLMS 3": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 5 pm"}, "Computer TeacherLMS 4": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 5 pm"}, "Computer TeacherLMS 5": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 5 pm"}, "Computer TeacherLMS 6": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 5 pm"}, "TechnicianHES": {"vacations": "No Vacations but +20 CL", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "As Per School Needs"}, "Clerk + PROHES": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 5 pm"}, "Driver Cum DaftriLMS 1": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "Daily Bus Fare from Home to Stop, \nOutstation Rs. 500 per night + Expenses", "timing": "As Per School Needs, day duty in School Campus"}, "Driver Cum DaftriLMS 2": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "Daily Bus Fare from Home to Stop, \nOutstation Rs. 500 per night + Expenses", "timing": "As Per School Needs, day duty in School Campus"}, "Driver Cum DaftriLMS 3": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "Daily Bus Fare from Home to Stop, \nOutstation Rs. 500 per night + Expenses", "timing": "As Per School Needs, day duty in School Campus"}, "Driver Cum DaftriLMS 4": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "Daily Bus Fare from Home to Stop, \nOutstation Rs. 500 per night + Expenses", "timing": "As Per School Needs, day duty in School Campus"}, "Driver Cum DaftriLMS 5": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "Daily Bus Fare from Home to Stop, \nOutstation Rs. 500 per night + Expenses", "timing": "As Per School Needs, day duty in School Campus"}, "Driver Cum DaftriLMS 6": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "Daily Bus Fare from Home to Stop, \nOutstation Rs. 500 per night + Expenses", "timing": "As Per School Needs, day duty in School Campus"}, "Games Teacher (PTI)HES": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm"}, "Driver Cum PeonLMS 1": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "Daily Bus Fare from Home to Stop, \nOutstation Rs. 500 per night + Expenses", "timing": "As Per School Needs, day duty in School Campus"}, "Driver Cum PeonLMS 2": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "Daily Bus Fare from Home to Stop, \nOutstation Rs. 500 per night + Expenses", "timing": "As Per School Needs, day duty in School Campus"}, "Driver Cum PeonLMS 3": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "Daily Bus Fare from Home to Stop, \nOutstation Rs. 500 per night + Expenses", "timing": "As Per School Needs, day duty in School Campus"}, "Driver Cum PeonLMS 4": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "Daily Bus Fare from Home to Stop, \nOutstation Rs. 500 per night + Expenses", "timing": "As Per School Needs, day duty in School Campus"}, "Driver Cum PeonLMS 5": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "Daily Bus Fare from Home to Stop, \nOutstation Rs. 500 per night + Expenses", "timing": "As Per School Needs, day duty in School Campus"}, "Driver Cum PeonLMS 6": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "Daily Bus Fare from Home to Stop, \nOutstation Rs. 500 per night + Expenses", "timing": "As Per School Needs, day duty in School Campus"}, "PRTHES": {"vacations": "Full Vacation", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (at School), \n4:00 pm to 5:00 pm (Online work)"}, "Computer TeacherHES": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 5 pm"}, "Games Teacher (PTI)LMS 1": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm"}, "Games Teacher (PTI)LMS 2": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm"}, "Games Teacher (PTI)LMS 3": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm"}, "Games Teacher (PTI)LMS 4": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm"}, "Games Teacher (PTI)LMS 5": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm"}, "Games Teacher (PTI)LMS 6": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm"}, "PTI (11, 12)HES": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm"}, "Head Master/ PrincipalLMS 1": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm, Online till 6 pm "}, "Head Master/ PrincipalLMS 2": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm, Online till 6 pm "}, "Head Master/ PrincipalLMS 3": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm, Online till 6 pm "}, "Head Master/ PrincipalLMS 4": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm, Online till 6 pm "}, "Head Master/ PrincipalLMS 5": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm, Online till 6 pm "}, "Head Master/ PrincipalLMS 6": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm, Online till 6 pm "}, "TGTHES": {"vacations": "As per School need", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (at School), \n4:00 pm to 5:00 pm (School work)"}, "HelperLMS 1": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm"}, "HelperLMS 2": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm"}, "HelperLMS 3": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm"}, "HelperLMS 4": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm"}, "HelperLMS 5": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm"}, "HelperLMS 6": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm"}, "PGTHES": {"vacations": "Online if needed", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (at School), \n4:00 pm to 5:00 pm (Online work)"}, "Vice PrincipalHES": {"vacations": "Online if needed", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 3 pm (at School), \n4:00 pm to 6:00 pm (School work) + \nOfficiate for Principal when needed"}, "Academic CoordinatorHES": {"vacations": "Online if needed", "cl": null, "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "No Fixed Timing"}, "Admin CoordinatorHES": {"vacations": "Online if needed", "cl": null, "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "No Fixed Timing"}, "Head Master/ PrincipalHES": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm, Online till 6 pm "}, "HOD (Full Time)HES": {"vacations": "Online if needed", "cl": null, "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "No Fixed Timing"}, "NTTLMS 1": {"vacations": "Full Vacation", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (With 1 subject/ activity)\n8:45 am to 1 pm (If only MW teacher)"}, "NTTLMS 2": {"vacations": "Full Vacation", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (With 1 subject/ activity)\n8:45 am to 1 pm (If only MW teacher)"}, "NTTLMS 3": {"vacations": "Full Vacation", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (With 1 subject/ activity)\n8:45 am to 1 pm (If only MW teacher)"}, "NTTLMS 4": {"vacations": "Full Vacation", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (With 1 subject/ activity)\n8:45 am to 1 pm (If only MW teacher)"}, "NTTLMS 5": {"vacations": "Full Vacation", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (With 1 subject/ activity)\n8:45 am to 1 pm (If only MW teacher)"}, "NTTLMS 6": {"vacations": "Full Vacation", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (With 1 subject/ activity)\n8:45 am to 1 pm (If only MW teacher)"}, "IT Coordinator (Social Media)HES": {"vacations": "Online if needed", "cl": null, "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "No Fixed Timing"}, "PGTLMS 1": {"vacations": "Online if needed", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (at School), \n4:00 pm to 5:00 pm (Online work)"}, "PGTLMS 2": {"vacations": "Online if needed", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (at School), \n4:00 pm to 5:00 pm (Online work)"}, "PGTLMS 3": {"vacations": "Online if needed", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (at School), \n4:00 pm to 5:00 pm (Online work)"}, "PGTLMS 4": {"vacations": "Online if needed", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (at School), \n4:00 pm to 5:00 pm (Online work)"}, "PGTLMS 5": {"vacations": "Online if needed", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (at School), \n4:00 pm to 5:00 pm (Online work)"}, "PGTLMS 6": {"vacations": "Online if needed", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (at School), \n4:00 pm to 5:00 pm (Online work)"}, "School CoordinatorHES": {"vacations": "Online if needed", "cl": null, "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "No Fixed Timing"}, "PRTLMS 1": {"vacations": "Full Vacation", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (at School), \n4:00 pm to 5:00 pm (Online work)"}, "PRTLMS 2": {"vacations": "Full Vacation", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (at School), \n4:00 pm to 5:00 pm (Online work)"}, "PRTLMS 3": {"vacations": "Full Vacation", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (at School), \n4:00 pm to 5:00 pm (Online work)"}, "PRTLMS 4": {"vacations": "Full Vacation", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (at School), \n4:00 pm to 5:00 pm (Online work)"}, "PRTLMS 5": {"vacations": "Full Vacation", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (at School), \n4:00 pm to 5:00 pm (Online work)"}, "PRTLMS 6": {"vacations": "Full Vacation", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (at School), \n4:00 pm to 5:00 pm (Online work)"}, "PTI (11, 12)LMS 1": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm"}, "PTI (11, 12)LMS 2": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm"}, "PTI (11, 12)LMS 3": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm"}, "PTI (11, 12)LMS 4": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm"}, "PTI (11, 12)LMS 5": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm"}, "PTI (11, 12)LMS 6": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 5 pm"}, "Academic HeadHES": {"vacations": "Online if needed", "cl": null, "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "No Fixed Timing"}, "Coordination HeadHES": {"vacations": "Online if needed", "cl": null, "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "No Fixed Timing"}, "SweeperLMS 1": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "As Per School Needs"}, "SweeperLMS 2": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "As Per School Needs"}, "SweeperLMS 3": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "As Per School Needs"}, "SweeperLMS 4": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "As Per School Needs"}, "SweeperLMS 5": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "As Per School Needs"}, "SweeperLMS 6": {"vacations": "Half Vacation Working", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "As Per School Needs"}, "Finance HeadHES": {"vacations": "Online if needed", "cl": null, "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "No Fixed Timing"}, "Marketing & PR HeadHES": {"vacations": "Online if needed", "cl": null, "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "No Fixed Timing"}, "Systems HeadHES": {"vacations": "Online if needed", "cl": null, "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "No Fixed Timing"}, "TechnicianLMS 1": {"vacations": "No Vacations but +20 CL", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "As Per School Needs"}, "TechnicianLMS 2": {"vacations": "No Vacations but +20 CL", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "As Per School Needs"}, "TechnicianLMS 3": {"vacations": "No Vacations but +20 CL", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "As Per School Needs"}, "TechnicianLMS 4": {"vacations": "No Vacations but +20 CL", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "As Per School Needs"}, "TechnicianLMS 5": {"vacations": "No Vacations but +20 CL", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "As Per School Needs"}, "TechnicianLMS 6": {"vacations": "No Vacations but +20 CL", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "As Per School Needs"}, "M.D. AcademicsHES": {"vacations": "Online if needed", "cl": null, "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "No Fixed Timing"}, "TGTLMS 1": {"vacations": "As per School need", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (at School), \n4:00 pm to 5:00 pm (School work)"}, "TGTLMS 2": {"vacations": "As per School need", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (at School), \n4:00 pm to 5:00 pm (School work)"}, "TGTLMS 3": {"vacations": "As per School need", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (at School), \n4:00 pm to 5:00 pm (School work)"}, "TGTLMS 4": {"vacations": "As per School need", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (at School), \n4:00 pm to 5:00 pm (School work)"}, "TGTLMS 5": {"vacations": "As per School need", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (at School), \n4:00 pm to 5:00 pm (School work)"}, "TGTLMS 6": {"vacations": "As per School need", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:45 am to 3 pm (at School), \n4:00 pm to 5:00 pm (School work)"}, "M.D. OperationsHES": {"vacations": "Online if needed", "cl": null, "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "No Fixed Timing"}, "Vice PrincipalLMS 1": {"vacations": "Online if needed", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 3 pm (at School), \n4:00 pm to 6:00 pm (School work) + \nOfficiate for Principal when needed"}, "Vice PrincipalLMS 2": {"vacations": "Online if needed", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 3 pm (at School), \n4:00 pm to 6:00 pm (School work) + \nOfficiate for Principal when needed"}, "Vice PrincipalLMS 3": {"vacations": "Online if needed", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 3 pm (at School), \n4:00 pm to 6:00 pm (School work) + \nOfficiate for Principal when needed"}, "Vice PrincipalLMS 4": {"vacations": "Online if needed", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 3 pm (at School), \n4:00 pm to 6:00 pm (School work) + \nOfficiate for Principal when needed"}, "Vice PrincipalLMS 5": {"vacations": "Online if needed", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 3 pm (at School), \n4:00 pm to 6:00 pm (School work) + \nOfficiate for Principal when needed"}, "Vice PrincipalLMS 6": {"vacations": "Online if needed", "cl": "12 CL, 1 per month", "rrf": "Y1 - 12%, Y2 - 9%, Y3 - 6% (can be more months if RRF is less that CTI)", "travel": "NA", "timing": "8:30 am to 3 pm (at School), \n4:00 pm to 6:00 pm (School work) + \nOfficiate for Principal when needed"}}, "tuition": {"LMS 1": {"Tuition Fees 2026": "LMS 1", "M1": 2550, "M2": 2550, "M3": 2550, "C1": 3600, "C2": 3600, "C3": 3600, "C4": 3600, "C5": 3600, "C6": 3700, "C7": 3700, "C8": 3700, "C9": 3800, "C10": 3800}, "LMS 2": {"Tuition Fees 2026": "LMS 2", "M1": 2550, "M2": 2550, "M3": 2550, "C1": 3650, "C2": 3650, "C3": 3650, "C4": 3650, "C5": 3650, "C6": 3750, "C7": 3750, "C8": 3750, "C9": 3850, "C10": 3850, "C11-Science": 4500, "C11-Comm.": 4250, "C11-Hum.": 4250, "C12-Science": 4500, "C12-Comm.": 4250, "C12-Hum.": 4250}, "LMS 3": {"Tuition Fees 2026": "LMS 3", "M1": 1275, "M2": 1275, "M3": 1275, "C1": 1950, "C2": 1950, "C3": 1950, "C4": 1950, "C5": 1950, "C6": 1975, "C7": 1975, "C8": 1975, "C9": 2025, "C10": 2025}, "LMS 4": {"Tuition Fees 2026": "LMS 4", "M1": 2550, "M2": 2550, "M3": 2550, "C1": 3250, "C2": 3250, "C3": 3250, "C4": 3250, "C5": 3250, "C6": 3350, "C7": 3350, "C8": 3350, "C9": 3450, "C10": 3450}, "LMS 5": {"Tuition Fees 2026": "LMS 5", "M1": 2550, "M2": 2550, "M3": 2550, "C1": 3650, "C2": 3650, "C3": 3650, "C4": 3650, "C5": 3650}, "LMS 6": {"Tuition Fees 2026": "LMS 6"}}};
+const DA_R  = {'HES':0.05,'LMS 1':0.05,'LMS 2':0.05,'LMS 3':0.05,'LMS 4':0.05,'LMS 5':0.05,'LMS 6':0.05};
+const ADA_R = {'HES':0.35,'LMS 1':0.35,'LMS 2':0.35,'LMS 3':0.25,'LMS 4':0.35,'LMS 5':0.25,'LMS 6':0.25};
+// Default EPF by school: LMS 6 = No, all others = Yes
+const EPF_DEFAULT = {'HES':'Yes','LMS 1':'Yes','LMS 2':'Yes','LMS 3':'Yes','LMS 4':'Yes','LMS 5':'Yes','LMS 6':'No'};
+
+let apLms=2, apOther=0, isDirty=false;
+function fl(v){return Math.floor(v)}
+function fmt(v){return(v==null||isNaN(v))?'—':'₹'+Math.round(v).toLocaleString('en-IN')}
+function set(id,v){const e=document.getElementById(id);if(e)e.textContent=v}
+
+function getKidFeeVal(school, cls){
+  if(!school||cls==='N.A.') return 0;
+  const tf=D.tuition[school];
+  return (tf&&tf[cls])||0;
+}
+
+function calcSalary(desig, school, lmsExp, otherExp, wh, tui){
+  const bd=D.base[desig+school];
+  if(!bd||!bd.pre_basic||!bd.gp||!bd.ideal_hours) return null;
+  const workH=wh||bd.ideal_hours;
+  const inc=fl(3+lmsExp+otherExp/2);
+  const nb=fl((bd.pre_basic+bd.gp)*Math.pow(1.03,inc)*(workH/bd.ideal_hours));
+  const da=fl((DA_R[school]||0.05)*nb);
+  const ada=fl((ADA_R[school]||0.35)*nb);
+  const ns=nb+da+ada;
+  const sw=document.getElementById('inp-epf').value==='No'?0:1;
+  const epfE=sw*fl(ns>15000?1250:ns*0.0833);
+  const pfE =sw*fl(ns>15000?550 :ns*0.0367);
+  const totEpf=(epfE+pfE)*2;
+  const esiE =ns<21000?fl(ns*0.0325):0;
+  const esiEe=ns<21000?fl(ns*0.0075):0;
+  const totEsi=esiE+esiEe;
+  const cti=ns+epfE+pfE+esiE;
+  const rrf1=Math.ceil(cti*0.12),rrf2=Math.ceil(cti*0.09),rrf3=Math.ceil(cti*0.06);
+  // Tuition: added to earnings side, deducted from net pay
+  const tuiFee=tui||0;
+  return{inc,nb,da,ada,ns,epfE,pfE,esiE,totEpf,totEsi,cti,rrf1,rrf2,rrf3,tuiFee,
+    y1:cti-rrf1-totEpf-totEsi,y2:cti-rrf2-totEpf-totEsi,y3:cti-rrf3-totEpf-totEsi};
+}
+
+function onExpInput(){
+  const lms=parseFloat(document.getElementById('inp-lms-exp').value)||0;
+  const oth=parseFloat(document.getElementById('inp-other-exp').value)||0;
+  isDirty=(lms!==apLms||oth!==apOther);
+  const btn=document.getElementById('btn-refresh');
+  const msg=document.getElementById('dirty-msg');
+  const lE=document.getElementById('inp-lms-exp');
+  const oE=document.getElementById('inp-other-exp');
+  if(isDirty){
+    btn.classList.add('dirty');msg.style.display='inline';
+    lE.classList.add('exp-dirty');oE.classList.add('exp-dirty');
+    set('inc-display','Increments: '+fl(3+lms+oth/2)+' (pending)');
+  }else{
+    btn.classList.remove('dirty');msg.style.display='none';
+    lE.classList.remove('exp-dirty');oE.classList.remove('exp-dirty');
+    set('inc-display','Increments: '+fl(3+lms+oth/2));
+  }
+}
+
+function applyAndCompute(){
+  apLms=parseFloat(document.getElementById('inp-lms-exp').value)||0;
+  apOther=parseFloat(document.getElementById('inp-other-exp').value)||0;
+  isDirty=false;
+  const btn=document.getElementById('btn-refresh');
+  btn.classList.remove('dirty');
+  document.getElementById('dirty-msg').style.display='none';
+  document.getElementById('inp-lms-exp').classList.remove('exp-dirty');
+  document.getElementById('inp-other-exp').classList.remove('exp-dirty');
+  compute();
+  btn.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Done!';
+  btn.style.background='#16a34a';
+  setTimeout(()=>{
+    btn.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Recalculate';
+    btn.style.background='';
+  },1500);
+}
+
+function resetExp(){
+  document.getElementById('inp-lms-exp').value=0;
+  document.getElementById('inp-other-exp').value=0;
+  apLms=0;apOther=0;isDirty=false;
+  onExpInput();compute();
+}
+
+function onSchoolChange(){
+  const school=document.getElementById('inp-school').value;
+  const ds=document.getElementById('inp-designation');
+  const prev=ds.value;
+  ds.innerHTML='<option value="">-- Select --</option>';
+  // Set EPF default based on school
+  if(school){
+    document.getElementById('inp-epf').value = EPF_DEFAULT[school]||'Yes';
+  }
+  if(!school){compute();return;}
+  const desigs=[...new Set(Object.values(D.base).filter(r=>r.school===school).map(r=>r.designation))].sort();
+  desigs.forEach(d=>{const o=document.createElement('option');o.value=o.textContent=d;if(d===prev)o.selected=true;ds.appendChild(o);});
+  compute();
+}
+
+function compute(){
+  const school=document.getElementById('inp-school').value;
+  const desig=document.getElementById('inp-designation').value;
+  const hoursV=parseFloat(document.getElementById('inp-hours').value)||null;
+  const kid1=document.getElementById('inp-kid1').value;
+  const kid2=document.getElementById('inp-kid2').value;
+
+  // Kid fees
+  const fee1=getKidFeeVal(school,kid1);
+  const fee2=getKidFeeVal(school,kid2);
+  const totalTui=fee1+fee2;
+
+  // Update kid fee displays
+  const k1el=document.getElementById('kid1-fee');
+  const k2el=document.getElementById('kid2-fee');
+  if(fee1){k1el.textContent='₹'+fee1.toLocaleString('en-IN');k1el.className='kid-fee';}
+  else{k1el.textContent='N.A.';k1el.className='kid-fee na';}
+  if(fee2){k2el.textContent='₹'+fee2.toLocaleString('en-IN');k2el.className='kid-fee';}
+  else{k2el.textContent='N.A.';k2el.className='kid-fee na';}
+
+  renderTuition(school);
+
+  if(!school||!desig){clearSalary();clearJRD();return;}
+
+  const bd=D.base[desig+school];
+  if(bd&&!hoursV) document.getElementById('inp-hours').value=bd.ideal_hours;
+  const wh=hoursV||(bd&&bd.ideal_hours);
+
+  const r=calcSalary(desig,school,apLms,apOther,wh,totalTui);
+  renderJRD(D.norms[desig+school],bd);
+
+  if(!isDirty) set('inc-display','Increments: '+(r?r.inc:fl(3+apLms+apOther/2))+' ('+apLms+' LMS + '+fl(apOther/2)+' other)');
+
+  if(!r){
+    document.getElementById('salary-title').textContent='⚠ Data error for '+desig+' at '+school;
+    clearSalary();return;
+  }
+
+  document.getElementById('salary-title').textContent='Salary: '+desig+' @ '+school;
+
+  set('s-net-basic',fmt(r.nb));
+  set('s-net-salary',fmt(r.ns));
+  set('s-govt-sav',fmt(r.totEpf));
+  set('s-rrf',fmt(r.rrf1));
+  set('s-total-ded',fmt(r.totEpf+r.totEsi+r.rrf1));
+  set('s-cti',fmt(r.cti));
+  set('s-y1',fmt(r.y1));set('s-y2',fmt(r.y2));set('s-y3',fmt(r.y3));
+  set('d-basic',fmt(r.nb));set('d-da',fmt(r.da));set('d-ada',fmt(r.ada));
+  set('d-epf-emp',fmt(r.epfE));set('d-pf-emp',fmt(r.pfE));set('d-esi-emp',fmt(r.esiE));
+  // Tuition fee (added & deducted) = sum of kid1 + kid2 fees
+  if(totalTui>0){
+    set('d-tui-add','₹'+totalTui.toLocaleString('en-IN'));
+    set('d-tui-ded','₹'+totalTui.toLocaleString('en-IN'));
+    document.getElementById('d-tui-add').className='ev tui';
+    document.getElementById('d-tui-ded').className='ev ded';
+  } else {
+    set('d-tui-add','TBC');set('d-tui-ded','TBC');
+    document.getElementById('d-tui-add').className='ev na';
+    document.getElementById('d-tui-ded').className='ev na';
+  }
+  set('d-nbt',fmt(r.y1));set('d-nbt2',fmt(r.y2));set('d-nbt3',fmt(r.y3));
+  set('d-epf-epfo',fmt(r.totEpf));set('d-esi-esic',fmt(r.totEsi));set('d-rrf-ded',fmt(r.rrf1));
+}
+
+function clearSalary(){
+  ['s-net-basic','s-net-salary','s-govt-sav','s-rrf','s-total-ded','s-cti','s-y1','s-y2','s-y3',
+   'd-basic','d-da','d-ada','d-epf-emp','d-pf-emp','d-esi-emp','d-tui-add','d-tui-ded',
+   'd-nbt','d-nbt2','d-nbt3','d-epf-epfo','d-esi-esic','d-rrf-ded'].forEach(id=>set(id,'—'));
+}
+
+function clearJRD(){
+  document.getElementById('jrd-content').innerHTML='<div class="ji full"><div class="jlbl">Status</div><div class="jval" style="color:#9ca3af">Select above</div></div>';
+}
+
+function renderJRD(norm,sal){
+  if(!norm&&!sal){clearJRD();return;}
+  const n=norm||{},s=sal||{};
+  document.getElementById('jrd-content').innerHTML=[
+    ji('Vacations',n.vacations||'—'),
+    ji('Casual Leave',n.cl||'—'),
+    ji('Timing',(n.timing||'—').replace(/\n/g,'<br>')),
+    ji('Travel Allow.',n.travel||'—'),
+    ji('RRF Policy',n.rrf||'—',true),
+    ji('Classification',s.classification||'—'),
+    ji('Employee Scale',s.es||'—'),
+  ].join('');
+}
+
+function ji(label,value,full=false){
+  return `<div class="ji${full?' full':''}"><div class="jlbl">${label}</div><div class="jval">${value}</div></div>`;
+}
+
+function renderTuition(school){
+  document.getElementById('tui-school-title').textContent=school||'—';
+  const g=document.getElementById('tui-grid');
+  if(!school||!D.tuition[school]){
+    g.innerHTML='<div class="ti na"><div class="tc">N.A.</div><div class="tf">—</div></div>';return;
+  }
+  const tf=D.tuition[school];
+  const cls=['M1','M2','M3','C1','C2','C3','C4','C5','C6','C7','C8','C9','C10','C11-Sci','C11-Com','C11-Hum','C12-Sci','C12-Com','C12-Hum'];
+  const keys=['M1','M2','M3','C1','C2','C3','C4','C5','C6','C7','C8','C9','C10','C11-Science','C11-Comm.','C11-Hum.','C12-Science','C12-Comm.','C12-Hum.'];
+  g.innerHTML=keys.map((k,i)=>{const f=tf[k];return f
+    ?`<div class="ti"><div class="tc">${cls[i]}</div><div class="tf">₹${f.toLocaleString('en-IN')}</div></div>`
+    :`<div class="ti na"><div class="tc">${cls[i]}</div><div class="tf">—</div></div>`;}).join('');
+}
+
+// Init — default to LMS 6 (EPF=No per policy)
+window.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('inp-school').value='LMS 6';
+  onSchoolChange();
+  document.getElementById('inp-designation').value='PRT';
+  compute();
+});
+</script>
+</body>
+</html>
