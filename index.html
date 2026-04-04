@@ -9,25 +9,23 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',sans-serif;background:#e8edf4;color:#1a202c;font-size:12px;min-height:100vh}
 
-.hdr{background:linear-gradient(135deg,#1a3c6e,#2563a8 60%,#1e4f8c);color:#fff;padding:7px 16px;display:flex;align-items:center;justify-content:space-between}
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#1a3c6e,#2563a8 60%,#1e4f8c);color:#fff;padding:7px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px}
 .hdr-brand{display:flex;align-items:center;gap:8px}
-.hdr-logo{background:#fff;border-radius:5px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:800;font-size:12px;color:#1a3c6e}
+.hdr-logo{background:#fff;border-radius:5px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:800;font-size:12px;color:#1a3c6e;flex-shrink:0}
 .hdr h1{font-family:'Poppins',sans-serif;font-size:13px;font-weight:700}
 .hdr p{font-size:9.5px;opacity:.7;margin-top:1px}
 .hdr-meta{font-size:9.5px;opacity:.65;text-align:right}
 .hdr-meta strong{font-size:10.5px;opacity:1;display:block}
 
-.lgnd{background:#fff;border-bottom:1px solid #dde3ec;padding:3px 16px;display:flex;align-items:center;gap:12px;font-size:10px;color:#4a5568}
+/* LEGEND */
+.lgnd{background:#fff;border-bottom:1px solid #dde3ec;padding:3px 14px;display:flex;align-items:center;gap:12px;font-size:10px;color:#4a5568;flex-wrap:wrap}
 .lgnd-dot{width:7px;height:7px;border-radius:2px;display:inline-block;margin-right:3px}
 .ld-m{background:#fbbf24}.ld-d{background:#86efac}.ld-t{background:#93c5fd}
 
-/* LAYOUT: 2 cols — left narrow, right wide */
-.main{padding:8px 16px;display:grid;grid-template-columns:220px 1fr;gap:8px;align-items:start}
-
-/* LEFT: Employee Detail tall + Tuition below */
+/* MAIN LAYOUT — desktop: 2 cols */
+.main{padding:8px 14px;display:grid;grid-template-columns:220px 1fr;gap:8px;align-items:start}
 .left-col{display:flex;flex-direction:column;gap:8px}
-
-/* RIGHT: Job Role top + Salary below */
 .right-col{display:flex;flex-direction:column;gap:8px}
 
 /* CARDS */
@@ -42,46 +40,40 @@ body{font-family:'Inter',sans-serif;background:#e8edf4;color:#1a202c;font-size:1
 /* FORM */
 .fg{display:flex;flex-direction:column;gap:2px;margin-bottom:5px}
 .fg:last-child{margin-bottom:0}
-/* Inline row: label left, control right */
 .fg-row{display:grid;grid-template-columns:1fr 1fr;gap:5px;align-items:center;margin-bottom:5px}
 .fg-row:last-child{margin-bottom:0}
 .fg-row .fl{margin-bottom:0}
-
 .fl{font-size:9.5px;font-weight:600;color:#374151;text-transform:uppercase;letter-spacing:.3px;display:flex;align-items:center;gap:3px}
 .fd{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .fm .fd{background:#f59e0b}.fd2 .fd{background:#22c55e}.ft .fd{background:#3b82f6}
 
-select,input[type=number]{width:100%;background:#f8fafc;border:1.5px solid #d1d5db;border-radius:4px;color:#1a202c;font-family:'Inter',sans-serif;font-size:11px;padding:3px 7px;outline:none;transition:border-color .12s;appearance:none}
+select,input[type=number],input[type=text]{width:100%;background:#f8fafc;border:1.5px solid #d1d5db;border-radius:4px;color:#1a202c;font-family:'Inter',sans-serif;font-size:11px;padding:4px 8px;outline:none;transition:border-color .12s;appearance:none;-webkit-appearance:none}
 select:focus,input:focus{border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.1)}
 select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%236b7280'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center;padding-right:20px}
 .must{border-color:#f59e0b!important}
 .exp-dirty{border-color:#dc2626!important;background:#fff5f5!important}
 
-/* KID ROW: class + fee on one line */
+/* KID ROW */
 .kid-row{display:grid;grid-template-columns:1fr auto;gap:5px;align-items:center;margin-bottom:5px}
 .kid-fee{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;padding:3px 7px;font-size:11px;color:#166534;font-weight:600;font-family:'Inter',monospace;white-space:nowrap}
 .kid-fee.na{background:#f9fafb;border-color:#e5e7eb;color:#9ca3af;font-style:italic}
 
 /* REFRESH ROW */
-.rfrow{background:#f8fafc;border:1px solid #e5e7eb;border-radius:5px;padding:5px 8px;margin:5px 0;display:flex;align-items:center;justify-content:space-between;gap:6px}
+.rfrow{background:#f8fafc;border:1px solid #e5e7eb;border-radius:5px;padding:5px 8px;margin:5px 0;display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap}
 .rfinfo{font-size:9.5px;color:#6b7280;line-height:1.4}
 .rfinfo strong{color:#374151;font-size:10px}
 .dirty-msg{color:#dc2626;font-weight:600;display:none;font-size:9px}
 .rfbtns{display:flex;gap:5px;flex-shrink:0}
-.btn-rf{background:#1e40af;color:#fff;border:none;border-radius:5px;cursor:pointer;font-family:'Poppins',sans-serif;font-size:9.5px;font-weight:700;padding:4px 9px;display:flex;align-items:center;gap:4px;transition:background .12s}
+.btn-rf{background:#1e40af;color:#fff;border:none;border-radius:5px;cursor:pointer;font-family:'Poppins',sans-serif;font-size:9.5px;font-weight:700;padding:5px 10px;display:flex;align-items:center;gap:4px;transition:background .12s;-webkit-tap-highlight-color:transparent}
 .btn-rf:hover{background:#1d4ed8}
 .btn-rf.dirty{background:#dc2626;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 2px rgba(220,38,38,.2)}50%{box-shadow:0 0 0 5px rgba(220,38,38,.06)}}
-.btn-rst{background:#f3f4f6;color:#374151;border:1.5px solid #d1d5db;border-radius:5px;cursor:pointer;font-size:10px;font-weight:600;padding:4px 8px;transition:background .12s}
+.btn-rst{background:#f3f4f6;color:#374151;border:1.5px solid #d1d5db;border-radius:5px;cursor:pointer;font-size:11px;font-weight:600;padding:5px 9px;transition:background .12s;-webkit-tap-highlight-color:transparent}
 .btn-rst:hover{background:#e5e7eb}
 
-/* SALARY */
+/* SALARY SUMMARY */
 .sal-title{font-family:'Poppins',sans-serif;font-weight:700;font-size:10.5px;color:#1e40af;margin-bottom:7px;padding:4px 8px;background:#eff6ff;border-radius:4px;border-left:3px solid #3b82f6;line-height:1.3}
-
-/* Salary uses 2-col layout inside right panel */
 .sal-inner{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-
-/* Summary boxes */
 .sal-summary{display:flex;flex-direction:column;gap:5px}
 .sb{background:#f8fafc;border:1px solid #e2e8f0;border-radius:5px;padding:5px 8px}
 .sb.hl{background:#1e40af;border-color:#1e40af}
@@ -90,7 +82,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .sv{font-family:'Inter',monospace;font-weight:700;font-size:12px;color:#1a202c}
 .sn{font-size:8px;color:#9ca3af;margin-top:1px}
 
-/* Year boxes */
+/* YEAR BOXES */
 .yc{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:5px}
 .yb{text-align:center;background:#f0f9ff;border:1px solid #bae6fd;border-radius:5px;padding:4px 3px}
 .yb.y1{background:#1e40af;border-color:#1e40af;color:#fff}
@@ -98,8 +90,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .yval{font-family:'Inter',monospace;font-size:12px;font-weight:800}
 .yval.y1c{color:#fbbf24}.yval.y2c,.yval.y3c{color:#0c4a6e}
 
-/* ED table */
-.ed-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:0}
+/* ED TABLE */
+.ed-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .edsec h4{font-size:8.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#374151;margin-bottom:3px;padding-bottom:2px;border-bottom:2px solid #e5e7eb}
 .edr{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #f1f5f9;font-size:10.5px}
 .edr:last-child{border-bottom:none}
@@ -118,7 +110,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .ji.full{grid-column:1/-1}
 
 /* TUITION */
-.tui-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}
+.tui-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .ti{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:3px;padding:3px 4px;text-align:center}
 .tc{font-size:8px;font-weight:700;color:#166534;text-transform:uppercase}
 .tf{font-family:'Inter',monospace;font-size:10.5px;font-weight:700;color:#15803d}
@@ -127,6 +119,33 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .divider{height:1px;background:#e5e7eb;margin:6px 0}
 .sec-lbl{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#374151;margin-bottom:4px;margin-top:6px}
 .sec-lbl:first-of-type{margin-top:0}
+
+/* ── MOBILE: ≤ 640px ── */
+@media(max-width:640px){
+  .hdr-meta{display:none}
+  .main{grid-template-columns:1fr;padding:8px 10px;gap:8px}
+  .sal-inner{grid-template-columns:1fr}
+  .ed-wrap{grid-template-columns:1fr}
+  .jrd-grid{grid-template-columns:1fr}
+  .tui-grid{grid-template-columns:repeat(5,1fr)}
+  .yc{grid-template-columns:repeat(3,1fr)}
+  select,input[type=number],input[type=text]{font-size:14px;padding:6px 10px}
+  .btn-rf,.btn-rst{padding:8px 14px;font-size:12px}
+  .sal-title{font-size:12px}
+  .sv{font-size:13px}
+  .yval{font-size:14px}
+  .edr{font-size:12px;padding:4px 0}
+  .jval{font-size:12px}
+}
+
+/* ── TABLET: 641–900px ── */
+@media(min-width:641px) and (max-width:900px){
+  .main{grid-template-columns:1fr 1fr;padding:8px 12px}
+  .left-col{grid-column:1;grid-row:1/3}
+  .right-col{grid-column:2;grid-row:1/3}
+  .sal-inner{grid-template-columns:1fr}
+  .tui-grid{grid-template-columns:repeat(5,1fr)}
+}
 </style>
 </head>
 <body>
@@ -162,6 +181,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       </div>
       <div class="cb">
 
+        <div class="fg">
+          <label class="fl fm"><div class="fd"></div>Name of Employee</label>
+          <input type="text" id="inp-name" placeholder="Enter full name..." style="font-size:11px;padding:3px 7px;border-radius:4px;border:1.5px solid #f59e0b;background:#f8fafc;width:100%;outline:none;font-family:'Inter',sans-serif;" onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 2px rgba(59,130,246,.1)'" onblur="this.style.borderColor='#f59e0b';this.style.boxShadow='none'">
+        </div>
         <div class="fg">
           <label class="fl fm"><div class="fd"></div>School</label>
           <select id="inp-school" class="must" onchange="onSchoolChange()">
@@ -264,20 +287,9 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       </div>
     </div>
 
-    <!-- TUITION FEE -->
-    <div class="card">
-      <div class="ch ch-teal">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-        Tuition Fees &mdash; <span id="tui-school-title" style="font-weight:400;font-size:8.5px;opacity:.85">School</span>
-      </div>
-      <div class="cb">
-        <div id="tui-grid" class="tui-grid">
-          <div class="ti na"><div class="tc">N.A.</div><div class="tf">—</div></div>
-        </div>
-      </div>
-    </div>
 
-  </div><!-- end left-col -->
+
+    </div><!-- end left-col -->
 
   <!-- RIGHT COLUMN: Job Role + Salary -->
   <div class="right-col">
@@ -359,6 +371,23 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
 
   </div><!-- end right-col -->
+
+  <!-- TUITION FEE — full width bottom -->
+  <div style="grid-column:1/-1">
+    <!-- TUITION FEE -->
+    <div class="card">
+      <div class="ch ch-teal">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        Tuition Fees &mdash; <span id="tui-school-title" style="font-weight:400;font-size:8.5px;opacity:.85">School</span>
+      </div>
+      <div class="cb">
+        <div id="tui-grid" class="tui-grid">
+          <div class="ti na"><div class="tc">N.A.</div><div class="tf">—</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div><!-- end main -->
 
 <script>
