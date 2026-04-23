@@ -427,8 +427,11 @@ function calcSalary(desig, school, lmsExp, otherExp, wh, tui){
   const tuiFee=tui||0;
   const cti=ns+epfE+pfE+esiE+tuiFee;
   const rrf1=Math.ceil(cti*0.12),rrf2=Math.ceil(cti*0.09),rrf3=Math.ceil(cti*0.06);
+  // Net Bank transfer: tuition added to CTI then subtracted back — net neutral on take-home
   return{inc,nb,da,ada,ns,epfE,pfE,esiE,totEpf,totEsi,cti,rrf1,rrf2,rrf3,tuiFee,
-    y1:cti-rrf1-totEpf-totEsi,y2:cti-rrf2-totEpf-totEsi,y3:cti-rrf3-totEpf-totEsi};
+    y1:cti-rrf1-totEpf-totEsi-tuiFee,
+    y2:cti-rrf2-totEpf-totEsi-tuiFee,
+    y3:cti-rrf3-totEpf-totEsi-tuiFee};
 }
 
 function onExpInput(){
@@ -534,7 +537,7 @@ function compute(){
   set('s-net-salary',fmt(r.ns));
   set('s-govt-sav',fmt(r.totEpf));
   set('s-rrf',fmt(r.rrf1));
-  set('s-total-ded',fmt(r.totEpf+r.totEsi+r.rrf1));
+  set('s-total-ded',fmt(r.totEpf+r.totEsi+r.rrf1+r.tuiFee));
   set('s-cti',fmt(r.cti));
   set('s-y1',fmt(r.y1));set('s-y2',fmt(r.y2));set('s-y3',fmt(r.y3));
   set('d-basic',fmt(r.nb));set('d-da',fmt(r.da));set('d-ada',fmt(r.ada));
