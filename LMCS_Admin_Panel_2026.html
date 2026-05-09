@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMCS Admin Panel — Pay Scale 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e2e8f0;font-size:12px;min-height:100vh}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#1e1b4b,#312e81);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #312e81}
+.hdr-brand{display:flex;align-items:center;gap:10px}
+.hdr-logo{background:#6366f1;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:800;font-size:12px;color:#fff}
+.hdr h1{font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;color:#a5b4fc}
+.hdr p{font-size:9.5px;color:#6366f1;margin-top:1px}
+.hdr-badge{background:#1e1b4b;border:1px solid #4f46e5;color:#a5b4fc;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:600}
+
+/* NAV TABS */
+.tabs{display:flex;background:#0f1117;border-bottom:1px solid #1e293b;padding:0 20px;gap:2px}
+.tab{padding:8px 16px;border:none;background:none;color:#64748b;cursor:pointer;font-family:'Poppins',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border-bottom:2px solid transparent;transition:all .15s}
+.tab:hover{color:#94a3b8}
+.tab.active{color:#6366f1;border-bottom-color:#6366f1}
+
+/* MAIN */
+.main{padding:16px 20px;max-width:1200px}
+.panel{display:none}.panel.active{display:block}
+
+/* SECTION */
+.section{margin-bottom:20px}
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.section-title{font-family:'Poppins',sans-serif;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:6px}
+.section-title::before{content:'';width:3px;height:14px;background:#6366f1;border-radius:2px;display:inline-block}
+
+/* TABLE */
+.tbl-wrap{border:1px solid #1e293b;border-radius:8px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead th{background:#0d1321;color:#64748b;font-size:9.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid #1e293b}
+tbody tr{border-bottom:1px solid #1a2234;transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#111827}
+tbody td{padding:7px 12px;font-size:11.5px;vertical-align:middle}
+.td-label{color:#94a3b8;font-weight:500}
+.td-val{font-family:'Inter',monospace;font-weight:600;color:#e2e8f0}
+.td-school{color:#6366f1;font-weight:700;font-size:11px}
+
+/* EDITABLE INPUT */
+.ed-input{background:#1e293b;border:1.5px solid #334155;border-radius:5px;color:#e2e8f0;font-family:'Inter',monospace;font-size:11.5px;font-weight:600;padding:4px 8px;width:90px;outline:none;transition:border-color .12s}
+.ed-input:focus{border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.15)}
+.ed-input.changed{border-color:#f59e0b;background:#1c1a0d}
+.pct-wrap{display:flex;align-items:center;gap:4px}
+.pct-sign{color:#64748b;font-size:11px}
+
+/* SAVE BTN */
+.btn-save{background:#6366f1;color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:'Poppins',sans-serif;font-size:10px;font-weight:700;padding:6px 14px;display:flex;align-items:center;gap:5px;transition:background .12s;letter-spacing:.3px}
+.btn-save:hover{background:#4f46e5}
+.btn-save:active{transform:scale(.97)}
+.btn-save.success{background:#16a34a}
+.btn-reset-all{background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:6px;cursor:pointer;font-size:10px;font-weight:600;padding:6px 12px;transition:background .12s}
+.btn-reset-all:hover{background:#0f172a;color:#e2e8f0}
+
+/* EPF DEFAULT TOGGLES */
+.epf-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.epf-card{background:#0d1321;border:1.5px solid #1e293b;border-radius:7px;padding:8px 10px;text-align:center;cursor:pointer;transition:all .15s}
+.epf-card.on{border-color:#22c55e;background:#052e16}
+.epf-card.off{border-color:#ef4444;background:#1c0a0a}
+.epf-school{font-family:'Poppins',sans-serif;font-size:10px;font-weight:700;color:#94a3b8;margin-bottom:5px}
+.epf-toggle{font-size:11px;font-weight:700}
+.epf-card.on .epf-toggle{color:#22c55e}
+.epf-card.off .epf-toggle{color:#ef4444}
+
+/* INCREMENT FORMULA */
+.formula-box{background:#0d1321;border:1px solid #1e293b;border-radius:7px;padding:12px 14px;font-family:'Inter',monospace;font-size:12px;color:#a5b4fc;line-height:1.8}
+.formula-box .formula-lbl{font-family:'Inter',sans-serif;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#475569;margin-bottom:6px}
+.formula-val{color:#f1f5f9;font-weight:600}
+.formula-accent{color:#6366f1}
+
+/* STAT CHIPS */
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chip{background:#0d1321;border:1px solid #1e293b;border-radius:6px;padding:6px 12px;display:flex;flex-direction:column;gap:2px;min-width:120px}
+.chip-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:#475569;font-weight:700}
+.chip-val{font-family:'Inter',monospace;font-size:13px;font-weight:700;color:#6366f1}
+
+/* CHANGE LOG */
+.log-wrap{border:1px solid #1e293b;border-radius:8px;overflow:hidden;max-height:400px;overflow-y:auto}
+.log-hdr{background:#0d1321;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:1}
+.log-hdr-title{font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px}
+.btn-clear-log{background:none;border:1px solid #334155;color:#64748b;border-radius:4px;cursor:pointer;font-size:9.5px;padding:3px 8px;transition:all .12s}
+.btn-clear-log:hover{border-color:#ef4444;color:#ef4444}
+.log-empty{padding:24px;text-align:center;color:#334155;font-size:12px}
+.log-entry{display:grid;grid-template-columns:160px 1fr auto;gap:12px;padding:8px 12px;border-bottom:1px solid #0f172a;align-items:start;transition:background .1s}
+.log-entry:last-child{border-bottom:none}
+.log-entry:hover{background:#0d1321}
+.log-ts{font-family:'Inter',monospace;font-size:10px;color:#475569;white-space:nowrap}
+.log-desc{font-size:11px;color:#94a3b8;line-height:1.4}
+.log-desc strong{color:#e2e8f0}
+.log-change{text-align:right;white-space:nowrap}
+.log-old{font-family:'Inter',monospace;font-size:10px;color:#ef4444;text-decoration:line-through}
+.log-new{font-family:'Inter',monospace;font-size:10px;color:#22c55e;font-weight:700}
+.log-tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+.tag-rate{background:#1e1b4b;color:#a5b4fc}
+.tag-epf{background:#052e16;color:#86efac}
+.tag-rrf{background:#1c1400;color:#fbbf24}
+.tag-epf-threshold{background:#0c1a2e;color:#7dd3fc}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:#0f1117}
+::-webkit-scrollbar-thumb{background:#1e293b;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#334155}
+
+@media(max-width:640px){
+  .epf-grid{grid-template-columns:repeat(4,1fr)}
+  .log-entry{grid-template-columns:1fr;gap:4px}
+  .log-change{text-align:left}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-logo">LM</div>
+    <div>
+      <h1>LMCS Admin Panel</h1>
+      <p>Pay Scale Configuration &amp; Change Log — 2026</p>
+    </div>
+  </div>
+  <div class="hdr-badge">&#128274; Admin Only</div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('rates',this)">Rates &amp; Constants</button>
+  <button class="tab" onclick="showTab('epf',this)">EPF Defaults</button>
+  <button class="tab" onclick="showTab('rrf',this)">RRF &amp; Salary Rules</button>
+  <button class="tab" onclick="showTab('log',this)">Change Log</button>
+</div>
+
+<div class="main">
+
+  <!-- ── TAB 1: RATES & CONSTANTS ── -->
+  <div id="panel-rates" class="panel active">
+
+    <div class="chips" id="summary-chips"></div>
+
+    <!-- DA Rates -->
+    <div class="section">
+      <div class="section-hdr">
+        <div class="section-title">Dearness Allowance (DA) — % of Net Basic</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-reset-all" onclick="resetSection('da')">Reset</button>
+          <button class="btn-save" onclick="saveSection('da')">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Save DA
+          </button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>School</th><th>Current DA %</th><th>New Value</th></tr></thead>
+          <tbody id="da-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ADA Rates -->
+    <div class="section">
+      <div class="section-hdr">
+        <div class="section-title">Additional Duty Allowance (ADA) — % of Net Basic</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-reset-all" onclick="resetSection('ada')">Reset</button>
+          <button class="btn-save" onclick="saveSection('ada')">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Save ADA
+          </button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>School</th><th>Current ADA %</th><th>New Value</th></tr></thead>
+          <tbody id="ada-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- EPF Thresholds -->
+    <div class="section">
+      <div class="section-hdr">
+        <div class="section-title">EPF / PF / ESI Thresholds &amp; Rates</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-reset-all" onclick="resetSection('epfrates')">Reset</button>
+          <button class="btn-save" onclick="saveSection('epfrates')">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Save
+          </button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Parameter</th><th>Description</th><th>Current Value</th><th>New Value</th></tr></thead>
+          <tbody id="epfrates-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── TAB 2: EPF DEFAULTS ── -->
+  <div id="panel-epf" class="panel">
+    <div class="section">
+      <div class="section-hdr">
+        <div class="section-title">EPF Enrollment Default by School</div>
+        <button class="btn-save" onclick="saveSection('epfdefault')">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Save Defaults
+        </button>
+      </div>
+      <p style="color:#475569;font-size:11px;margin-bottom:12px">Click a school card to toggle its EPF default between Yes and No.</p>
+      <div class="epf-grid" id="epf-grid"></div>
+    </div>
+  </div>
+
+  <!-- ── TAB 3: RRF & SALARY RULES ── -->
+  <div id="panel-rrf" class="panel">
+
+    <!-- RRF Rates -->
+    <div class="section">
+      <div class="section-hdr">
+        <div class="section-title">RRF (Retention &amp; Remunerative Fund) Rates</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-reset-all" onclick="resetSection('rrf')">Reset</button>
+          <button class="btn-save" onclick="saveSection('rrf')">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Save RRF
+          </button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Year</th><th>Description</th><th>Current Rate %</th><th>New Value</th></tr></thead>
+          <tbody id="rrf-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Increment Formula -->
+    <div class="section">
+      <div class="section-hdr">
+        <div class="section-title">Increment Formula</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-reset-all" onclick="resetSection('incbase')">Reset</button>
+          <button class="btn-save" onclick="saveSection('incbase')">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Save
+          </button>
+        </div>
+      </div>
+      <div class="formula-box" id="formula-display"></div>
+      <div class="tbl-wrap" style="margin-top:10px">
+        <table>
+          <thead><tr><th>Parameter</th><th>Description</th><th>Current</th><th>New Value</th></tr></thead>
+          <tbody id="incbase-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Annual Increment Rate -->
+    <div class="section">
+      <div class="section-hdr">
+        <div class="section-title">Annual Increment Rate</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-reset-all" onclick="resetSection('incrate')">Reset</button>
+          <button class="btn-save" onclick="saveSection('incrate')">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Save
+          </button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Parameter</th><th>Description</th><th>Current %</th><th>New Value</th></tr></thead>
+          <tbody id="incrate-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── TAB 4: CHANGE LOG ── -->
+  <div id="panel-log" class="panel">
+    <div class="section">
+      <div class="log-wrap">
+        <div class="log-hdr">
+          <span class="log-hdr-title">&#128221; Change History (<span id="log-count">0</span> entries)</span>
+          <button class="btn-clear-log" onclick="clearLog()">Clear All</button>
+        </div>
+        <div id="log-body">
+          <div class="log-empty">No changes recorded yet. Make changes in the other tabs and save them to see a log here.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end main -->
+
+<script>
+// ── DEFAULT CONFIG (matches dashboard) ──
+const DEFAULTS = {
+  da:   {HES:5,'LMS 1':5,'LMS 2':5,'LMS 3':5,'LMS 4':5,'LMS 5':5,'LMS 6':5},
+  ada:  {HES:35,'LMS 1':35,'LMS 2':35,'LMS 3':25,'LMS 4':35,'LMS 5':35,'LMS 6':25},
+  epfdefault: {HES:'Yes','LMS 1':'Yes','LMS 2':'Yes','LMS 3':'Yes','LMS 4':'Yes','LMS 5':'Yes','LMS 6':'No'},
+  rrf:  {Y1:12, Y2:9, Y3:6},
+  epfrates: {
+    epf_cap_salary: 15000,
+    epf_employer_cap: 1250,
+    pf_employer_cap: 550,
+    epf_rate_pct: 8.33,
+    pf_rate_pct: 3.67,
+    esi_threshold: 21000,
+    esi_employer_pct: 3.25,
+    esi_employee_pct: 0.75,
+  },
+  incbase: {base_increments: 3, other_exp_divisor: 2},
+  incrate: {annual_increment_pct: 3},
+};
+
+const SCHOOLS = ['HES','LMS 1','LMS 2','LMS 3','LMS 4','LMS 5','LMS 6'];
+
+// ── STATE (load from localStorage or use defaults) ──
+function loadState(){
+  try {
+    const saved = localStorage.getItem('lmcs_admin_config');
+    return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULTS));
+  } catch(e){ return JSON.parse(JSON.stringify(DEFAULTS)); }
+}
+function saveState(state){
+  localStorage.setItem('lmcs_admin_config', JSON.stringify(state));
+}
+function loadLog(){
+  try{
+    const saved = localStorage.getItem('lmcs_admin_log');
+    return saved ? JSON.parse(saved) : [];
+  }catch(e){return [];}
+}
+function saveLog(log){ localStorage.setItem('lmcs_admin_log', JSON.stringify(log)); }
+
+let CFG = loadState();
+let LOG = loadLog();
+
+// ── TABS ──
+function showTab(name, btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='log') renderLog();
+}
+
+// ── RENDER HELPERS ──
+function pctInput(id, val, section){
+  return `<div class="pct-wrap">
+    <input class="ed-input" id="${id}" type="number" step="0.01" min="0" max="100" value="${val}"
+      oninput="this.classList.add('changed')">
+    <span class="pct-sign">%</span>
+  </div>`;
+}
+function numInput(id, val){
+  return `<input class="ed-input" id="${id}" type="number" step="1" min="0" value="${val}"
+    style="width:110px" oninput="this.classList.add('changed')">`;
+}
+
+function renderDA(){
+  const tb = document.getElementById('da-tbody');
+  tb.innerHTML = SCHOOLS.map(s=>`
+    <tr>
+      <td class="td-school">${s}</td>
+      <td class="td-val">${CFG.da[s]}%</td>
+      <td>${pctInput('da_'+s.replace(' ','_'), CFG.da[s], 'da')}</td>
+    </tr>`).join('');
+}
+
+function renderADA(){
+  const tb = document.getElementById('ada-tbody');
+  tb.innerHTML = SCHOOLS.map(s=>`
+    <tr>
+      <td class="td-school">${s}</td>
+      <td class="td-val">${CFG.ada[s]}%</td>
+      <td>${pctInput('ada_'+s.replace(' ','_'), CFG.ada[s], 'ada')}</td>
+    </tr>`).join('');
+}
+
+function renderEPFRates(){
+  const rows = [
+    {id:'epf_cap_salary',     lbl:'EPF Cap Salary',      desc:'Net salary above this → EPF capped at fixed amounts', unit:'₹'},
+    {id:'epf_employer_cap',   lbl:'EPF Employer Cap',     desc:'Max EPF employer pays when salary > cap', unit:'₹'},
+    {id:'pf_employer_cap',    lbl:'PF Employer Cap',      desc:'Max PF employer pays when salary > cap', unit:'₹'},
+    {id:'epf_rate_pct',       lbl:'EPF Employer Rate',    desc:'% of net salary when below cap', unit:'%'},
+    {id:'pf_rate_pct',        lbl:'PF Employer Rate',     desc:'% of net salary when below cap', unit:'%'},
+    {id:'esi_threshold',      lbl:'ESI Threshold',        desc:'Net salary above this → ESI not applicable', unit:'₹'},
+    {id:'esi_employer_pct',   lbl:'ESI Employer %',       desc:'Employer ESI contribution rate', unit:'%'},
+    {id:'esi_employee_pct',   lbl:'ESI Employee %',       desc:'Employee ESI contribution rate', unit:'%'},
+  ];
+  const tb = document.getElementById('epfrates-tbody');
+  tb.innerHTML = rows.map(r=>{
+    const val = CFG.epfrates[r.id];
+    const inp = r.unit==='%'
+      ? `<div class="pct-wrap"><input class="ed-input" id="epfr_${r.id}" type="number" step="0.01" min="0" value="${val}" oninput="this.classList.add('changed')"><span class="pct-sign">%</span></div>`
+      : `<div class="pct-wrap"><span class="pct-sign">₹</span><input class="ed-input" id="epfr_${r.id}" type="number" step="1" min="0" value="${val}" oninput="this.classList.add('changed')"></div>`;
+    return `<tr>
+      <td class="td-label" style="font-weight:600;color:#e2e8f0">${r.lbl}</td>
+      <td class="td-label">${r.desc}</td>
+      <td class="td-val">${r.unit==='%'?val+'%':'₹'+val.toLocaleString('en-IN')}</td>
+      <td>${inp}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderEPFDefaults(){
+  const grid = document.getElementById('epf-grid');
+  grid.innerHTML = SCHOOLS.map(s=>{
+    const isYes = CFG.epfdefault[s]==='Yes';
+    return `<div class="epf-card ${isYes?'on':'off'}" id="epfc_${s.replace(' ','_')}" onclick="toggleEPF('${s}')">
+      <div class="epf-school">${s}</div>
+      <div class="epf-toggle">${isYes?'✓ YES':'✗ NO'}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleEPF(school){
+  CFG.epfdefault[school] = CFG.epfdefault[school]==='Yes'?'No':'Yes';
+  renderEPFDefaults();
+}
+
+function renderRRF(){
+  const rows = [
+    {id:'Y1', lbl:'Year 1', desc:'First year RRF deduction % of CTI'},
+    {id:'Y2', lbl:'Year 2', desc:'Second year RRF deduction % of CTI'},
+    {id:'Y3', lbl:'Year 3', desc:'Third year RRF deduction % of CTI'},
+  ];
+  document.getElementById('rrf-tbody').innerHTML = rows.map(r=>`
+    <tr>
+      <td class="td-label" style="font-weight:700;color:#fbbf24">${r.lbl}</td>
+      <td class="td-label">${r.desc}</td>
+      <td class="td-val">${CFG.rrf[r.id]}%</td>
+      <td>${pctInput('rrf_'+r.id, CFG.rrf[r.id], 'rrf')}</td>
+    </tr>`).join('');
+}
+
+function renderIncBase(){
+  const rows = [
+    {id:'base_increments',   lbl:'Base Increments',     desc:'Starting increments for all new hires'},
+    {id:'other_exp_divisor', lbl:'Other Exp. Divisor',  desc:'Other school experience is divided by this'},
+  ];
+  document.getElementById('incbase-tbody').innerHTML = rows.map(r=>`
+    <tr>
+      <td class="td-label" style="font-weight:600;color:#e2e8f0">${r.lbl}</td>
+      <td class="td-label">${r.desc}</td>
+      <td class="td-val">${CFG.incbase[r.id]}</td>
+      <td>${numInput('incb_'+r.id, CFG.incbase[r.id])}</td>
+    </tr>`).join('');
+  updateFormula();
+}
+
+function renderIncRate(){
+  document.getElementById('incrate-tbody').innerHTML = `
+    <tr>
+      <td class="td-label" style="font-weight:600;color:#e2e8f0">Annual Increment Rate</td>
+      <td class="td-label">Each increment multiplies (Pre Basic + GP) by this factor</td>
+      <td class="td-val">${CFG.incrate.annual_increment_pct}%</td>
+      <td>${pctInput('incr_annual', CFG.incrate.annual_increment_pct, 'incrate')}</td>
+    </tr>`;
+}
+
+function updateFormula(){
+  const b = CFG.incbase.base_increments;
+  const d = CFG.incbase.other_exp_divisor;
+  const r = CFG.incrate.annual_increment_pct;
+  document.getElementById('formula-display').innerHTML = `
+    <div class="formula-lbl">Current Increment Formula</div>
+    Increments = FLOOR(<span class="formula-accent">${b}</span> + LMS_Exp + (Other_Exp ÷ <span class="formula-accent">${d}</span>))<br>
+    Net Basic = FLOOR((Pre Basic + GP) × <span class="formula-accent">(1 + ${r/100})</span><sup>Increments</sup> × (Working Hrs ÷ Ideal Hrs))
+  `;
+}
+
+function renderChips(){
+  const chips = [
+    {lbl:'DA Rate',    val: [...new Set(Object.values(CFG.da))].join(' / ')+'%'},
+    {lbl:'ADA High',   val: Math.max(...Object.values(CFG.ada))+'%'},
+    {lbl:'ADA Low',    val: Math.min(...Object.values(CFG.ada))+'%'},
+    {lbl:'RRF Y1/Y2/Y3', val: `${CFG.rrf.Y1}% / ${CFG.rrf.Y2}% / ${CFG.rrf.Y3}%`},
+    {lbl:'Annual Inc.', val: CFG.incrate.annual_increment_pct+'%'},
+    {lbl:'Base Inc.',  val: CFG.incbase.base_increments},
+    {lbl:'EPF Cap ₹',  val: '₹'+CFG.epfrates.epf_cap_salary.toLocaleString('en-IN')},
+    {lbl:'ESI Threshold', val: '₹'+CFG.epfrates.esi_threshold.toLocaleString('en-IN')},
+  ];
+  document.getElementById('summary-chips').innerHTML = chips.map(c=>`
+    <div class="chip"><div class="chip-lbl">${c.lbl}</div><div class="chip-val">${c.val}</div></div>
+  `).join('');
+}
+
+// ── SAVE SECTIONS ──
+function saveSection(section){
+  const changes = [];
+  const ts = new Date().toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'});
+
+  if(section==='da'){
+    SCHOOLS.forEach(s=>{
+      const el = document.getElementById('da_'+s.replace(' ','_'));
+      if(!el) return;
+      const newVal = parseFloat(el.value);
+      if(newVal !== CFG.da[s]){
+        changes.push({tag:'rate',field:`DA — ${s}`,old:CFG.da[s]+'%',new:newVal+'%'});
+        CFG.da[s] = newVal;
+      }
+      el.classList.remove('changed');
+    });
+    renderDA();
+  }
+  else if(section==='ada'){
+    SCHOOLS.forEach(s=>{
+      const el = document.getElementById('ada_'+s.replace(' ','_'));
+      if(!el) return;
+      const newVal = parseFloat(el.value);
+      if(newVal !== CFG.ada[s]){
+        changes.push({tag:'rate',field:`ADA — ${s}`,old:CFG.ada[s]+'%',new:newVal+'%'});
+        CFG.ada[s] = newVal;
+      }
+      el.classList.remove('changed');
+    });
+    renderADA();
+  }
+  else if(section==='epfrates'){
+    const keys = Object.keys(CFG.epfrates);
+    keys.forEach(k=>{
+      const el = document.getElementById('epfr_'+k);
+      if(!el) return;
+      const newVal = parseFloat(el.value);
+      if(newVal !== CFG.epfrates[k]){
+        const isRs = ['epf_cap_salary','epf_employer_cap','pf_employer_cap','esi_threshold'].includes(k);
+        changes.push({tag:'epf-threshold',field:k.replace(/_/g,' '),old:(isRs?'₹':'')+CFG.epfrates[k]+(isRs?'':'%'),new:(isRs?'₹':'')+newVal+(isRs?'':'%')});
+        CFG.epfrates[k] = newVal;
+      }
+      el.classList.remove('changed');
+    });
+    renderEPFRates();
+  }
+  else if(section==='epfdefault'){
+    SCHOOLS.forEach(s=>{
+      const savedVal = loadState().epfdefault[s];
+      if(CFG.epfdefault[s] !== savedVal){
+        changes.push({tag:'epf',field:`EPF Default — ${s}`,old:savedVal,new:CFG.epfdefault[s]});
+      }
+    });
+    renderEPFDefaults();
+  }
+  else if(section==='rrf'){
+    ['Y1','Y2','Y3'].forEach(y=>{
+      const el = document.getElementById('rrf_'+y);
+      if(!el) return;
+      const newVal = parseFloat(el.value);
+      if(newVal !== CFG.rrf[y]){
+        changes.push({tag:'rrf',field:`RRF ${y}`,old:CFG.rrf[y]+'%',new:newVal+'%'});
+        CFG.rrf[y] = newVal;
+      }
+      el.classList.remove('changed');
+    });
+    renderRRF();
+  }
+  else if(section==='incbase'){
+    ['base_increments','other_exp_divisor'].forEach(k=>{
+      const el = document.getElementById('incb_'+k);
+      if(!el) return;
+      const newVal = parseFloat(el.value);
+      if(newVal !== CFG.incbase[k]){
+        changes.push({tag:'rate',field:k.replace(/_/g,' '),old:String(CFG.incbase[k]),new:String(newVal)});
+        CFG.incbase[k] = newVal;
+      }
+      el.classList.remove('changed');
+    });
+    renderIncBase();
+  }
+  else if(section==='incrate'){
+    const el = document.getElementById('incr_annual');
+    if(el){
+      const newVal = parseFloat(el.value);
+      if(newVal !== CFG.incrate.annual_increment_pct){
+        changes.push({tag:'rate',field:'Annual Increment Rate',old:CFG.incrate.annual_increment_pct+'%',new:newVal+'%'});
+        CFG.incrate.annual_increment_pct = newVal;
+      }
+      el.classList.remove('changed');
+    }
+    renderIncRate();
+  }
+
+  // Log and persist
+  if(changes.length > 0){
+    changes.forEach(c=>{ LOG.unshift({ts, ...c}); });
+    saveLog(LOG);
+    saveState(CFG);
+    renderChips();
+    updateFormula();
+    showToast(`${changes.length} change${changes.length>1?'s':''} saved`);
+  } else {
+    showToast('No changes detected', 'grey');
+  }
+}
+
+function resetSection(section){
+  if(!confirm('Reset this section to defaults?')) return;
+  if(section==='da')      CFG.da = {...DEFAULTS.da};
+  if(section==='ada')     CFG.ada = {...DEFAULTS.ada};
+  if(section==='rrf')     CFG.rrf = {...DEFAULTS.rrf};
+  if(section==='epfrates')CFG.epfrates = {...DEFAULTS.epfrates};
+  if(section==='incbase') CFG.incbase = {...DEFAULTS.incbase};
+  if(section==='incrate') CFG.incrate = {...DEFAULTS.incrate};
+  saveState(CFG);
+  renderAll();
+  showToast('Reset to defaults');
+}
+
+// ── CHANGE LOG ──
+function renderLog(){
+  const body = document.getElementById('log-body');
+  document.getElementById('log-count').textContent = LOG.length;
+  if(LOG.length===0){
+    body.innerHTML='<div class="log-empty">No changes recorded yet.</div>';
+    return;
+  }
+  const tagClass = {rate:'tag-rate',epf:'tag-epf',rrf:'tag-rrf','epf-threshold':'tag-epf-threshold'};
+  body.innerHTML = LOG.map(e=>`
+    <div class="log-entry">
+      <div class="log-ts">&#128337; ${e.ts}</div>
+      <div class="log-desc">
+        <span class="log-tag ${tagClass[e.tag]||'tag-rate'}">${e.tag}</span><br>
+        <strong>${e.field}</strong>
+      </div>
+      <div class="log-change">
+        <div class="log-old">${e.old}</div>
+        <div class="log-new">&#8594; ${e.new}</div>
+      </div>
+    </div>`).join('');
+}
+
+function clearLog(){
+  if(!confirm('Clear all change history?')) return;
+  LOG = [];
+  saveLog(LOG);
+  renderLog();
+}
+
+// ── TOAST ──
+function showToast(msg, color='green'){
+  const t = document.createElement('div');
+  t.style.cssText=`position:fixed;bottom:20px;right:20px;background:${color==='green'?'#16a34a':color==='grey'?'#334155':'#dc2626'};color:#fff;padding:8px 16px;border-radius:6px;font-size:11px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.4);font-family:'Poppins',sans-serif`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2500);
+}
+
+// ── RENDER ALL ──
+function renderAll(){
+  renderChips();
+  renderDA();
+  renderADA();
+  renderEPFRates();
+  renderEPFDefaults();
+  renderRRF();
+  renderIncBase();
+  renderIncRate();
+  updateFormula();
+}
+
+renderAll();
+</script>
+</body>
+</html>
