@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMCS — Course Mapping Progress 2026-27</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#0d1117;color:#e2e8f0;min-height:100vh;font-size:12px;display:flex;flex-direction:column}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(34,197,94,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(34,197,94,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+/* ── HEADER ── */
+.hdr{position:relative;z-index:10;background:linear-gradient(135deg,#14532d,#166534 55%,#15803d);color:#fff;padding:9px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #166534;flex-shrink:0}
+.hdr-brand{display:flex;align-items:center;gap:10px}
+.hdr-logo{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:7px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:800;font-size:13px;color:#fff;flex-shrink:0}
+.hdr h1{font-family:'Poppins',sans-serif;font-size:14px;font-weight:700}
+.hdr p{font-size:9.5px;opacity:.65;margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.hdr-ts{font-size:10px;opacity:.6}
+.hdr-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.85);padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;cursor:pointer;transition:background .15s;white-space:nowrap}
+.hdr-btn:hover{background:rgba(255,255,255,.2)}
+.hdr-btn svg{width:11px;height:11px}
+
+/* ── VIEW NAV ── */
+.view-nav{position:relative;z-index:9;background:#0d1117;border-bottom:1px solid #1e293b;display:flex;gap:0;flex-shrink:0}
+.vnav-tab{display:flex;align-items:center;gap:7px;padding:10px 20px;background:none;border:none;border-bottom:2px solid transparent;color:#64748b;font-family:'Poppins',sans-serif;font-size:11px;font-weight:700;letter-spacing:.3px;cursor:pointer;transition:all .15s;text-transform:uppercase}
+.vnav-tab:hover{color:#94a3b8;background:#111827}
+.vnav-tab.active{color:#22c55e;border-bottom-color:#22c55e}
+.vnav-tab .vcnt{font-size:9px;font-weight:800;padding:1px 5px;border-radius:20px;background:#450a0a;color:#ef4444;display:none}
+.vnav-tab .vcnt.show{display:inline}
+
+/* ── CHIPS STRIP ── */
+.chips-strip{position:relative;z-index:1;background:#111827;border-bottom:1px solid #1e293b;padding:10px 20px;display:flex;gap:8px;overflow-x:auto;align-items:stretch;flex-shrink:0}
+.chip{background:#0d1321;border:1px solid #1e293b;border-radius:6px;padding:6px 14px;display:flex;flex-direction:column;gap:1px;min-width:108px;flex-shrink:0}
+.chip.alert{border-color:#7f1d1d;background:#1c0a0a}.chip.warn{border-color:#78350f;background:#1c1400}
+.chip-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:#475569;font-weight:700}
+.chip-val{font-family:'Poppins',sans-serif;font-size:16px;font-weight:800;line-height:1.1;color:#22c55e}
+.chip-val.red{color:#ef4444}.chip-val.amber{color:#f59e0b}.chip-val.muted{color:#64748b}
+.chip-sub{font-size:9px;color:#334155;margin-top:1px}
+
+/* ── NOTICE ── */
+.notice{position:relative;z-index:1;background:#1c1400;border:1px solid #78350f;color:#fbbf24;padding:7px 16px;font-size:11px;display:none;align-items:center;gap:8px;margin:12px 20px 0;border-radius:7px;flex-shrink:0}
+
+/* ── APP ── */
+#app{position:relative;z-index:1;flex:1;min-height:0}
+
+/* ─────────────────────────────────────
+   SCHOOLS GRID VIEW
+───────────────────────────────────── */
+.schools-view{padding:16px 20px;max-width:1440px;margin:0 auto;width:100%}
+.sec-lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#475569;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.sec-lbl::after{content:'';flex:1;height:1px;background:#1e293b}
+.sec-badge{padding:1px 8px;border-radius:20px;font-size:8.5px;font-weight:700}
+.sb-green{background:#052e16;color:#22c55e;border:1px solid #166534}
+.sb-red{background:#450a0a;color:#ef4444;border:1px solid #7f1d1d}
+.legend{display:flex;align-items:center;gap:14px;font-size:10px;color:#475569;flex-wrap:wrap;margin-bottom:14px}
+.ld{display:flex;align-items:center;gap:5px}
+.ld-dot{width:8px;height:8px;border-radius:50%}
+.school-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
+
+/* ── SCHOOL CARD ── */
+.scard{background:#111827;border:1.5px solid #1e293b;border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .18s,transform .18s,box-shadow .18s;position:relative;text-decoration:none;color:inherit;display:block}
+.scard::before{content:'';position:absolute;inset:0;opacity:0;background:linear-gradient(135deg,rgba(34,197,94,.05),transparent);transition:opacity .18s;pointer-events:none}
+.scard:hover{transform:translateY(-2px);border-color:#22c55e;box-shadow:0 12px 32px rgba(34,197,94,.1)}
+.scard:hover::before{opacity:1}
+.scard.has-critical{border-color:#7f1d1d}
+.scard.has-critical:hover{border-color:#ef4444;box-shadow:0 12px 32px rgba(239,68,68,.12)}
+.scard-top{background:linear-gradient(135deg,#0d1a10,#111c14);padding:13px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;border-bottom:1px solid #1e293b}
+.scard-meta{flex:1}
+.scard-name{font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;color:#f1f5f9}
+.scard-sub{font-size:10px;color:#475569;margin-top:2px}
+.scard-issues{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
+.issue-pill{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px}
+.ip-red{background:#450a0a;color:#ef4444;border:1px solid #7f1d1d}
+.ip-amber{background:#1c1400;color:#f59e0b;border:1px solid #78350f}
+.ip-green{background:#052e16;color:#22c55e;border:1px solid #166534}
+.donut-wrap{position:relative;width:52px;height:52px;flex-shrink:0}
+.donut-wrap svg{transform:rotate(-90deg)}
+.d-bg{fill:none;stroke:#1e293b;stroke-width:5}
+.d-fill{fill:none;stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset 1s ease}
+.d-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;font-weight:800;line-height:1}
+.d-text small{font-size:7.5px;color:#475569;font-weight:600}
+.scard-mid{padding:12px 16px}
+.prog-row{margin-bottom:10px}
+.prog-row:last-child{margin-bottom:0}
+.prog-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.prog-left{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:#64748b}
+.term-chip{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;padding:1px 6px;border-radius:20px}
+.tc-1{background:#1e3a5f;color:#60a5fa}.tc-2{background:#2d1b69;color:#a78bfa}
+.prog-pct{font-size:12px;font-weight:800}
+.prog-track{background:#0d1321;border-radius:99px;height:6px;overflow:hidden;border:1px solid #1a2234}
+.prog-fill{height:100%;border-radius:99px;transition:width 1s ease}
+.scard-bot{background:#0d1117;border-top:1px solid #1e293b;padding:9px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.scard-bot-txt{font-size:10px;color:#334155}
+.scard-bot-txt strong{color:#475569}
+.btn-view{background:#052e16;border:1px solid #166534;color:#22c55e;border-radius:5px;padding:4px 10px;font-size:10px;font-weight:700;letter-spacing:.2px;white-space:nowrap}
+
+/* ── SKELETON ── */
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel{background:linear-gradient(90deg,#1e293b 25%,#263448 50%,#1e293b 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px}
+
+/* ─────────────────────────────────────
+   SCHOOL DETAIL PAGE
+───────────────────────────────────── */
+.school-page{display:flex;flex-direction:column;min-height:100%}
+.sp-crumb{display:flex;align-items:center;gap:10px;padding:10px 20px;background:#0d1117;border-bottom:1px solid #1e293b;flex-shrink:0;position:sticky;top:0;z-index:8}
+.sp-crumb-back{display:flex;align-items:center;gap:5px;background:#111827;border:1px solid #1e293b;color:#64748b;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:all .13s;text-decoration:none}
+.sp-crumb-back:hover{border-color:#334155;color:#94a3b8}
+.sp-crumb-sep{color:#334155;font-size:12px}
+.sp-crumb-name{font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;color:#22c55e}
+.sp-pills{display:flex;gap:8px;padding:10px 20px;background:#0d1117;border-bottom:1px solid #1e293b;flex-shrink:0;flex-wrap:wrap}
+.dpill{background:#111827;border:1px solid #1e293b;border-radius:99px;padding:4px 12px;font-size:11px;font-weight:700}
+.dpill span{color:#475569;font-weight:500;margin-right:3px;font-size:10px}
+.sp-tabs{display:flex;background:#0f1117;border-bottom:1px solid #1e293b;padding:0 20px;gap:2px;flex-shrink:0;position:sticky;top:38px;z-index:7}
+.stab{padding:9px 16px;border:none;background:none;color:#64748b;cursor:pointer;font-family:'Poppins',sans-serif;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;border-bottom:2px solid transparent;transition:all .15s;display:flex;align-items:center;gap:6px}
+.stab:hover{color:#94a3b8}.stab.active{color:#22c55e;border-bottom-color:#22c55e}
+.stab .tbadge{font-size:8.5px;font-weight:800;padding:1px 5px;border-radius:20px;background:#450a0a;color:#ef4444}
+.stab .tbadge.warn{background:#1c1400;color:#f59e0b}
+.sp-body{flex:1}
+.stp{display:none;padding:16px 20px}
+.stp.active{display:block}
+
+/* ─────────────────────────────────────
+   TABLE STYLES (shared by detail & subject)
+───────────────────────────────────── */
+.ctbl{width:100%;border-collapse:collapse}
+.ctbl thead th{background:#0d1321;color:#475569;font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:8px 10px;text-align:left;border-bottom:1px solid #1e293b;white-space:nowrap}
+.ctbl tbody tr{border-bottom:1px solid #0f172a;transition:background .1s}
+.ctbl tbody tr:last-child{border-bottom:none}
+.ctbl tbody tr:hover td{background:#0d1321}
+.ctbl td{padding:8px 10px;vertical-align:middle}
+.cls-badge{display:inline-block;font-family:'Poppins',sans-serif;font-size:11px;font-weight:700;background:#052e16;color:#22c55e;border:1px solid #166534;padding:2px 9px;border-radius:20px;white-space:nowrap}
+.subj-badge{display:inline-block;font-size:10px;font-weight:600;background:#1e293b;color:#94a3b8;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.num-cell{font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;text-align:center}
+.mini-prog{display:flex;align-items:center;gap:6px}
+.mini-track{flex:1;min-width:40px;height:5px;background:#0d1321;border-radius:99px;overflow:hidden;border:1px solid #1a2234}
+.mini-fill{height:100%;border-radius:99px;transition:width .8s ease}
+.mini-pct{font-size:11px;font-weight:800;width:30px;text-align:right}
+.mini-counts{font-size:9px;color:#334155;margin-top:2px}
+.unassigned-cell{font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;text-align:center}
+.unassigned-cell.bad{color:#ef4444}.unassigned-cell.ok{color:#334155}
+.subj-tbl-wrap{overflow-x:auto;border:1px solid #1e293b;border-radius:8px}
+.subj-sec-hdr{display:flex;align-items:center;gap:10px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #1e293b}
+.subj-cls-badge{font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;background:#052e16;color:#22c55e;border:1px solid #166534;padding:3px 12px;border-radius:20px}
+.subj-cls-skip{font-size:10px;color:#334155;font-style:italic}
+
+/* ── STATUS CHIPS ── */
+.schip{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;white-space:nowrap;display:inline-block}
+.s-complete   {background:#052e16;color:#22c55e;border:1px solid #166534}
+.s-cwa        {background:#1c1400;color:#f59e0b;border:1px solid #78350f}
+.s-dist       {background:#0c1a2e;color:#60a5fa;border:1px solid #1e3a5f}
+.s-mapping    {background:#450a0a;color:#ef4444;border:1px solid #7f1d1d}
+.s-milestone  {background:#1e293b;color:#64748b;border:1px solid #334155}
+.s-skipped    {background:#0d1321;color:#334155;border:1px solid #1a2234}
+
+/* ── REMARKS ── */
+.remarks-intro{background:#0d1321;border:1px solid #1e293b;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#64748b;line-height:1.6}
+.remarks-intro strong{color:#94a3b8;display:block;margin-bottom:4px;font-family:'Poppins',sans-serif;font-size:12px}
+.rem-group{margin-bottom:18px}
+.rem-group-hdr{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.rem-group-hdr::after{content:'';flex:1;height:1px}
+.rgh-red{color:#ef4444}.rgh-red::after{background:#7f1d1d}
+.rgh-amber{color:#f59e0b}.rgh-amber::after{background:#78350f}
+.rgh-blue{color:#60a5fa}.rgh-blue::after{background:#1e3a5f}
+.rem-item{border-radius:8px;padding:12px 14px;margin-bottom:8px;border-left:3px solid}
+.rem-item.crit{border-color:#ef4444;background:#1c0a0a}
+.rem-item.warn{border-color:#f59e0b;background:#1c1400}
+.rem-item.info{border-color:#3b82f6;background:#0c1a2e}
+.rem-tags{display:flex;gap:5px;margin-bottom:7px;flex-wrap:wrap}
+.rtag{font-size:8.5px;font-weight:700;padding:2px 7px;border-radius:20px}
+.rtag-class{background:#052e16;color:#22c55e;border:1px solid #166534}
+.rtag-subj{background:#1e3a5f;color:#60a5fa;border:1px solid #1e3a8f}
+.rtag-crit{background:#450a0a;color:#ef4444;border:1px solid #7f1d1d}
+.rtag-warn{background:#1c1400;color:#f59e0b;border:1px solid #78350f}
+.rtag-info{background:#0c1a2e;color:#60a5fa;border:1px solid #1e3a5f}
+.rem-issue{font-size:11.5px;font-weight:600;color:#e2e8f0;margin-bottom:6px;line-height:1.4}
+.rem-action-hdr{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#475569;margin-bottom:3px}
+.rem-action{font-size:11px;color:#64748b;line-height:1.55}
+.no-remarks{text-align:center;padding:40px 20px;color:#334155}
+.no-remarks .icon{font-size:32px;margin-bottom:8px}
+.no-remarks p{font-size:12px;color:#475569}
+
+/* ─────────────────────────────────────
+   SUBJECT VIEW
+───────────────────────────────────── */
+.subject-view{display:flex;flex-direction:column;min-height:100%}
+
+/* Filter bar */
+.sv-filter{background:#111827;border-bottom:1px solid #1e293b;padding:12px 20px;flex-shrink:0;display:flex;flex-direction:column;gap:10px}
+.sv-filter-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sv-search-wrap{position:relative;flex:1;min-width:200px;max-width:320px}
+.sv-search{width:100%;background:#0d1321;border:1px solid #1e293b;border-radius:8px;padding:7px 32px 7px 12px;color:#e2e8f0;font-size:12px;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s}
+.sv-search:focus{border-color:#22c55e}
+.sv-search::placeholder{color:#334155}
+.sv-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#475569;cursor:pointer;font-size:14px;line-height:1;display:none}
+.sv-clear.show{display:block}
+.sv-filter-hint{font-size:10px;color:#334155}
+.sv-chips{display:flex;gap:6px;flex-wrap:wrap}
+.svchip{background:#0d1321;border:1px solid #1e293b;border-radius:99px;padding:4px 12px;font-size:11px;font-weight:600;color:#64748b;cursor:pointer;transition:all .13s;white-space:nowrap}
+.svchip:hover{border-color:#334155;color:#94a3b8}
+.svchip.active{background:#052e16;border-color:#166534;color:#22c55e}
+.sv-no-subjects{font-size:11px;color:#334155;padding:4px 0}
+
+/* Overview table (no subject selected) */
+.sv-overview{padding:16px 20px;overflow-x:auto}
+.sv-ov-wrap{overflow-x:auto;border:1px solid #1e293b;border-radius:10px}
+.sv-ov-tbl{border-collapse:collapse;min-width:100%}
+.sv-ov-tbl thead th{background:#0d1321;color:#475569;font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:9px 14px;text-align:center;border-bottom:1px solid #1e293b;white-space:nowrap;position:sticky;top:0;z-index:2}
+.sv-ov-tbl thead th:first-child{text-align:left;position:sticky;left:0;z-index:3;background:#0d1321}
+.sv-ov-tbl tbody tr{border-bottom:1px solid #0f172a;cursor:pointer;transition:background .1s}
+.sv-ov-tbl tbody tr:last-child{border-bottom:none}
+.sv-ov-tbl tbody tr:hover td{background:#111827}
+.sv-ov-tbl tbody tr:hover td:first-child{background:#111827}
+.sv-ov-tbl td{padding:9px 14px;vertical-align:middle;text-align:center}
+.sv-ov-tbl td:first-child{text-align:left;font-weight:600;color:#e2e8f0;font-size:12px;position:sticky;left:0;background:#0d1117;z-index:1;white-space:nowrap;min-width:150px}
+.sv-ov-tbl tbody tr:hover td:first-child{background:#111827}
+.sv-ov-loading{color:#334155;font-size:11px;font-style:italic}
+.sv-ov-empty{color:#334155;font-size:11px}
+.sv-ov-cnt{font-size:9px;color:#334155;display:block;margin-top:2px;font-weight:400}
+.sv-ov-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px}
+.sv-ov-hdr h3{font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;color:#f1f5f9}
+.sv-ov-hdr p{font-size:11px;color:#475569}
+
+/* Subject matrix (subject selected) */
+.sv-matrix{padding:16px 20px}
+.sv-mat-hdr{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.sv-mat-back{background:#111827;border:1px solid #1e293b;color:#64748b;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:all .13s}
+.sv-mat-back:hover{border-color:#334155;color:#94a3b8}
+.sv-mat-title{font-family:'Poppins',sans-serif;font-size:15px;font-weight:800;color:#f1f5f9}
+.sv-mat-sub{font-size:10px;color:#475569;margin-left:4px}
+.sv-mat-wrap{overflow-x:auto;border:1px solid #1e293b;border-radius:10px}
+.sv-mat-tbl{border-collapse:collapse;min-width:100%}
+.sv-mat-tbl thead th{background:#0d1321;color:#475569;font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:10px 16px;border-bottom:1px solid #1e293b;white-space:nowrap;text-align:center;position:sticky;top:0;z-index:2}
+.sv-mat-tbl thead th:first-child{text-align:left;position:sticky;left:0;z-index:3;background:#0d1321;min-width:90px}
+.sv-mat-tbl tbody tr{border-bottom:1px solid #0f172a}
+.sv-mat-tbl tbody tr:last-child{border-bottom:none}
+.sv-mat-tbl td{padding:8px 16px;vertical-align:middle;text-align:center;min-width:148px}
+.sv-mat-tbl td:first-child{position:sticky;left:0;background:#0d1117;z-index:1;padding:8px 14px;border-right:1px solid #1e293b}
+.sv-mat-tbl tbody tr:hover td{background:#0d1321}
+.sv-mat-tbl tbody tr:hover td:first-child{background:#111827}
+/* cell variants */
+.sv-cell{display:flex;flex-direction:column;gap:3px;align-items:center}
+.sv-cell-stats{font-size:9px;color:#475569;display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.sv-cell-stat{display:flex;align-items:center;gap:2px}
+.sv-cell-na{color:#1e293b;font-size:20px;font-weight:700}
+.sv-cell-loading{color:#334155;font-size:10px}
+.sv-summary-row{background:#0d1321 !important;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.4px}
+.sv-summary-row td{padding:6px 16px !important}
+.sv-summary-row td:first-child{color:#475569;background:#0d1321 !important}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:#0d1117}
+::-webkit-scrollbar-thumb{background:#1e293b;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#334155}
+
+@media(max-width:640px){
+  .school-grid{grid-template-columns:1fr}
+  .schools-view,.sp-body .stp,.sv-matrix,.sv-overview{padding:12px 14px}
+  .hdr{padding:9px 14px}.hdr h1{font-size:12px}
+  .vnav-tab{padding:8px 14px;font-size:10px}
+  .sp-crumb,.sp-pills,.sp-tabs{padding-left:14px;padding-right:14px}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════ HEADER ══════════ -->
+<div class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-logo">LM</div>
+    <div>
+      <h1>LMCS — Course Mapping Progress</h1>
+      <p id="hdrCtx">Academic Coordinator View &nbsp;·&nbsp; T1 &amp; T2 Live Tracking &nbsp;·&nbsp; Session 2026-27</p>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <span class="hdr-ts" id="lastUpdated"></span>
+    <a href="guide.html" class="hdr-btn" style="border-color:rgba(245,158,11,.35);color:rgba(251,191,36,.85)">📖 Guide</a>
+    <a href="index.html" class="hdr-btn">← Back</a>
+    <button class="hdr-btn" onclick="reload()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Refresh
+    </button>
+  </div>
+</div>
+
+<!-- ══════════ VIEW NAV ══════════ -->
+<div class="view-nav">
+  <button class="vnav-tab active" id="vt-schools" onclick="navigate('#schools')">
+    🏫 &nbsp;Schools
+    <span class="vcnt" id="vcnt-crit"></span>
+  </button>
+  <button class="vnav-tab" id="vt-subjects" onclick="navigate('#subjects')">
+    📚 &nbsp;By Subject
+  </button>
+</div>
+
+<!-- ══════════ CHIPS STRIP ══════════ -->
+<div class="chips-strip" id="chipsStrip">
+  <div class="chip"><div class="chip-lbl">Schools</div><div class="chip-val muted">6</div></div>
+  <div class="chip"><div class="chip-lbl">T1 CWA Completion</div><div class="chip-val" id="cT1">—</div><div class="chip-sub">CWA filled / T1 chapters</div></div>
+  <div class="chip"><div class="chip-lbl">T2 CWA Completion</div><div class="chip-val amber" id="cT2">—</div><div class="chip-sub">CWA filled / T2 chapters</div></div>
+  <div class="chip"><div class="chip-lbl">Overall CWA</div><div class="chip-val" id="cOverall">—</div><div class="chip-sub">All CWA / All chapters</div></div>
+  <div class="chip alert"><div class="chip-lbl">Unassigned Chapters</div><div class="chip-val red" id="cUnassigned">—</div><div class="chip-sub">No Term assigned</div></div>
+  <div class="chip alert"><div class="chip-lbl">Critical Issues</div><div class="chip-val red" id="cCritical">—</div><div class="chip-sub">Needs immediate action</div></div>
+  <div class="chip warn"><div class="chip-lbl">Attention Items</div><div class="chip-val amber" id="cAttention">—</div><div class="chip-sub">Follow up required</div></div>
+</div>
+
+<!-- ══════════ NOTICE ══════════ -->
+<div class="notice" id="notice">⚠&nbsp; Some sheets couldn't be loaded. In Google Sheets → Share → set to <strong>Anyone with the link → Viewer</strong>.</div>
+
+<!-- ══════════ APP ══════════ -->
+<div id="app"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════════════════════ */
+const SCHOOLS = [
+  {name:'LMS 1', id:'1BorpCdePG7O6iZiwgGwNpWZBl7I1IGAT-OAh0fw2yMs'},
+  {name:'LMS 2', id:'1ejXKsnK3a2kNGEboTs-yQ2d3Tpk3xG5JRtm9DAmiYXs'},
+  {name:'LMS 3', id:'1MYTOPH_zFIK8xnQk3SsKIgsX5eT5mZgHaJpMgyoJhL8'},
+  {name:'LMS 4', id:'1nwPLQprQoQJ35xKDWSi2Y4YDzbvUPZ688u5QwOYmSxU'},
+  {name:'LMS 5', id:'172YKw1cMMcG5UZ0jjI8RzO2tGxnVWG3QVCEsDY6CZHg'},
+  {name:'LMS 6', id:'1PkZYbeVCdKeqCbbX2eXAwk7c8w7NAHUOSQKmO6nDZtE'},
+];
+const TABS = [
+  'M-I','M-II','M-III',
+  'Class 1','Class 2','Class 3','Class 4','Class 5','Class 6',
+  'Class 7','Class 8','Class 9','Class 10','Class 11','Class 12'
+];
+const MILESTONE_TABS = new Set(['M-I','M-II','M-III']);
+const TARGET = (tab) => (['Class 10','Class 12'].includes(tab)) ? {t1:0.5,t2:0.5} : {t1:0.6,t2:0.4};
+const TOLERANCE = 0.05;
+
+/* ═══════════════════════════════════════════════════════════
+   SUBJECT REGISTRY — collects all unique subjects as data loads
+═══════════════════════════════════════════════════════════ */
+const subjectRegistry = new Map(); // normalised key → display name
+
+function registerSubjects(subjOrder) {
+  subjOrder.forEach(s => {
+    const key = s.toLowerCase().trim();
+    if (!subjectRegistry.has(key)) subjectRegistry.set(key, s);
+  });
+}
+
+function getSortedSubjects(query = '') {
+  const q = query.toLowerCase().trim();
+  return [...subjectRegistry.values()]
+    .filter(s => !q || s.toLowerCase().includes(q))
+    .sort((a, b) => a.localeCompare(b));
+}
+
+/* ═══════════════════════════════════════════════════════════
+   COLUMN DETECTION
+═══════════════════════════════════════════════════════════ */
+function detectColumns(table) {
+  const map = {SUBJECT:1,TERM:5,START_DATE:7,DAYS:8,CWA:10};
+  if (!table?.cols) return map;
+  table.cols.forEach((col, i) => {
+    const lbl = (col.label || col.id || '').toLowerCase().trim();
+    if (lbl === 'subject')                 map.SUBJECT    = i;
+    else if (lbl === 'term')               map.TERM       = i;
+    else if (lbl.includes('start date'))   map.START_DATE = i;
+    else if (lbl.includes('days planned')) map.DAYS       = i;
+    else if (lbl === 'cwa date')           map.CWA        = i;
+  });
+  return map;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FETCH + PARSE
+═══════════════════════════════════════════════════════════ */
+async function fetchTab(sheetId, tab) {
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(tab)}`;
+  const res = await fetch(url, {cache:'no-cache'});
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  const s = text.indexOf('{'), e = text.lastIndexOf('}');
+  if (s < 0 || e < 0) throw new Error('Bad response');
+  const data = JSON.parse(text.slice(s, e+1));
+  if (data.status === 'error') throw new Error(data.errors?.[0]?.detailed_message || 'Error');
+  return data.table;
+}
+
+function parseRows(table) {
+  if (!table?.rows) return [];
+  return table.rows.map(row =>
+    (table.cols || []).map((_, i) => {
+      const c = row.c?.[i];
+      return (!c || c.v == null) ? '' : String(c.f ?? c.v).trim();
+    })
+  ).filter(r => r.some(v => v !== ''));
+}
+
+function parseDate(str) {
+  if (!str) return null;
+  const months = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+  const m1 = str.match(/^(\d{1,2})[\/-]([A-Za-z]{3,})[\/-](\d{4})$/);
+  if (m1) { const mon=months[m1[2].toLowerCase().slice(0,3)]; if(mon!=null) return new Date(+m1[3],mon,+m1[1]); }
+  const m2 = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m2) return new Date(+m2[1], +m2[2]-1, +m2[3]);
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PROCESS ROWS (matches course-progress-summary-v4 exactly)
+═══════════════════════════════════════════════════════════ */
+function processRows(rows, colMap, tabName) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const isMile = MILESTONE_TABS.has(tabName);
+  const subjects = {};
+  const subjOrder = [];
+
+  const hasTerms = rows.some(r => {
+    const t = (r[colMap.TERM]||'').toLowerCase();
+    return t.includes('1') || t.includes('2');
+  });
+  if (!hasTerms) return null;
+
+  for (const r of rows) {
+    const subj = (r[colMap.SUBJECT]||'').trim();
+    if (!subj) continue;
+    if (!subjects[subj]) {
+      subjects[subj] = {total:0,unassigned:0,isMilestone:isMile,
+        t1:{total:0,sched:0,cwa:0,overdue:0},t2:{total:0,sched:0,cwa:0,overdue:0}};
+      subjOrder.push(subj);
+    }
+    const s = subjects[subj];
+    s.total++;
+    const term  = (r[colMap.TERM]||'').toLowerCase();
+    const isT1  = term.includes('1');
+    const isT2  = term.includes('2') && !term.includes('1');
+    if (!isT1 && !isT2) continue;
+    const b     = isT1 ? s.t1 : s.t2;
+    const start = (r[colMap.START_DATE]||'').trim();
+    const cwa   = (r[colMap.CWA]||'').trim();
+    const days  = parseFloat(r[colMap.DAYS]||0) || 0;
+    b.total++;
+    if (start && start !== '0') b.sched++;
+    if (cwa && cwa !== '0') {
+      b.cwa++;
+    } else if (start && days > 0) {
+      const sd = parseDate(start);
+      if (sd && (today - sd) > days * 86400000) b.overdue++;
+    }
+  }
+
+  let aggTotal=0,aggUnassigned=0;
+  let aggT1={total:0,sched:0,cwa:0,overdue:0},aggT2={total:0,sched:0,cwa:0,overdue:0};
+
+  subjOrder.forEach(subj => {
+    const s = subjects[subj];
+    s.unassigned = s.total - s.t1.total - s.t2.total;
+    s.t1.distPct = s.total > 0 ? s.t1.total / s.total : 0;
+    s.t2.distPct = s.total > 0 ? s.t2.total / s.total : 0;
+    s.t1.complPct = s.t1.total > 0 ? s.t1.cwa / s.t1.total : null;
+    s.t2.complPct = s.t2.total > 0 ? s.t2.cwa / s.t2.total : null;
+    s.t1Status = calcStatus('t1', tabName, s);
+    s.t2Status = calcStatus('t2', tabName, s);
+    aggTotal+=s.total; aggUnassigned+=s.unassigned;
+    aggT1.total+=s.t1.total; aggT1.sched+=s.t1.sched; aggT1.cwa+=s.t1.cwa; aggT1.overdue+=s.t1.overdue;
+    aggT2.total+=s.t2.total; aggT2.sched+=s.t2.sched; aggT2.cwa+=s.t2.cwa; aggT2.overdue+=s.t2.overdue;
+  });
+
+  const agg = {
+    total:aggTotal, unassigned:aggUnassigned,
+    t1:{...aggT1, distPct:aggTotal>0?aggT1.total/aggTotal:0, complPct:aggT1.total>0?aggT1.cwa/aggT1.total:null},
+    t2:{...aggT2, distPct:aggTotal>0?aggT2.total/aggTotal:0, complPct:aggT2.total>0?aggT2.cwa/aggT2.total:null},
+  };
+
+  return {subjects, subjOrder, agg, isMilestone: isMile};
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STATUS (matches v4 Step 2.3 exactly)
+═══════════════════════════════════════════════════════════ */
+function calcStatus(term, tabName, s) {
+  const isMile = MILESTONE_TABS.has(tabName);
+  const tgt    = TARGET(tabName);
+  const b      = s[term];
+  const tgtPct = term === 't1' ? tgt.t1 : tgt.t2;
+  if (s.unassigned > 0)           return 'Course Mapping Not Complete';
+  if (!isMile && b.cwa < b.total) return 'CWA Not Updated';
+  if (b.total > 0 && (b.distPct < tgtPct - TOLERANCE || b.distPct > tgtPct + TOLERANCE))
+                                  return 'Course Distribution Issue';
+  if (b.total === 0)              return 'Pending';
+  return 'Complete';
+}
+
+const STATUS_ORDER = {'Course Mapping Not Complete':0,'CWA Not Updated':1,'Course Distribution Issue':2,'Pending':3,'Complete':4};
+
+function worstStatus(statuses) {
+  return statuses.reduce((w, s) => (STATUS_ORDER[s]??9) < (STATUS_ORDER[w]??9) ? s : w, 'Complete');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   REMARKS
+═══════════════════════════════════════════════════════════ */
+function generateRemarks(tabName, subjects, subjOrder) {
+  const tgt = TARGET(tabName);
+  const isMile = MILESTONE_TABS.has(tabName);
+  const remarks = [];
+
+  subjOrder.forEach(subj => {
+    const s = subjects[subj];
+    const {t1Status, t2Status} = s;
+
+    if (t1Status === 'Course Mapping Not Complete') {
+      remarks.push({level:'critical',subject:subj,
+        issue:`${s.unassigned} chapter${s.unassigned>1?'s':''} have no Term assigned — Course Mapping incomplete`,
+        action:`Review the ${subj} mapping for ${tabName}. Open the Google Sheet → column F (Term) and ensure every row has "Term 1" or "Term 2". Unassigned chapters are excluded from all progress tracking.`});
+    } else if (t1Status === 'CWA Not Updated') {
+      const pending = s.t1.total - s.t1.cwa;
+      const overdueNote = s.t1.overdue > 0 ? ` ⚠ ${s.t1.overdue} past planned completion date` : '';
+      remarks.push({level:s.t1.overdue>0?'critical':'attention',subject:subj,
+        issue:`T1: ${pending}/${s.t1.total} ${subj} chapters have no CWA date${overdueNote}`,
+        action:s.t1.overdue>0
+          ?`Urgently follow up with the ${subj} teacher. ${s.t1.overdue} T1 chapter(s) are past their planned completion date with no CWA date in column K. Confirm if chapters were completed and update immediately.`
+          :`Remind the ${subj} teacher to update column K (CWA Date) as each chapter is completed. Current T1 completion: ${s.t1.cwa}/${s.t1.total} chapters.`});
+    } else if (t1Status === 'Course Distribution Issue') {
+      remarks.push({level:'attention',subject:subj,
+        issue:`T1 chapter distribution is ${Math.round(s.t1.distPct*100)}% — target is ~${Math.round(tgt.t1*100)}% (±5%)`,
+        action:`The T1/T2 chapter split for ${subj} in ${tabName} is off. Expected: ~${Math.round(tgt.t1*100)}% T1 / ~${Math.round(tgt.t2*100)}% T2. Ask the teacher to reassign chapters in column F.`});
+    }
+
+    if (t2Status === 'CWA Not Updated' && t1Status !== 'Course Mapping Not Complete') {
+      const pending = s.t2.total - s.t2.cwa;
+      const overdueNote = s.t2.overdue > 0 ? ` ⚠ ${s.t2.overdue} past planned completion` : '';
+      remarks.push({level:s.t2.overdue>0?'critical':'attention',subject:subj,
+        issue:`T2: ${pending}/${s.t2.total} ${subj} chapters have no CWA date${overdueNote}`,
+        action:s.t2.overdue>0
+          ?`Follow up with the ${subj} teacher on T2 chapter completion. Past-planned chapters must have CWA dates updated in column K immediately.`
+          :`Monitor ${subj} T2 progress. Remind teacher to update CWA Date (column K) as each chapter is completed. Current: ${s.t2.cwa}/${s.t2.total}.`});
+    } else if (t2Status === 'Course Distribution Issue' && t1Status !== 'Course Mapping Not Complete') {
+      remarks.push({level:'attention',subject:subj,
+        issue:`T2 chapter distribution is ${Math.round(s.t2.distPct*100)}% — target ~${Math.round(tgt.t2*100)}% (±5%)`,
+        action:`T2 chapter split for ${subj} in ${tabName} is outside the target range. Review column F.`});
+    } else if (t2Status === 'Pending' && t1Status !== 'Course Mapping Not Complete') {
+      remarks.push({level:'info',subject:subj,
+        issue:`T2 chapters not yet assigned for ${subj}`,
+        action:`Ensure the ${subj} teacher assigns chapters to Term 2 (column F) before T2 begins in Nov 2026.`});
+    }
+  });
+
+  remarks.sort((a,b) => ({critical:0,attention:1,info:2}[a.level]||9) - ({critical:0,attention:1,info:2}[b.level]||9));
+  return remarks;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   COLOR + FORMAT HELPERS
+═══════════════════════════════════════════════════════════ */
+function pctColor(pct) {
+  if (pct===null||pct===undefined) return '#475569';
+  return pct>=80?'#22c55e':pct>=50?'#f59e0b':'#ef4444';
+}
+function barColor(pct) {
+  if (pct===null||pct===undefined) return '#334155';
+  return pct>=80?'#22c55e':pct>=50?'#f59e0b':'#ef4444';
+}
+const fmt  = v => v===null||v===undefined ? '—' : Math.round(v)+'%';
+const fmtD = v => v===null||v===undefined ? '—' : Math.round(v*100)+'%';
+
+function statusChipHTML(status, isMilestone) {
+  if (status==='Complete')                    return `<span class="schip s-complete">&#10003; Complete</span>`;
+  if (status==='CWA Not Updated')             return `<span class="schip s-cwa">&#9888; CWA Not Updated</span>`;
+  if (status==='Course Distribution Issue')   return `<span class="schip s-dist">&#8596; Distribution Issue</span>`;
+  if (status==='Course Mapping Not Complete') return `<span class="schip s-mapping">&#10007; Mapping Incomplete</span>`;
+  if (status==='Pending')                     return `<span class="schip s-skipped">Pending</span>`;
+  if (isMilestone)                            return `<span class="schip s-milestone">N/A</span>`;
+  return `<span class="schip s-skipped">—</span>`;
+}
+
+function donut(complPct, unassigned) {
+  const r=20, circ=+(2*Math.PI*r).toFixed(2);
+  const col = unassigned>0?'#ef4444':barColor(complPct!==null?complPct:null);
+  const off = complPct!==null ? +(circ*(1-complPct/100)).toFixed(2) : circ;
+  return `<div class="donut-wrap">
+    <svg width="52" height="52" viewBox="0 0 52 52">
+      <circle class="d-bg" cx="26" cy="26" r="${r}"/>
+      <circle class="d-fill" cx="26" cy="26" r="${r}" stroke="${col}"
+        stroke-dasharray="${circ}" stroke-dashoffset="${off}"/>
+    </svg>
+    <div class="d-text" style="color:${col}">
+      ${complPct!==null?Math.round(complPct):'—'}<small>${complPct!==null?'%':''}</small>
+    </div>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ROUTING
+═══════════════════════════════════════════════════════════ */
+let currentRoute = {view:'schools'};
+let renderedSchoolIdx = -1;
+
+function navigate(hash) { window.location.hash = hash; }
+
+function getRoute() {
+  const raw = decodeURIComponent(location.hash.replace(/^#/,''));
+  if (!raw || raw === 'schools') return {view:'schools'};
+  const m = raw.match(/^school\/(\d+)/);
+  if (m) return {view:'school', idx:+m[1]};
+  if (raw === 'subjects') return {view:'subjects', subject:null};
+  if (raw.startsWith('subjects/')) return {view:'subjects', subject:raw.slice(9)||null};
+  return {view:'schools'};
+}
+
+window.addEventListener('hashchange', applyRoute);
+
+function applyRoute() {
+  currentRoute = getRoute();
+  const app = document.getElementById('app');
+
+  // Update view nav
+  const inSchools = currentRoute.view==='schools' || currentRoute.view==='school';
+  document.getElementById('vt-schools').classList.toggle('active', inSchools);
+  document.getElementById('vt-subjects').classList.toggle('active', currentRoute.view==='subjects');
+
+  // Chips strip — only on schools grid
+  document.getElementById('chipsStrip').style.display = currentRoute.view==='schools' ? 'flex' : 'none';
+
+  // Header context
+  const ctxEl = document.getElementById('hdrCtx');
+  if (currentRoute.view==='school') {
+    ctxEl.textContent = `${SCHOOLS[currentRoute.idx]?.name||''} — Detailed View · Session 2026-27`;
+  } else if (currentRoute.view==='subjects') {
+    ctxEl.textContent = `Subject-Wide View · Cross-School & Cross-Class · Session 2026-27`;
+  } else {
+    ctxEl.textContent = `Academic Coordinator View · T1 & T2 Live Tracking · Session 2026-27`;
+  }
+
+  // Render
+  if (currentRoute.view === 'schools') {
+    renderedSchoolIdx = -1;
+    renderSchoolsView();
+  } else if (currentRoute.view === 'school') {
+    renderSchoolPage(currentRoute.idx);
+    renderedSchoolIdx = currentRoute.idx;
+  } else if (currentRoute.view === 'subjects') {
+    renderedSchoolIdx = -1;
+    renderSubjectView(currentRoute.subject);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER — Schools grid view
+═══════════════════════════════════════════════════════════ */
+function renderSchoolsView() {
+  const app = document.getElementById('app');
+  // If already rendered (cards exist), just re-use
+  if (app.querySelector('.schools-view')) return;
+  app.innerHTML = `
+    <div class="schools-view">
+      <div class="sec-lbl">
+        All Schools — Live Mapping Progress
+        <span class="sec-badge sb-green" id="loadedBadge">0 / 6 loaded</span>
+        <span class="sec-badge sb-red" id="critBadge" style="display:none"></span>
+        <span></span>
+      </div>
+      <div class="legend">
+        <div class="ld"><div class="ld-dot" style="background:#22c55e"></div>Complete</div>
+        <div class="ld"><div class="ld-dot" style="background:#f59e0b"></div>CWA Not Updated / Distribution Issue</div>
+        <div class="ld"><div class="ld-dot" style="background:#ef4444"></div>Mapping Incomplete / Overdue</div>
+        <div class="ld"><div class="ld-dot" style="background:#334155"></div>No data / Skipped</div>
+      </div>
+      <div class="school-grid" id="schoolGrid">
+        ${SCHOOLS.map((s,i) => renderSkeleton(s,i)).join('')}
+      </div>
+    </div>`;
+}
+
+function renderSkeleton(s, idx) {
+  return `<div class="scard" id="card-${idx}" style="pointer-events:none">
+    <div class="scard-top" style="min-height:78px">
+      <div class="scard-meta">
+        <div class="scard-name">${s.name}</div>
+        <div class="scard-sub" style="color:#334155">Fetching data…</div>
+      </div>
+    </div>
+    <div class="scard-mid" style="padding:18px 16px">
+      <div class="skel" style="height:8px;margin-bottom:9px;width:70%"></div>
+      <div class="skel" style="height:8px;margin-bottom:18px"></div>
+      <div class="skel" style="height:8px;width:60%"></div>
+      <div class="skel" style="height:8px;margin-top:9px"></div>
+    </div>
+  </div>`;
+}
+
+function getIssues(idx) {
+  let critical=0,attention=0;
+  TABS.forEach(tab => {
+    const d = store[idx]?.[tab]; if (!d) return;
+    d.remarks.forEach(r => { if(r.level==='critical') critical++; else if(r.level==='attention') attention++; });
+  });
+  return {critical,attention};
+}
+
+function progRowHTML(label, chipCls, t) {
+  const pct = t.complPct!==null ? Math.round(t.complPct*100) : null;
+  const bc  = barColor(pct);
+  return `<div class="prog-row">
+    <div class="prog-top">
+      <div class="prog-left">
+        <span class="term-chip ${chipCls}">${label}</span>
+        ${t.total>0
+          ? `${t.cwa}/${t.total} CWA${t.overdue>0?` &nbsp;<span style="color:#ef4444;font-size:9px;font-weight:700">&#9888;${t.overdue} overdue</span>`:''}`
+          : '<span style="color:#334155">No chapters</span>'}
+      </div>
+      <span class="prog-pct" style="color:${bc}">${fmt(pct)}</span>
+    </div>
+    <div class="prog-track"><div class="prog-fill" style="width:${pct??0}%;background:${bc}"></div></div>
+  </div>`;
+}
+
+function renderCard(s, idx, agg) {
+  const issues = getIssues(idx);
+  const totCh  = agg.t1.total + agg.t2.total;
+  const complAll = totCh > 0 ? Math.round((agg.t1.cwa+agg.t2.cwa)/totCh*100) : null;
+  const hasCrit  = issues.critical > 0 || agg.unassigned > 0;
+  const pills = [];
+  if (agg.unassigned > 0)   pills.push(`<span class="issue-pill ip-red">&#10007; ${agg.unassigned} unassigned</span>`);
+  if (issues.critical > 0)  pills.push(`<span class="issue-pill ip-red">&#9888; ${issues.critical} critical</span>`);
+  if (issues.attention > 0) pills.push(`<span class="issue-pill ip-amber">&bull; ${issues.attention} attention</span>`);
+  if (!hasCrit && issues.attention===0 && totCh>0)
+    pills.push(`<span class="issue-pill ip-green">&#10003; All mapped</span>`);
+
+  return `<a class="scard ${hasCrit?'has-critical':''}" id="card-${idx}" href="#school/${idx}">
+    <div class="scard-top">
+      <div class="scard-meta">
+        <div class="scard-name">${s.name}</div>
+        <div class="scard-sub">Course Mapping T1 &amp; T2 &nbsp;&middot;&nbsp; 2026-27</div>
+        ${pills.length?`<div class="scard-issues">${pills.join('')}</div>`:''}
+      </div>
+      ${donut(complAll, agg.unassigned)}
+    </div>
+    <div class="scard-mid">
+      ${progRowHTML('Term 1','tc-1',agg.t1)}
+      ${progRowHTML('Term 2','tc-2',agg.t2)}
+    </div>
+    <div class="scard-bot">
+      <span class="scard-bot-txt"><strong>${totCh.toLocaleString('en-IN')}</strong> chapters &nbsp;|&nbsp;
+        <strong style="color:${agg.unassigned>0?'#ef4444':'#334155'}">${agg.unassigned}</strong> unassigned</span>
+      <span class="btn-view">View Details →</span>
+    </div>
+  </a>`;
+}
+
+function updateSchoolCard(idx, agg) {
+  const el = document.getElementById(`card-${idx}`);
+  if (el) el.outerHTML = renderCard(SCHOOLS[idx], idx, agg);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER — School detail page (replaces drill popup)
+═══════════════════════════════════════════════════════════ */
+function renderSchoolPage(idx) {
+  const app  = document.getElementById('app');
+  const d    = store[idx];
+
+  if (!d) {
+    app.innerHTML = `<div style="padding:48px 24px;text-align:center;color:#334155">
+      <div style="font-size:28px;margin-bottom:10px">⏳</div>
+      <div style="font-size:13px;color:#475569">Loading ${SCHOOLS[idx]?.name||'school'} data…</div>
+    </div>`;
+    return;
+  }
+
+  // Aggregate for pills
+  let total=0,unassigned=0,t1T=0,t1C=0,t2T=0,t2C=0,critCnt=0,attCnt=0;
+  TABS.forEach(tab => {
+    const x=d[tab]; if (!x) return;
+    total+=x.agg.total; unassigned+=x.agg.unassigned;
+    t1T+=x.agg.t1.total; t1C+=x.agg.t1.cwa;
+    t2T+=x.agg.t2.total; t2C+=x.agg.t2.cwa;
+    x.remarks.forEach(r => { if(r.level==='critical') critCnt++; else if(r.level==='attention') attCnt++; });
+  });
+  const t1p = t1T>0 ? Math.round(t1C/t1T*100) : null;
+  const t2p = t2T>0 ? Math.round(t2C/t2T*100) : null;
+  const op  = (t1T+t2T)>0 ? Math.round((t1C+t2C)/(t1T+t2T)*100) : null;
+
+  const pill = (lbl, val, col) =>
+    `<div class="dpill" style="color:${col||pctColor(val)}"><span>${lbl}</span>${fmt(val)}</div>`;
+  const pillsHTML =
+    pill('T1 CWA',t1p) + pill('T2 CWA',t2p) + pill('Overall CWA',op) +
+    `<div class="dpill"><span>Total Ch.</span>${total.toLocaleString('en-IN')}</div>` +
+    (unassigned>0?`<div class="dpill" style="color:#ef4444;border-color:#7f1d1d;background:#1c0a0a"><span>Unassigned</span>${unassigned}</div>`:'') +
+    (critCnt>0?`<div class="dpill" style="color:#ef4444;border-color:#7f1d1d;background:#1c0a0a"><span>Critical</span>${critCnt}</div>`:'') +
+    (attCnt>0?`<div class="dpill" style="color:#f59e0b;border-color:#78350f;background:#1c1400"><span>Attention</span>${attCnt}</div>`:'');
+
+  const badgeHTML = critCnt>0
+    ? `<span class="tbadge">${critCnt}</span>`
+    : attCnt>0 ? `<span class="tbadge warn">${attCnt}</span>` : '';
+
+  app.innerHTML = `
+    <div class="school-page">
+      <div class="sp-crumb">
+        <a class="sp-crumb-back" href="#schools">← All Schools</a>
+        <span class="sp-crumb-sep">/</span>
+        <span class="sp-crumb-name">${SCHOOLS[idx].name}</span>
+      </div>
+      <div class="sp-pills">${pillsHTML}</div>
+      <div class="sp-tabs">
+        <button class="stab active" data-tab="overview"  onclick="switchSchoolTab(this,'overview')">Class Overview</button>
+        <button class="stab"        data-tab="subjects"  onclick="switchSchoolTab(this,'subjects')">Subject Detail</button>
+        <button class="stab"        data-tab="action"    onclick="switchSchoolTab(this,'action')">
+          Action Plan ${badgeHTML}
+        </button>
+      </div>
+      <div class="sp-body">
+        <div class="stp active" id="stp-overview">${renderOverviewTab(idx)}</div>
+        <div class="stp"        id="stp-subjects">${renderSubjectsTab(idx)}</div>
+        <div class="stp"        id="stp-action"  >${renderRemarksTab(idx)}</div>
+      </div>
+    </div>`;
+}
+
+function switchSchoolTab(btn, name) {
+  document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.stp').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('stp-' + name)?.classList.add('active');
+}
+
+/* ── Overview tab content ── */
+function renderOverviewTab(idx) {
+  const d = store[idx] || {};
+  const mBar = (t, showCwa) => {
+    const pct = t.complPct!==null ? Math.round(t.complPct*100) : null;
+    const bc  = barColor(pct);
+    return `<div class="mini-prog">
+      <div class="mini-track"><div class="mini-fill" style="width:${pct??0}%;background:${bc}"></div></div>
+      <span class="mini-pct" style="color:${bc}">${fmt(pct)}</span>
+    </div>
+    <div class="mini-counts">${showCwa?`${t.cwa} CWA / ${t.total} ch.`:t.total+' ch.'}${t.overdue>0?` <span style="color:#ef4444">&#9888;${t.overdue}</span>`:''}</div>`;
+  };
+
+  const rows = TABS.map(tab => {
+    const x = d[tab];
+    if (!x) return `<tr><td><span class="cls-badge">${tab}</span></td><td colspan="6" style="color:#334155;font-size:11px">Not available / skipped</td></tr>`;
+    const {agg,isMilestone} = x;
+    const complAll = (agg.t1.total+agg.t2.total)>0 ? Math.round((agg.t1.cwa+agg.t2.cwa)/(agg.t1.total+agg.t2.total)*100) : null;
+    const wst = worstStatus([
+      ...Object.values(x.subjects).map(s=>s.t1Status),
+      ...Object.values(x.subjects).map(s=>s.t2Status)
+    ]);
+    return `<tr>
+      <td><span class="cls-badge">${tab}</span></td>
+      <td class="num-cell" style="color:${barColor(complAll)}">${agg.t1.total+agg.t2.total}</td>
+      <td class="unassigned-cell ${agg.unassigned>0?'bad':'ok'}">${agg.unassigned>0?`&#9888; ${agg.unassigned}`:agg.unassigned}</td>
+      <td>${mBar(agg.t1,true)}</td>
+      <td>${mBar(agg.t2,true)}</td>
+      <td class="num-cell" style="color:${barColor(complAll)}">${fmt(complAll)}</td>
+      <td>${statusChipHTML(wst,isMilestone)}</td>
+    </tr>`;
+  });
+
+  return `<table class="ctbl">
+    <thead><tr>
+      <th>Class</th><th>Total Ch.</th><th>Unassigned</th>
+      <th>T1 CWA Completion</th><th>T2 CWA Completion</th>
+      <th>Overall</th><th>Worst Status</th>
+    </tr></thead>
+    <tbody>${rows.join('')}</tbody>
+  </table>`;
+}
+
+/* ── Subject detail tab content ── */
+function renderSubjectsTab(idx) {
+  const d = store[idx] || {};
+  const sections = [];
+
+  TABS.forEach(tab => {
+    const x = d[tab];
+    let inner;
+    if (!x) {
+      inner = `<div style="padding:8px 0;font-size:11px;color:#334155">Not available or skipped (no Term data)</div>`;
+    } else {
+      const {subjects,subjOrder,isMilestone} = x;
+      const rows = subjOrder.map(subj => {
+        const s = subjects[subj];
+        const cwaCellT1 = isMilestone ? `<td class="num-cell" style="color:#334155">NA</td>` : `<td class="num-cell" style="color:${barColor(s.t1.complPct!==null?Math.round(s.t1.complPct*100):null)}">${s.t1.cwa}</td>`;
+        const cwaCellT2 = isMilestone ? `<td class="num-cell" style="color:#334155">NA</td>` : `<td class="num-cell" style="color:${barColor(s.t2.complPct!==null?Math.round(s.t2.complPct*100):null)}">${s.t2.cwa}</td>`;
+        return `<tr>
+          <td><span class="subj-badge">${subj}</span></td>
+          <td class="num-cell">${s.total}</td>
+          <td class="unassigned-cell ${s.unassigned>0?'bad':'ok'}">${s.unassigned>0?`&#9888; ${s.unassigned}`:s.unassigned}</td>
+          <td class="num-cell">${s.t1.total}</td>
+          <td class="num-cell" style="color:#475569">${s.t1.sched}</td>
+          ${cwaCellT1}
+          <td class="num-cell" style="color:${pctColor(Math.round(s.t1.distPct*100))}">${fmtD(s.t1.distPct)}</td>
+          <td>${statusChipHTML(s.t1Status,isMilestone)}</td>
+          <td class="num-cell">${s.t2.total}</td>
+          <td class="num-cell" style="color:#475569">${s.t2.sched}</td>
+          ${cwaCellT2}
+          <td class="num-cell" style="color:${pctColor(Math.round(s.t2.distPct*100))}">${fmtD(s.t2.distPct)}</td>
+          <td>${statusChipHTML(s.t2Status,isMilestone)}</td>
+        </tr>`;
+      });
+      inner = `<div class="subj-tbl-wrap">
+        <table class="ctbl" style="min-width:820px">
+          <thead><tr>
+            <th>Subject</th><th>Total</th><th>Unassigned</th>
+            <th>T1 Ch.</th><th>T1 Sched</th><th>T1 CWA</th><th>T1 % <small style="opacity:.6">(dist)</small></th><th>T1 Status</th>
+            <th>T2 Ch.</th><th>T2 Sched</th><th>T2 CWA</th><th>T2 % <small style="opacity:.6">(dist)</small></th><th>T2 Status</th>
+          </tr></thead>
+          <tbody>${rows.join('')}</tbody>
+        </table>
+      </div>`;
+    }
+    sections.push(`<div style="margin-bottom:20px">
+      <div class="subj-sec-hdr">
+        <span class="subj-cls-badge">${tab}</span>
+        ${!x?`<span class="subj-cls-skip">Skipped — no Term data entered</span>`:''}
+        ${x&&x.isMilestone?`<span style="font-size:10px;color:#475569">Milestone class — CWA not applicable</span>`:''}
+      </div>
+      ${inner}
+    </div>`);
+  });
+  return sections.join('');
+}
+
+/* ── Action plan tab content ── */
+function renderRemarksTab(idx) {
+  const d = store[idx] || {};
+  const all = [];
+  TABS.forEach(tab => { const x=d[tab]; if(!x) return; x.remarks.forEach(r=>all.push({...r,tab})); });
+  all.sort((a,b)=>({critical:0,attention:1,info:2}[a.level]||9)-({critical:0,attention:1,info:2}[b.level]||9));
+
+  if (!all.length) return `<div class="no-remarks"><div class="icon">✅</div>
+    <p>No action items found.<br>All classes appear to be fully mapped and CWA dates up to date.</p></div>`;
+
+  const intro = `<div class="remarks-intro">
+    <strong>📋 Academic Coordinator — Action Plan for ${SCHOOLS[idx]?.name}</strong>
+    Issues identified using course-progress-summary-v4 logic:
+    <strong>Mapping Not Complete</strong> → <strong>CWA Not Updated</strong> →
+    <strong>Distribution Issue</strong> → <strong>Complete</strong>.
+    Target: 60% T1 / 40% T2 for most classes; 50%/50% for Class 10 &amp; 12.
+  </div>`;
+
+  const groups = [
+    {key:'critical', label:'🔴 Critical — Immediate Action Required', cls:'rgh-red'},
+    {key:'attention',label:'🟡 Attention — Follow Up This Week',      cls:'rgh-amber'},
+    {key:'info',     label:'ℹ️ Plan Ahead — Before T2 Begins',        cls:'rgh-blue'},
+  ];
+
+  const body = groups.filter(g=>all.some(r=>r.level===g.key)).map(g => {
+    const items = all.filter(r=>r.level===g.key).map(r => {
+      const lt = r.level==='critical'
+        ? `<span class="rtag rtag-crit">&#9888; Critical</span>`
+        : r.level==='attention'
+          ? `<span class="rtag rtag-warn">&bull; Attention</span>`
+          : `<span class="rtag rtag-info">&#8505; Plan Ahead</span>`;
+      return `<div class="rem-item ${r.level==='critical'?'crit':r.level==='attention'?'warn':'info'}">
+        <div class="rem-tags">${lt}<span class="rtag rtag-class">${r.tab}</span><span class="rtag rtag-subj">${r.subject}</span></div>
+        <div class="rem-issue">${r.issue}</div>
+        <div class="rem-action-hdr">&#10148; Recommended Action</div>
+        <div class="rem-action">${r.action}</div>
+      </div>`;
+    }).join('');
+    return `<div class="rem-group">
+      <div class="rem-group-hdr ${g.cls}">${g.label}</div>${items}
+    </div>`;
+  }).join('');
+
+  return intro + body;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER — Subject view
+═══════════════════════════════════════════════════════════ */
+let svSearchQuery = '';
+
+function renderSubjectView(selectedSubject) {
+  const app = document.getElementById('app');
+  const subjects = getSortedSubjects(svSearchQuery);
+
+  const chipsHTML = subjects.length
+    ? subjects.map(s => {
+        const active = s === selectedSubject;
+        return `<button class="svchip ${active?'active':''}" onclick="selectSubject('${escHtml(s)}')">${escHtml(s)}</button>`;
+      }).join('')
+    : `<span class="sv-no-subjects">${svSearchQuery ? 'No subjects match your search.' : 'Loading subjects…'}</span>`;
+
+  const filterBar = `
+    <div class="sv-filter">
+      <div class="sv-filter-top">
+        <div class="sv-search-wrap">
+          <input class="sv-search" id="svSearch" type="search" placeholder="Search subject…" value="${escHtml(svSearchQuery)}"
+            oninput="onSvSearch(this.value)" autocomplete="off">
+          <button class="sv-clear ${svSearchQuery?'show':''}" onclick="clearSvSearch()">✕</button>
+        </div>
+        <span class="sv-filter-hint">${subjects.length} subject${subjects.length!==1?'s':''} found · Click to drill in</span>
+      </div>
+      <div class="sv-chips" id="svChips">${chipsHTML}</div>
+    </div>`;
+
+  const contentHTML = selectedSubject
+    ? renderSubjectMatrix(selectedSubject)
+    : renderSubjectOverview();
+
+  app.innerHTML = `<div class="subject-view">${filterBar}<div id="svContent">${contentHTML}</div></div>`;
+}
+
+function onSvSearch(val) {
+  svSearchQuery = val;
+  const subjects = getSortedSubjects(val);
+  const clearBtn = document.querySelector('.sv-clear');
+  if (clearBtn) clearBtn.classList.toggle('show', !!val);
+  const hintEl = document.querySelector('.sv-filter-hint');
+  if (hintEl) hintEl.textContent = `${subjects.length} subject${subjects.length!==1?'s':''} found · Click to drill in`;
+  const chipsEl = document.getElementById('svChips');
+  const sel = currentRoute.subject;
+  if (chipsEl) chipsEl.innerHTML = subjects.length
+    ? subjects.map(s=>`<button class="svchip ${s===sel?'active':''}" onclick="selectSubject('${escHtml(s)}')">${escHtml(s)}</button>`).join('')
+    : `<span class="sv-no-subjects">No subjects match your search.</span>`;
+}
+
+function clearSvSearch() {
+  svSearchQuery = '';
+  const input = document.getElementById('svSearch');
+  if (input) { input.value = ''; onSvSearch(''); }
+}
+
+function selectSubject(subj) {
+  navigate(subj ? `#subjects/${encodeURIComponent(subj)}` : '#subjects');
+}
+
+/* ── Subject overview: all subjects × schools table ── */
+function renderSubjectOverview() {
+  const subjects = getSortedSubjects(svSearchQuery);
+  if (!subjects.length) return `<div style="padding:48px 24px;text-align:center;color:#334155;font-size:13px">Loading subjects…</div>`;
+
+  const loaded = SCHOOLS.filter((_,i) => !!store[i]);
+  if (!loaded.length) return `<div style="padding:48px 24px;text-align:center;color:#334155;font-size:13px">Loading data…</div>`;
+
+  const headerCols = SCHOOLS.map((_,i) =>
+    `<th style="min-width:120px">${SCHOOLS[i].name}${!store[i]?'<br><span style="font-weight:400;text-transform:none;letter-spacing:0;color:#334155;font-size:9px">loading…</span>':''}</th>`
+  ).join('');
+
+  const rows = subjects.map(subj => {
+    const cells = SCHOOLS.map((_,i) => {
+      if (!store[i]) return `<td><span class="sv-ov-loading">…</span></td>`;
+      const statuses = [];
+      TABS.forEach(tab => {
+        const s = store[i]?.[tab]?.subjects?.[subj];
+        if (!s) return;
+        statuses.push(s.t1Status, s.t2Status);
+      });
+      if (!statuses.length) return `<td><span class="sv-ov-empty">—</span></td>`;
+      return `<td>${statusChipHTML(worstStatus(statuses), false)}</td>`;
+    }).join('');
+
+    // Count how many classes this subject appears in (across all loaded schools)
+    let classCount = 0;
+    TABS.forEach(tab => {
+      const found = SCHOOLS.some((_,i) => !!store[i]?.[tab]?.subjects?.[subj]);
+      if (found) classCount++;
+    });
+
+    return `<tr onclick="selectSubject('${escHtml(subj)}')" title="Click to see ${escHtml(subj)} across all classes & schools">
+      <td>
+        ${escHtml(subj)}
+        <span class="sv-ov-cnt">${classCount} class${classCount!==1?'es':''}</span>
+      </td>
+      ${cells}
+    </tr>`;
+  }).join('');
+
+  return `<div class="sv-overview">
+    <div class="sv-ov-hdr">
+      <div>
+        <h3>All Subjects — Worst Status per School</h3>
+        <p>Click any row to see the class-by-class breakdown for that subject</p>
+      </div>
+    </div>
+    <div class="sv-ov-wrap">
+      <table class="sv-ov-tbl">
+        <thead><tr><th>Subject</th>${headerCols}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+/* ── Subject matrix: classes × schools for one subject ── */
+function renderSubjectMatrix(subj) {
+  // Find which classes have this subject in at least one school
+  const activeTabs = TABS.filter(tab =>
+    SCHOOLS.some((_,i) => !!store[i]?.[tab]?.subjects?.[subj])
+  );
+
+  const headerCols = SCHOOLS.map((_,i) =>
+    `<th style="min-width:160px">${SCHOOLS[i].name}${!store[i]?'<br><span style="color:#334155;font-weight:400;text-transform:none;letter-spacing:0;font-size:9px">loading…</span>':''}</th>`
+  ).join('');
+
+  const tabRows = TABS.map(tab => {
+    const cells = SCHOOLS.map((_,i) => {
+      if (!store[i]) return `<td><span class="sv-cell-loading">…</span></td>`;
+      const s = store[i]?.[tab]?.subjects?.[subj];
+      const isMile = MILESTONE_TABS.has(tab);
+      if (!s) return `<td><span class="sv-cell-na">—</span></td>`;
+
+      const t1p  = s.t1.total>0 ? Math.round(s.t1.distPct*100) : null;
+      const t1cp = s.t1.complPct!==null ? Math.round(s.t1.complPct*100) : null;
+      const t2p  = s.t2.total>0 ? Math.round(s.t2.distPct*100) : null;
+      const t2cp = s.t2.complPct!==null ? Math.round(s.t2.complPct*100) : null;
+      const wst  = worstStatus([s.t1Status, s.t2Status]);
+
+      const statRow = `
+        <div class="sv-cell-stats">
+          <span class="sv-cell-stat">
+            <span style="font-size:8px;background:#1e3a5f;color:#60a5fa;padding:0 4px;border-radius:3px">T1</span>
+            <span style="color:${pctColor(t1p)}">${t1p!==null?t1p+'%':'—'}</span>
+            ${!isMile&&t1cp!==null?`<span style="color:#475569">·</span><span style="color:${pctColor(t1cp)}">${t1cp}% CWA</span>`:''}
+          </span>
+          <span class="sv-cell-stat">
+            <span style="font-size:8px;background:#2d1b69;color:#a78bfa;padding:0 4px;border-radius:3px">T2</span>
+            <span style="color:${pctColor(t2p)}">${t2p!==null?t2p+'%':'—'}</span>
+            ${!isMile&&t2cp!==null?`<span style="color:#475569">·</span><span style="color:${pctColor(t2cp)}">${t2cp}% CWA</span>`:''}
+          </span>
+        </div>`;
+
+      return `<td>
+        <div class="sv-cell">
+          ${statusChipHTML(wst, isMile)}
+          ${statRow}
+        </div>
+      </td>`;
+    }).join('');
+
+    // check if this tab has any data for this subject
+    const hasAny = SCHOOLS.some((_,i) => !!store[i]?.[tab]?.subjects?.[subj]);
+    const rowStyle = !hasAny ? 'opacity:.35' : '';
+
+    return `<tr style="${rowStyle}">
+      <td><span class="cls-badge">${tab}</span></td>
+      ${cells}
+    </tr>`;
+  }).join('');
+
+  // Summary row: worst status per school for this subject
+  const summaryRow = SCHOOLS.map((_,i) => {
+    if (!store[i]) return `<td style="color:#334155;font-size:10px">…</td>`;
+    const statuses = [];
+    TABS.forEach(tab => {
+      const s = store[i]?.[tab]?.subjects?.[subj];
+      if (s) statuses.push(s.t1Status, s.t2Status);
+    });
+    if (!statuses.length) return `<td style="color:#334155">—</td>`;
+    return `<td>${statusChipHTML(worstStatus(statuses), false)}</td>`;
+  }).join('');
+
+  return `<div class="sv-matrix">
+    <div class="sv-mat-hdr">
+      <button class="sv-mat-back" onclick="selectSubject(null)">← All Subjects</button>
+      <span class="sv-mat-title">${escHtml(subj)}</span>
+      <span class="sv-mat-sub">across all classes &amp; schools</span>
+    </div>
+    <div class="sv-mat-wrap">
+      <table class="sv-mat-tbl">
+        <thead><tr><th>Class</th>${headerCols}</tr></thead>
+        <tbody>
+          ${tabRows}
+          <tr class="sv-summary-row">
+            <td>School Worst</td>${summaryRow}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function escHtml(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL STATS
+═══════════════════════════════════════════════════════════ */
+const store = {};
+let loadedCount=0, errShown=false, globalCritical=0, globalAttention=0;
+
+function updateStats() {
+  let t1T=0,t1C=0,t2T=0,t2C=0,unassigned=0;
+  globalCritical=0; globalAttention=0;
+  Object.values(store).forEach(d => TABS.forEach(tab => {
+    const x=d[tab]; if(!x) return;
+    t1T+=x.agg.t1.total; t1C+=x.agg.t1.cwa;
+    t2T+=x.agg.t2.total; t2C+=x.agg.t2.cwa;
+    unassigned+=x.agg.unassigned;
+    x.remarks.forEach(r => { if(r.level==='critical') globalCritical++; else if(r.level==='attention') globalAttention++; });
+  }));
+  const pct=(c,t)=>t>0?Math.round(c/t*100)+'%':'—';
+  const $ = id => document.getElementById(id);
+  $('cT1')        && ($('cT1').textContent          = pct(t1C,t1T));
+  $('cT2')        && ($('cT2').textContent          = pct(t2C,t2T));
+  $('cOverall')   && ($('cOverall').textContent     = pct(t1C+t2C,t1T+t2T));
+  $('cUnassigned')&& ($('cUnassigned').textContent  = unassigned);
+  $('cCritical')  && ($('cCritical').textContent    = globalCritical);
+  $('cAttention') && ($('cAttention').textContent   = globalAttention);
+  $('loadedBadge')&& ($('loadedBadge').textContent  = `${loadedCount} / 6 loaded`);
+
+  const vcnt = $('vcnt-crit');
+  if (vcnt) {
+    if (globalCritical>0) { vcnt.textContent=globalCritical; vcnt.classList.add('show'); }
+    else vcnt.classList.remove('show');
+  }
+  const cb = $('critBadge');
+  if (cb) { if (globalCritical>0){cb.textContent=`${globalCritical} Critical`;cb.style.display='inline';}else cb.style.display='none'; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DATA LOADING
+═══════════════════════════════════════════════════════════ */
+async function loadSchool(idx) {
+  const s = SCHOOLS[idx];
+  const results = await Promise.allSettled(TABS.map(t => fetchTab(s.id, t)));
+  store[idx] = {};
+  let aggTotal=0,aggUnassigned=0,aggT1={total:0,sched:0,cwa:0,overdue:0},aggT2={total:0,sched:0,cwa:0,overdue:0};
+  let anyErr = false;
+
+  TABS.forEach((tab, i) => {
+    const r = results[i];
+    if (r.status === 'fulfilled') {
+      const table  = r.value;
+      const rows   = parseRows(table);
+      const colMap = detectColumns(table);
+      const proc   = processRows(rows, colMap, tab);
+      if (!proc) { console.info(`${s.name}/${tab}: skipped — no Term data`); return; }
+      const remarks = generateRemarks(tab, proc.subjects, proc.subjOrder);
+      store[idx][tab] = {...proc, remarks};
+      registerSubjects(proc.subjOrder);
+      aggTotal+=proc.agg.total; aggUnassigned+=proc.agg.unassigned;
+      ['total','sched','cwa','overdue'].forEach(k=>{aggT1[k]+=proc.agg.t1[k];aggT2[k]+=proc.agg.t2[k];});
+    } else {
+      anyErr = true;
+      console.warn(`${s.name}/${tab}:`, r.reason?.message);
+    }
+  });
+
+  if (anyErr && !errShown) { errShown=true; document.getElementById('notice').style.display='flex'; }
+
+  const agg = {
+    total:aggTotal, unassigned:aggUnassigned,
+    t1:{...aggT1, distPct:aggTotal>0?aggT1.total/aggTotal:0, complPct:aggT1.total>0?aggT1.cwa/aggT1.total:null},
+    t2:{...aggT2, distPct:aggTotal>0?aggT2.total/aggTotal:0, complPct:aggT2.total>0?aggT2.cwa/aggT2.total:null},
+  };
+
+  loadedCount++;
+  updateStats();
+
+  // Update school card if we're on the schools view
+  if (currentRoute.view === 'schools') updateSchoolCard(idx, agg);
+
+  // Re-render school detail page if this school is currently open
+  if (currentRoute.view === 'school' && currentRoute.idx === idx) renderSchoolPage(idx);
+
+  // Refresh subject view if open
+  if (currentRoute.view === 'subjects') renderSubjectView(currentRoute.subject);
+}
+
+function reload() {
+  Object.keys(store).forEach(k => delete store[k]);
+  loadedCount=0; errShown=false; globalCritical=0; globalAttention=0;
+  subjectRegistry.clear();
+  svSearchQuery = '';
+  renderedSchoolIdx = -1;
+  init();
+}
+
+function init() {
+  document.getElementById('lastUpdated').textContent =
+    new Date().toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'});
+  ['cT1','cT2','cOverall','cUnassigned','cCritical','cAttention']
+    .forEach(id => { const el=document.getElementById(id); if(el) el.textContent='—'; });
+  document.getElementById('notice').style.display = 'none';
+
+  // Render initial view, then start loading
+  applyRoute();
+  Promise.all(SCHOOLS.map((_,i) => loadSchool(i)));
+}
+
+init();
+</script>
+</body>
+</html>
