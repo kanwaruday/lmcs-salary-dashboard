@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMCS — Course Progress 2026-27</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#0d1117;color:#e2e8f0;min-height:100vh;font-size:12px}
+
+/* BG GRID */
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(34,197,94,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(34,197,94,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+/* HEADER */
+.hdr{position:relative;z-index:10;background:linear-gradient(135deg,#14532d,#166534 55%,#15803d);color:#fff;padding:9px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #166534}
+.hdr-brand{display:flex;align-items:center;gap:10px}
+.hdr-logo{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:7px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:800;font-size:13px;color:#fff;flex-shrink:0}
+.hdr h1{font-family:'Poppins',sans-serif;font-size:14px;font-weight:700}
+.hdr p{font-size:9.5px;opacity:.65;margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.hdr-ts{font-size:10px;opacity:.6}
+.btn-back{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.85);padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;transition:background .15s}
+.btn-back:hover{background:rgba(255,255,255,.2)}
+.btn-refresh{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);color:#fff;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-refresh:hover{background:rgba(255,255,255,.22)}
+.btn-refresh svg{width:11px;height:11px}
+
+/* CHIPS STRIP */
+.chips-strip{position:relative;z-index:1;background:#111827;border-bottom:1px solid #1e293b;padding:10px 20px;display:flex;gap:8px;overflow-x:auto}
+.chip{background:#0d1321;border:1px solid #1e293b;border-radius:6px;padding:6px 14px;display:flex;flex-direction:column;gap:1px;min-width:106px;flex-shrink:0}
+.chip-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:#475569;font-weight:700}
+.chip-val{font-family:'Poppins',sans-serif;font-size:16px;font-weight:800;line-height:1.1;color:#22c55e}
+.chip-val.amber{color:#f59e0b}
+.chip-val.muted{color:#64748b}
+
+/* NOTICE */
+.notice{position:relative;z-index:1;background:#1c1400;border:1px solid #78350f;color:#fbbf24;padding:7px 16px;font-size:11px;display:none;align-items:center;gap:8px;margin:12px 20px 0;border-radius:7px}
+
+/* MAIN */
+.main{position:relative;z-index:1;padding:16px 20px;max-width:1440px;margin:0 auto}
+
+/* SECTION LABEL */
+.sec-lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#475569;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.sec-lbl::after{content:'';flex:1;height:1px;background:#1e293b}
+.sec-badge{background:#052e16;color:#22c55e;border:1px solid #166534;padding:1px 8px;border-radius:20px;font-size:8.5px;font-weight:700}
+
+/* LEGEND */
+.legend{display:flex;align-items:center;gap:12px;font-size:10px;color:#475569;flex-wrap:wrap;margin-bottom:14px}
+.ld{display:flex;align-items:center;gap:5px}
+.ld-dot{width:8px;height:8px;border-radius:50%}
+
+/* SCHOOL GRID */
+.school-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
+
+/* SCHOOL CARD */
+.scard{background:#111827;border:1.5px solid #1e293b;border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .18s,transform .18s,box-shadow .18s;position:relative}
+.scard::before{content:'';position:absolute;inset:0;opacity:0;background:linear-gradient(135deg,rgba(34,197,94,.05),transparent);transition:opacity .18s;pointer-events:none}
+.scard:hover{transform:translateY(-2px);border-color:#22c55e;box-shadow:0 12px 32px rgba(34,197,94,.1)}
+.scard:hover::before{opacity:1}
+.scard.active{border-color:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.12)}
+
+/* CARD TOP */
+.scard-top{background:linear-gradient(135deg,#0d1a10,#111c14);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #1e293b}
+.scard-name{font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;color:#f1f5f9}
+.scard-sub{font-size:10px;color:#475569;margin-top:2px}
+
+/* DONUT */
+.donut-wrap{position:relative;width:52px;height:52px;flex-shrink:0}
+.donut-wrap svg{transform:rotate(-90deg)}
+.d-bg{fill:none;stroke:#1e293b;stroke-width:5}
+.d-fill{fill:none;stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset 1s ease}
+.d-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;font-weight:800;line-height:1;color:#22c55e}
+.d-text small{font-size:7.5px;color:#475569;font-weight:600}
+
+/* CARD MID */
+.scard-mid{padding:13px 16px}
+.prog-row{margin-bottom:10px}
+.prog-row:last-child{margin-bottom:0}
+.prog-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.prog-left{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:#64748b}
+.term-chip{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;padding:1px 6px;border-radius:20px}
+.tc-1{background:#1e3a5f;color:#60a5fa}
+.tc-2{background:#2d1b69;color:#a78bfa}
+.prog-pct{font-size:12px;font-weight:800}
+.prog-track{background:#0d1321;border-radius:99px;height:6px;overflow:hidden;border:1px solid #1a2234}
+.prog-fill{height:100%;border-radius:99px;transition:width 1s ease}
+
+/* CARD BOTTOM */
+.scard-bot{background:#0d1117;border-top:1px solid #1e293b;padding:9px 16px;display:flex;align-items:center;justify-content:space-between}
+.scard-info-txt{font-size:10px;color:#334155}
+.scard-info-txt strong{color:#475569}
+.btn-view{background:#052e16;border:1px solid #166534;color:#22c55e;border-radius:5px;padding:4px 10px;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.2px;transition:background .12s}
+.btn-view:hover{background:#14532d}
+
+/* SKELETON */
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel{background:linear-gradient(90deg,#1e293b 25%,#263448 50%,#1e293b 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px}
+
+/* OVERLAY */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:199;opacity:0;pointer-events:none;transition:opacity .28s}
+.overlay.on{opacity:1;pointer-events:all}
+
+/* DRILL PANEL */
+.drill{position:fixed;top:0;right:-660px;width:660px;height:100vh;background:#111827;z-index:200;display:flex;flex-direction:column;transition:right .3s cubic-bezier(.4,0,.2,1);border-left:1px solid #1e293b}
+.drill.open{right:0}
+.drill-hdr{background:linear-gradient(135deg,#14532d,#15803d);padding:16px 20px;display:flex;align-items:flex-start;gap:12px;flex-shrink:0}
+.drill-hdr-info{flex:1}
+.drill-hdr h2{font-family:'Poppins',sans-serif;font-size:17px;font-weight:800;color:#fff}
+.drill-hdr p{font-size:10px;color:rgba(255,255,255,.6);margin-top:3px}
+.btn-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+.btn-close:hover{background:rgba(255,255,255,.25)}
+.drill-pills{display:flex;gap:8px;padding:11px 20px;background:#0d1117;border-bottom:1px solid #1e293b;flex-shrink:0;flex-wrap:wrap}
+.dpill{background:#111827;border:1px solid #1e293b;border-radius:99px;padding:4px 12px;font-size:11px;font-weight:700}
+.dpill span{color:#475569;font-weight:500;margin-right:3px;font-size:10px}
+.drill-body{flex:1;overflow-y:auto;padding:16px 20px}
+
+/* CLASS TABLE */
+.ctbl{width:100%;border-collapse:collapse}
+.ctbl thead th{background:#0d1321;color:#475569;font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:8px 10px;text-align:left;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:1}
+.ctbl thead th:first-child{border-radius:7px 0 0 0}
+.ctbl thead th:last-child{border-radius:0 7px 0 0}
+.ctbl tbody tr{border-bottom:1px solid #0f172a;transition:background .1s}
+.ctbl tbody tr:last-child{border-bottom:none}
+.ctbl tbody tr:hover td{background:#0d1321}
+.ctbl td{padding:9px 10px;vertical-align:middle}
+
+.cls-badge{display:inline-block;font-family:'Poppins',sans-serif;font-size:11px;font-weight:700;background:#052e16;color:#22c55e;border:1px solid #166534;padding:2px 9px;border-radius:20px;white-space:nowrap}
+.mini-prog{display:flex;align-items:center;gap:7px}
+.mini-track{flex:1;height:5px;background:#0d1321;border-radius:99px;overflow:hidden;border:1px solid #1a2234}
+.mini-fill{height:100%;border-radius:99px;transition:width .8s ease}
+.mini-pct{font-size:11px;font-weight:800;width:34px;text-align:right}
+.mini-counts{font-size:9px;color:#334155;margin-top:2px}
+.ov-cell{font-family:'Poppins',sans-serif;font-size:14px;font-weight:800}
+
+/* STATUS CHIPS */
+.schip{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;white-space:nowrap;letter-spacing:.2px}
+.s-done{background:#052e16;color:#22c55e;border:1px solid #166534}
+.s-prog{background:#1c1400;color:#f59e0b;border:1px solid #78350f}
+.s-pend{background:#0d1321;color:#475569;border:1px solid #1e293b}
+.s-na{background:#0d1321;color:#334155;border:1px solid #1a2234}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:#0d1117}
+::-webkit-scrollbar-thumb{background:#1e293b;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#334155}
+
+@media(max-width:640px){
+  .drill{width:100%;right:-100%}
+  .school-grid{grid-template-columns:1fr}
+  .main{padding:12px 14px}
+  .hdr{padding:9px 14px}
+  .hdr h1{font-size:12px}
+  .chips-strip{padding:8px 14px}
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-logo">LM</div>
+    <div>
+      <h1>LMCS — Course Progress Dashboard</h1>
+      <p>T1 &amp; T2 Live Tracking &nbsp;·&nbsp; Session 2026-27 &nbsp;·&nbsp; All 6 Schools &nbsp;·&nbsp; Confidential</p>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <span class="hdr-ts" id="lastUpdated"></span>
+    <a href="index.html" class="btn-back">← Back</a>
+    <button class="btn-refresh" onclick="reload()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Refresh
+    </button>
+  </div>
+</div>
+
+<!-- ── CHIPS STRIP ── -->
+<div class="chips-strip">
+  <div class="chip"><div class="chip-lbl">Schools</div><div class="chip-val muted">6</div></div>
+  <div class="chip"><div class="chip-lbl">Classes / School</div><div class="chip-val muted">15</div></div>
+  <div class="chip"><div class="chip-lbl">Avg T1 Progress</div><div class="chip-val" id="cT1">—</div></div>
+  <div class="chip"><div class="chip-lbl">Avg T2 Progress</div><div class="chip-val amber" id="cT2">—</div></div>
+  <div class="chip"><div class="chip-lbl">Overall Progress</div><div class="chip-val" id="cOverall">—</div></div>
+  <div class="chip"><div class="chip-lbl">Total Chapters</div><div class="chip-val muted" id="cChapters">—</div></div>
+</div>
+
+<!-- ── NOTICE ── -->
+<div class="notice" id="notice">⚠&nbsp; Some sheets couldn't be loaded. Open Google Sheets → Share → set to <strong>Anyone with the link → Viewer</strong>.</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+  <div class="sec-lbl">
+    All Schools — Live Progress
+    <span class="sec-badge" id="loadedBadge">0 / 6 loaded</span>
+    <span></span>
+  </div>
+
+  <div class="legend">
+    <div class="ld"><div class="ld-dot" style="background:#22c55e"></div>≥ 80% Complete</div>
+    <div class="ld"><div class="ld-dot" style="background:#f59e0b"></div>50 – 79%</div>
+    <div class="ld"><div class="ld-dot" style="background:#ef4444"></div>&lt; 50%</div>
+    <div class="ld"><div class="ld-dot" style="background:#334155"></div>No data yet</div>
+  </div>
+
+  <div class="school-grid" id="schoolGrid"></div>
+</div>
+
+<!-- ── OVERLAY ── -->
+<div class="overlay" id="overlay" onclick="closeDrill()"></div>
+
+<!-- ── DRILL PANEL ── -->
+<div class="drill" id="drill">
+  <div class="drill-hdr">
+    <div class="drill-hdr-info">
+      <h2 id="drillTitle">—</h2>
+      <p>Course Mapping T1 &amp; T2 &nbsp;·&nbsp; Session 2026-27 &nbsp;·&nbsp; Class-wise Breakdown</p>
+    </div>
+    <button class="btn-close" onclick="closeDrill()">✕</button>
+  </div>
+  <div class="drill-pills" id="drillPills"></div>
+  <div class="drill-body" id="drillBody"></div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════
+   CONFIG — schools & tabs
+════════════════════════════════════════════════ */
+const SCHOOLS = [
+  {name:'LMS 1', id:'1BorpCdePG7O6iZiwgGwNpWZBl7I1IGAT-OAh0fw2yMs'},
+  {name:'LMS 2', id:'1ejXKsnK3a2kNGEboTs-yQ2d3Tpk3xG5JRtm9DAmiYXs'},
+  {name:'LMS 3', id:'1MYTOPH_zFIK8xnQk3SsKIgsX5eT5mZgHaJpMgyoJhL8'},
+  {name:'LMS 4', id:'1nwPLQprQoQJ35xKDWSi2Y4YDzbvUPZ688u5QwOYmSxU'},
+  {name:'LMS 5', id:'172YKw1cMMcG5UZ0jjI8RzO2tGxnVWG3QVCEsDY6CZHg'},
+  {name:'LMS 6', id:'1PkZYbeVCdKeqCbbX2eXAwk7c8w7NAHUOSQKmO6nDZtE'},
+];
+const TABS = [
+  'M-I','M-II','M-III',
+  'Class 1','Class 2','Class 3','Class 4','Class 5','Class 6',
+  'Class 7','Class 8','Class 9','Class 10','Class 11','Class 12'
+];
+// Column indices (A=0 … K=10)
+const C = { TERM:5, DAYS:8, CWA:10 };
+
+/* ════════════════════════════════════════════════
+   DATA STORE
+════════════════════════════════════════════════ */
+const store = {};
+let loadedCount = 0, errShown = false, activeIdx = null;
+
+/* ════════════════════════════════════════════════
+   FETCH — Google gviz endpoint (no API key needed for public sheets)
+════════════════════════════════════════════════ */
+async function fetchTab(sheetId, tab) {
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(tab)}`;
+  const res  = await fetch(url, {cache:'no-cache'});
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  const s = text.indexOf('{'), e = text.lastIndexOf('}');
+  if (s < 0 || e < 0) throw new Error('Unexpected response');
+  const data = JSON.parse(text.slice(s, e + 1));
+  if (data.status === 'error') throw new Error(data.errors?.[0]?.detailed_message || 'Sheet error');
+  return data.table;
+}
+
+function parseRows(table) {
+  if (!table?.rows) return [];
+  return table.rows.map(row =>
+    (table.cols || []).map((_, i) => {
+      const c = row.c?.[i];
+      return (!c || c.v == null) ? '' : String(c.f ?? c.v).trim();
+    })
+  ).filter(r => r.some(v => v !== ''));
+}
+
+/* ════════════════════════════════════════════════
+   PROGRESS CALCULATION
+   A chapter is complete when CWA Date (col K) is filled.
+   Only rows with Term 1/2 and Days Planned > 0 are counted.
+════════════════════════════════════════════════ */
+function calcProg(rows) {
+  const t1 = {total:0, done:0}, t2 = {total:0, done:0};
+  for (const r of rows) {
+    const term = (r[C.TERM] || '').toLowerCase();
+    if (!term.includes('term')) continue;
+    if ((parseFloat(r[C.DAYS]) || 0) <= 0) continue;
+    const b = term.includes('1') ? t1 : term.includes('2') ? t2 : null;
+    if (!b) continue;
+    b.total++;
+    const cwa = (r[C.CWA] || '').trim();
+    if (cwa && cwa !== '0') b.done++;
+  }
+  const pct = b => b.total > 0 ? Math.round(b.done / b.total * 100) : null;
+  return { t1: {...t1, pct: pct(t1)}, t2: {...t2, pct: pct(t2)} };
+}
+
+function overallPct(p) {
+  const tot  = (p.t1.total || 0) + (p.t2.total || 0);
+  const done = (p.t1.done  || 0) + (p.t2.done  || 0);
+  return tot > 0 ? Math.round(done / tot * 100) : null;
+}
+
+/* ════════════════════════════════════════════════
+   COLOR HELPERS
+════════════════════════════════════════════════ */
+function col(pct) {
+  if (pct === null) return {stroke:'#334155', text:'#475569', bar:'#334155', chip:'s-na'};
+  if (pct >= 80)    return {stroke:'#22c55e', text:'#22c55e', bar:'#22c55e', chip:'s-done'};
+  if (pct >= 50)    return {stroke:'#f59e0b', text:'#f59e0b', bar:'#f59e0b', chip:'s-prog'};
+  return              {stroke:'#ef4444', text:'#ef4444', bar:'#ef4444', chip:'s-pend'};
+}
+const fmt = pct => pct === null ? '—' : pct + '%';
+
+/* ════════════════════════════════════════════════
+   DONUT RING
+════════════════════════════════════════════════ */
+function donut(pct) {
+  const r = 20, circ = +(2 * Math.PI * r).toFixed(2);
+  const c   = col(pct);
+  const off = pct !== null ? +(circ * (1 - pct / 100)).toFixed(2) : circ;
+  return `
+  <div class="donut-wrap">
+    <svg width="52" height="52" viewBox="0 0 52 52">
+      <circle class="d-bg" cx="26" cy="26" r="${r}"/>
+      <circle class="d-fill" cx="26" cy="26" r="${r}"
+        stroke="${c.stroke}" stroke-dasharray="${circ}" stroke-dashoffset="${off}"/>
+    </svg>
+    <div class="d-text" style="color:${c.text}">
+      ${pct !== null ? pct : '—'}<small>${pct !== null ? '%' : ''}</small>
+    </div>
+  </div>`;
+}
+
+/* ════════════════════════════════════════════════
+   RENDER — School card
+════════════════════════════════════════════════ */
+function progRow(label, chipCls, p) {
+  const c = col(p.pct);
+  return `
+  <div class="prog-row">
+    <div class="prog-top">
+      <div class="prog-left">
+        <span class="term-chip ${chipCls}">${label}</span>
+        ${p.total > 0 ? `${p.done}/${p.total} chapters` : '<span style="color:#334155">—</span>'}
+      </div>
+      <span class="prog-pct" style="color:${c.text}">${fmt(p.pct)}</span>
+    </div>
+    <div class="prog-track">
+      <div class="prog-fill" style="width:${p.pct ?? 0}%;background:${c.bar}"></div>
+    </div>
+  </div>`;
+}
+
+function renderCard(s, idx, agg) {
+  const op  = overallPct(agg);
+  const tot = agg.t1.total + agg.t2.total;
+  return `
+  <div class="scard" id="card-${idx}" onclick="openDrill(${idx})">
+    <div class="scard-top">
+      <div>
+        <div class="scard-name">${s.name}</div>
+        <div class="scard-sub">Course Mapping T1 &amp; T2 &nbsp;·&nbsp; 2026-27</div>
+      </div>
+      ${donut(op)}
+    </div>
+    <div class="scard-mid">
+      ${progRow('Term 1','tc-1',agg.t1)}
+      ${progRow('Term 2','tc-2',agg.t2)}
+    </div>
+    <div class="scard-bot">
+      <span class="scard-info-txt"><strong>${tot.toLocaleString('en-IN')}</strong> chapters tracked</span>
+      <button class="btn-view">View Classes →</button>
+    </div>
+  </div>`;
+}
+
+function renderSkeleton(s, idx) {
+  return `
+  <div class="scard" id="card-${idx}" style="pointer-events:none">
+    <div class="scard-top" style="min-height:78px">
+      <div>
+        <div class="scard-name">${s.name}</div>
+        <div class="scard-sub" style="color:#334155">Fetching data…</div>
+      </div>
+    </div>
+    <div class="scard-mid" style="padding:18px 16px">
+      <div class="skel" style="height:8px;margin-bottom:9px;width:70%"></div>
+      <div class="skel" style="height:8px;margin-bottom:18px"></div>
+      <div class="skel" style="height:8px;width:60%"></div>
+      <div class="skel" style="height:8px;margin-top:9px"></div>
+    </div>
+  </div>`;
+}
+
+/* ════════════════════════════════════════════════
+   RENDER — Drill-down panel
+════════════════════════════════════════════════ */
+function openDrill(idx) {
+  activeIdx = idx;
+  const d = store[idx] || {};
+  document.getElementById('drillTitle').textContent = SCHOOLS[idx].name;
+
+  // Summary pills
+  let t1T=0,t1D=0,t2T=0,t2D=0;
+  TABS.forEach(t => {const x=d[t];if(!x)return;t1T+=x.prog.t1.total;t1D+=x.prog.t1.done;t2T+=x.prog.t2.total;t2D+=x.prog.t2.done;});
+  const t1p  = t1T > 0 ? Math.round(t1D/t1T*100) : null;
+  const t2p  = t2T > 0 ? Math.round(t2D/t2T*100) : null;
+  const opp  = (t1T+t2T) > 0 ? Math.round((t1D+t2D)/(t1T+t2T)*100) : null;
+  const pill = (lbl, val) =>
+    `<div class="dpill" style="color:${col(val).text}"><span>${lbl}</span>${fmt(val)}</div>`;
+
+  document.getElementById('drillPills').innerHTML =
+    pill('T1', t1p) + pill('T2', t2p) + pill('Overall', opp) +
+    `<div class="dpill"><span>Chapters</span>${(t1T+t2T).toLocaleString('en-IN')}</div>`;
+
+  // Class table
+  const mBar = p => {
+    const c = col(p.pct);
+    return `
+      <div class="mini-prog">
+        <div class="mini-track"><div class="mini-fill" style="width:${p.pct??0}%;background:${c.bar}"></div></div>
+        <span class="mini-pct" style="color:${c.text}">${fmt(p.pct)}</span>
+      </div>
+      <div class="mini-counts">${p.done}/${p.total} ch.</div>`;
+  };
+  const statusChip = pct => {
+    if (pct === null)  return `<span class="schip s-na">No data</span>`;
+    if (pct === 100)   return `<span class="schip s-done">&#10003; Complete</span>`;
+    if (pct > 0)       return `<span class="schip s-prog">In Progress</span>`;
+    return `<span class="schip s-pend">Pending</span>`;
+  };
+
+  const rows = TABS.map(tab => {
+    const x = d[tab];
+    if (!x) return `
+      <tr>
+        <td><span class="cls-badge">${tab}</span></td>
+        <td colspan="4"><span class="schip s-na">Not available</span></td>
+      </tr>`;
+    const {prog} = x;
+    const op2 = overallPct(prog);
+    const oc  = col(op2);
+    return `
+      <tr>
+        <td><span class="cls-badge">${tab}</span></td>
+        <td>${mBar(prog.t1)}</td>
+        <td>${mBar(prog.t2)}</td>
+        <td class="ov-cell" style="color:${oc.text}">${fmt(op2)}</td>
+        <td>${statusChip(op2)}</td>
+      </tr>`;
+  });
+
+  document.getElementById('drillBody').innerHTML = `
+    <table class="ctbl">
+      <thead>
+        <tr>
+          <th>Class</th><th>Term 1</th><th>Term 2</th><th>Overall</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody>${rows.join('')}</tbody>
+    </table>`;
+
+  document.getElementById('drill').classList.add('open');
+  document.getElementById('overlay').classList.add('on');
+  document.querySelectorAll('.scard').forEach(c => c.classList.remove('active'));
+  document.getElementById(`card-${idx}`)?.classList.add('active');
+}
+
+function closeDrill() {
+  activeIdx = null;
+  document.getElementById('drill').classList.remove('open');
+  document.getElementById('overlay').classList.remove('on');
+  document.querySelectorAll('.scard').forEach(c => c.classList.remove('active'));
+}
+
+/* ════════════════════════════════════════════════
+   STATS BAR UPDATE
+════════════════════════════════════════════════ */
+function updateStats() {
+  let t1T=0,t1D=0,t2T=0,t2D=0;
+  Object.values(store).forEach(d =>
+    TABS.forEach(t => {const x=d[t];if(!x)return;t1T+=x.prog.t1.total;t1D+=x.prog.t1.done;t2T+=x.prog.t2.total;t2D+=x.prog.t2.done;})
+  );
+  const pct = (d,t) => t > 0 ? Math.round(d/t*100)+'%' : '—';
+  document.getElementById('cT1').textContent      = pct(t1D, t1T);
+  document.getElementById('cT2').textContent      = pct(t2D, t2T);
+  document.getElementById('cOverall').textContent = pct(t1D+t2D, t1T+t2T);
+  document.getElementById('cChapters').textContent = (t1T+t2T).toLocaleString('en-IN');
+  document.getElementById('loadedBadge').textContent = `${loadedCount} / 6 loaded`;
+}
+
+/* ════════════════════════════════════════════════
+   LOAD ONE SCHOOL (all 15 tabs in parallel)
+════════════════════════════════════════════════ */
+async function loadSchool(idx) {
+  const s = SCHOOLS[idx];
+  const results = await Promise.allSettled(TABS.map(t => fetchTab(s.id, t)));
+  store[idx] = {};
+  let t1T=0,t1D=0,t2T=0,t2D=0, anyErr=false;
+
+  TABS.forEach((tab, i) => {
+    const r = results[i];
+    if (r.status === 'fulfilled') {
+      const rows = parseRows(r.value);
+      const prog = calcProg(rows);
+      store[idx][tab] = {prog};
+      t1T+=prog.t1.total; t1D+=prog.t1.done;
+      t2T+=prog.t2.total; t2D+=prog.t2.done;
+    } else {
+      anyErr = true;
+      console.warn(`${s.name} / ${tab}:`, r.reason?.message);
+    }
+  });
+
+  if (anyErr && !errShown) {
+    errShown = true;
+    document.getElementById('notice').style.display = 'flex';
+  }
+
+  const agg = {
+    t1: {total:t1T, done:t1D, pct: t1T>0 ? Math.round(t1D/t1T*100) : null},
+    t2: {total:t2T, done:t2D, pct: t2T>0 ? Math.round(t2D/t2T*100) : null},
+  };
+
+  const el = document.getElementById(`card-${idx}`);
+  if (el) el.outerHTML = renderCard(s, idx, agg);
+  loadedCount++;
+  if (activeIdx === idx) openDrill(idx);
+  updateStats();
+}
+
+/* ════════════════════════════════════════════════
+   INIT / RELOAD
+════════════════════════════════════════════════ */
+function reload() {
+  Object.keys(store).forEach(k => delete store[k]);
+  loadedCount = 0; errShown = false;
+  init();
+}
+
+function init() {
+  document.getElementById('schoolGrid').innerHTML =
+    SCHOOLS.map((s, i) => renderSkeleton(s, i)).join('');
+  document.getElementById('lastUpdated').textContent =
+    new Date().toLocaleString('en-IN', {dateStyle:'medium', timeStyle:'short'});
+  ['cT1','cT2','cOverall','cChapters'].forEach(id => document.getElementById(id).textContent = '—');
+  document.getElementById('notice').style.display = 'none';
+  document.getElementById('loadedBadge').textContent = '0 / 6 loaded';
+  Promise.all(SCHOOLS.map((_, i) => loadSchool(i)));
+}
+
+init();
+</script>
+</body>
+</html>
