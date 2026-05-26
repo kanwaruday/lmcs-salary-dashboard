@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMCS — Course Progress Dashboard · Academic Coordinator Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#0d1117;color:#e2e8f0;min-height:100vh;font-size:13px;display:flex;flex-direction:column}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(34,197,94,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(34,197,94,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+/* ── HEADER ── */
+.hdr{position:relative;z-index:10;background:linear-gradient(135deg,#14532d,#166534 55%,#15803d);color:#fff;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #166534}
+.hdr-brand{display:flex;align-items:center;gap:10px}
+.hdr-logo{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:7px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:800;font-size:13px;color:#fff;flex-shrink:0}
+.hdr h1{font-family:'Poppins',sans-serif;font-size:14px;font-weight:700}
+.hdr p{font-size:9.5px;opacity:.65;margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.btn-back{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.85);padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;transition:background .15s}
+.btn-back:hover{background:rgba(255,255,255,.2)}
+.btn-live{display:inline-flex;align-items:center;gap:5px;background:#052e16;border:1px solid #166534;color:#22c55e;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;transition:background .15s}
+.btn-live:hover{background:#14532d}
+
+/* ── LAYOUT ── */
+.layout{display:flex;position:relative;z-index:1;flex:1}
+
+/* ── SIDEBAR NAV ── */
+.sidebar{width:220px;flex-shrink:0;background:#0d1117;border-right:1px solid #1e293b;position:sticky;top:0;height:100vh;overflow-y:auto;padding:20px 0}
+.nav-section{font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.9px;color:#334155;padding:0 16px 6px;margin-top:18px}
+.nav-section:first-child{margin-top:0}
+.nav-link{display:flex;align-items:center;gap:8px;padding:6px 16px;color:#64748b;font-size:11.5px;font-weight:500;text-decoration:none;border-left:2px solid transparent;transition:all .13s}
+.nav-link:hover{color:#94a3b8;background:#111827}
+.nav-link.active{color:#22c55e;border-left-color:#22c55e;background:#052e16}
+.nav-icon{font-size:12px;width:16px;text-align:center;flex-shrink:0}
+
+/* ── CONTENT ── */
+.content{flex:1;padding:32px 40px;max-width:880px;min-width:0}
+.content h2{font-family:'Poppins',sans-serif;font-size:20px;font-weight:800;color:#f1f5f9;margin-bottom:6px;scroll-margin-top:24px}
+.content .lead{font-size:13px;color:#64748b;line-height:1.7;margin-bottom:28px;border-bottom:1px solid #1e293b;padding-bottom:20px}
+section{margin-bottom:48px}
+
+/* ── SECTION HEADER ── */
+.sec-hdr{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.sec-hdr h3{font-family:'Poppins',sans-serif;font-size:15px;font-weight:700;color:#f1f5f9;scroll-margin-top:24px}
+.sec-hdr-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.si-green{background:rgba(34,197,94,.12)}
+.si-blue{background:rgba(59,130,246,.12)}
+.si-amber{background:rgba(245,158,11,.12)}
+.si-red{background:rgba(239,68,68,.12)}
+.si-purple{background:rgba(167,139,250,.12)}
+.si-slate{background:rgba(100,116,139,.12)}
+
+/* ── CALLOUT ── */
+.callout{border-radius:9px;padding:14px 16px;margin-bottom:16px;border-left:3px solid}
+.callout-green{border-color:#22c55e;background:#052e16}
+.callout-amber{border-color:#f59e0b;background:#1c1400}
+.callout-red{border-color:#ef4444;background:#1c0a0a}
+.callout-blue{border-color:#3b82f6;background:#0c1a2e}
+.callout-slate{border-color:#475569;background:#111827}
+.callout strong{display:block;font-family:'Poppins',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.callout-green strong{color:#22c55e}
+.callout-amber strong{color:#f59e0b}
+.callout-red strong{color:#ef4444}
+.callout-blue strong{color:#60a5fa}
+.callout-slate strong{color:#64748b}
+.callout p,.callout ul{font-size:12.5px;color:#94a3b8;line-height:1.7}
+.callout ul{padding-left:18px}
+.callout li{margin-bottom:3px}
+
+/* ── CARD MOCK (simplified visual replica) ── */
+.mock{background:#111827;border:1.5px solid #1e293b;border-radius:12px;overflow:hidden;margin-bottom:14px}
+.mock-top{background:linear-gradient(135deg,#0d1a10,#111c14);padding:13px 16px;border-bottom:1px solid #1e293b;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.mock-name{font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;color:#f1f5f9}
+.mock-sub{font-size:10px;color:#475569;margin-top:2px}
+.mock-mid{padding:12px 16px}
+.mock-bot{background:#0d1117;border-top:1px solid #1e293b;padding:9px 16px;display:flex;align-items:center;justify-content:space-between}
+.mock-bot-txt{font-size:10px;color:#334155}
+
+/* ── PROGRESS BAR MOCK ── */
+.pb-wrap{margin-bottom:10px}
+.pb-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;font-size:11px}
+.pb-label{display:flex;align-items:center;gap:6px;color:#64748b}
+.pb-pct{font-weight:800}
+.pb-track{background:#0d1321;border-radius:99px;height:6px;overflow:hidden;border:1px solid #1a2234}
+.pb-fill{height:100%;border-radius:99px}
+
+/* ── STATUS CHIPS ── */
+.schip{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;white-space:nowrap;display:inline-block;margin:2px}
+.s-complete{background:#052e16;color:#22c55e;border:1px solid #166534}
+.s-cwa{background:#1c1400;color:#f59e0b;border:1px solid #78350f}
+.s-dist{background:#0c1a2e;color:#60a5fa;border:1px solid #1e3a5f}
+.s-mapping{background:#450a0a;color:#ef4444;border:1px solid #7f1d1d}
+.s-milestone{background:#1e293b;color:#64748b;border:1px solid #334155}
+.s-pending{background:#0d1321;color:#334155;border:1px solid #1a2234}
+
+/* ── DONUT MINI ── */
+.donut-mini{position:relative;width:52px;height:52px;flex-shrink:0}
+.donut-mini svg{transform:rotate(-90deg)}
+.dm-bg{fill:none;stroke:#1e293b;stroke-width:5}
+.dm-fill{fill:none;stroke-width:5;stroke-linecap:round}
+.dm-lbl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;font-weight:800;line-height:1}
+.dm-lbl small{font-size:7.5px;color:#475569;font-weight:600}
+
+/* ── ISSUE PILLS ── */
+.issue-pill{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;display:inline-block;margin:2px}
+.ip-red{background:#450a0a;color:#ef4444;border:1px solid #7f1d1d}
+.ip-amber{background:#1c1400;color:#f59e0b;border:1px solid #78350f}
+.ip-green{background:#052e16;color:#22c55e;border:1px solid #166534}
+
+/* ── CHIP MOCK ── */
+.chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.chip-m{background:#0d1321;border:1px solid #1e293b;border-radius:6px;padding:8px 14px;min-width:100px}
+.chip-m.alert{border-color:#7f1d1d;background:#1c0a0a}
+.chip-m.warn{border-color:#78350f;background:#1c1400}
+.chip-m .lbl{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:#475569;font-weight:700;margin-bottom:2px}
+.chip-m .val{font-family:'Poppins',sans-serif;font-size:18px;font-weight:800;line-height:1}
+.chip-m .sub{font-size:9px;color:#334155;margin-top:2px}
+.val-green{color:#22c55e}.val-red{color:#ef4444}.val-amber{color:#f59e0b}.val-muted{color:#64748b}
+
+/* ── TABLE ── */
+.gtbl{width:100%;border-collapse:collapse;margin-bottom:16px}
+.gtbl thead th{background:#0d1321;color:#475569;font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:8px 10px;text-align:left;border-bottom:1px solid #1e293b;white-space:nowrap}
+.gtbl tbody tr{border-bottom:1px solid #0f172a}
+.gtbl tbody tr:last-child{border-bottom:none}
+.gtbl td{padding:8px 10px;vertical-align:middle;font-size:12px;color:#94a3b8;line-height:1.5}
+.gtbl td:first-child{font-weight:600;color:#e2e8f0}
+.tbl-wrap{background:#111827;border:1px solid #1e293b;border-radius:9px;overflow:hidden;margin-bottom:16px}
+
+/* ── STEP BOXES ── */
+.steps{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.step{display:flex;gap:14px;background:#111827;border:1px solid #1e293b;border-radius:9px;padding:14px 16px;align-items:flex-start}
+.step-num{width:26px;height:26px;border-radius:50%;background:rgba(34,197,94,.15);border:1px solid #166534;color:#22c55e;font-family:'Poppins',sans-serif;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-body h4{font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;color:#f1f5f9;margin-bottom:4px}
+.step-body p{font-size:12px;color:#64748b;line-height:1.6}
+.step-body code{font-family:monospace;background:#0d1321;border:1px solid #1e293b;padding:1px 5px;border-radius:4px;font-size:11px;color:#60a5fa}
+
+/* ── INLINE CODE ── */
+code{font-family:monospace;background:#0d1321;border:1px solid #1e293b;padding:1px 5px;border-radius:4px;font-size:11px;color:#60a5fa}
+
+/* ── TAG ROW ── */
+.tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;align-items:center}
+.tag{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px}
+.tag-green{background:#052e16;color:#22c55e;border:1px solid #166534}
+.tag-red{background:#450a0a;color:#ef4444;border:1px solid #7f1d1d}
+.tag-amber{background:#1c1400;color:#f59e0b;border:1px solid #78350f}
+.tag-blue{background:#0c1a2e;color:#60a5fa;border:1px solid #1e3a5f}
+.tag-slate{background:#1e293b;color:#64748b;border:1px solid #334155}
+
+/* ── CHECKLIST ── */
+.checklist{background:#111827;border:1px solid #1e293b;border-radius:9px;overflow:hidden;margin-bottom:16px}
+.checklist-hdr{background:#0d1321;padding:10px 16px;font-family:'Poppins',sans-serif;font-size:11px;font-weight:700;color:#64748b;letter-spacing:.3px;text-transform:uppercase;border-bottom:1px solid #1e293b}
+.checklist-item{display:flex;align-items:flex-start;gap:10px;padding:10px 16px;border-bottom:1px solid #0f172a;font-size:12px;color:#94a3b8;line-height:1.55}
+.checklist-item:last-child{border-bottom:none}
+.checklist-item:hover{background:#0d1321}
+.cl-box{width:16px;height:16px;border:1.5px solid #334155;border-radius:4px;flex-shrink:0;margin-top:1px}
+.checklist-item strong{color:#e2e8f0;display:block;margin-bottom:2px;font-size:12.5px}
+
+/* ── TERM TARGET VISUAL ── */
+.target-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.target-card{background:#111827;border:1px solid #1e293b;border-radius:9px;padding:14px;text-align:center}
+.target-card .classes{font-size:11px;font-weight:700;color:#475569;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px}
+.target-bar{display:flex;height:24px;border-radius:6px;overflow:hidden;margin:8px 0;font-size:10px;font-weight:700}
+.t1-seg{background:linear-gradient(135deg,#1e3a5f,#1e40af);color:#93c5fd;display:flex;align-items:center;justify-content:center}
+.t2-seg{background:linear-gradient(135deg,#2d1b69,#4c1d95);color:#c4b5fd;display:flex;align-items:center;justify-content:center}
+.target-note{font-size:10px;color:#475569;line-height:1.5}
+
+/* ── SEPARATOR ── */
+.sep{height:1px;background:#1e293b;margin:32px 0}
+
+/* ── TOC skip link ── */
+.skip-top{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:#334155;text-decoration:none;margin-bottom:28px}
+.skip-top:hover{color:#64748b}
+
+/* ── FOOTER ── */
+.footer{position:relative;z-index:1;text-align:center;padding:16px;border-top:1px solid #1e293b;color:#334155;font-size:10.5px}
+.footer a{color:#475569;text-decoration:none}.footer a:hover{color:#94a3b8}
+
+@media(max-width:780px){
+  .sidebar{display:none}
+  .content{padding:20px 16px}
+  .target-cards{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ════════ HEADER ════════ -->
+<div class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-logo">LM</div>
+    <div>
+      <h1>Course Progress Dashboard — Academic Coordinator Guide</h1>
+      <p>La Montessori Chain of Schools &nbsp;·&nbsp; Session 2026-27 &nbsp;·&nbsp; Confidential / Internal</p>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <a href="index.html" class="btn-back">← Tools Hub</a>
+    <a href="course-progress.html" class="btn-live">Open Dashboard →</a>
+  </div>
+</div>
+
+<!-- ════════ LAYOUT ════════ -->
+<div class="layout">
+
+  <!-- ── SIDEBAR ── -->
+  <nav class="sidebar">
+    <div class="nav-section">Overview</div>
+    <a href="#purpose" class="nav-link"><span class="nav-icon">🎯</span>Purpose</a>
+    <a href="#how-it-works" class="nav-link"><span class="nav-icon">⚙️</span>How It Works</a>
+
+    <div class="nav-section">Reading the Dashboard</div>
+    <a href="#global-chips" class="nav-link"><span class="nav-icon">📊</span>Global Stats Bar</a>
+    <a href="#school-cards" class="nav-link"><span class="nav-icon">🏫</span>School Cards</a>
+    <a href="#color-system" class="nav-link"><span class="nav-icon">🎨</span>Color System</a>
+
+    <div class="nav-section">Drill-Down Panel</div>
+    <a href="#drill-open" class="nav-link"><span class="nav-icon">🔍</span>Opening a School</a>
+    <a href="#tab-overview" class="nav-link"><span class="nav-icon">📋</span>Class Overview Tab</a>
+    <a href="#tab-subjects" class="nav-link"><span class="nav-icon">📚</span>Subject Detail Tab</a>
+    <a href="#tab-action" class="nav-link"><span class="nav-icon">📌</span>Action Plan Tab</a>
+
+    <div class="nav-section">Understanding Metrics</div>
+    <a href="#metrics-explained" class="nav-link"><span class="nav-icon">📐</span>Metrics Explained</a>
+    <a href="#status-values" class="nav-link"><span class="nav-icon">🚦</span>The 4 Status Values</a>
+    <a href="#target-distribution" class="nav-link"><span class="nav-icon">⚖️</span>Target Distribution</a>
+    <a href="#milestone-classes" class="nav-link"><span class="nav-icon">🌱</span>Milestone Classes</a>
+
+    <div class="nav-section">Compliance Workflow</div>
+    <a href="#weekly-routine" class="nav-link"><span class="nav-icon">📅</span>Weekly Routine</a>
+    <a href="#teacher-guide" class="nav-link"><span class="nav-icon">✏️</span>What Teachers Must Fill</a>
+    <a href="#troubleshoot" class="nav-link"><span class="nav-icon">🛠️</span>Troubleshooting</a>
+  </nav>
+
+  <!-- ── CONTENT ── -->
+  <div class="content">
+
+    <a href="#" class="skip-top" onclick="window.scrollTo(0,0);return false">↑ Back to top</a>
+
+    <!-- ════════ PURPOSE ════════ -->
+    <section id="purpose">
+      <h2>Academic Coordinator Guide</h2>
+      <p class="lead">
+        This guide explains how to read, interpret, and act on the Course Progress Dashboard —
+        the central tool for verifying that all six LMS school teachers have correctly filled
+        in their Course Mapping Google Sheets for Session 2026-27.
+      </p>
+
+      <div class="sec-hdr">
+        <div class="sec-hdr-icon si-green">🎯</div>
+        <h3 id="_purpose">Purpose of This Dashboard</h3>
+      </div>
+
+      <div class="callout callout-blue">
+        <strong>Who fills the data vs. who reads the dashboard</strong>
+        <p><strong style="color:#93c5fd">Teachers fill the Google Sheets</strong> — each sheet has one tab per class (M-I through Class 12) where teachers log every chapter's Term, Start Date, and CWA Date.<br><br>
+        <strong style="color:#93c5fd">You read this dashboard</strong> — it automatically fetches those 6 sheets × 15 classes = 90 tabs of data and presents them in one place, so you can identify which teachers are behind, which courses have gaps, and exactly what action to take.</p>
+      </div>
+
+      <div class="tbl-wrap">
+        <table class="gtbl">
+          <thead><tr><th>Dashboard answers this question</th><th>Where to find it</th></tr></thead>
+          <tbody>
+            <tr><td>Are all 6 schools' course mappings complete?</td><td>School cards — issue pills &amp; donut ring</td></tr>
+            <tr><td>Which classes have unassigned chapters?</td><td>Global stats bar → "Unassigned Chapters"</td></tr>
+            <tr><td>Which subjects haven't updated CWA dates?</td><td>Drill → Action Plan → CWA Not Updated items</td></tr>
+            <tr><td>Is the T1/T2 chapter split within the target?</td><td>Drill → Subject Detail → T1% / T2% columns</td></tr>
+            <tr><td>Are any chapters overdue (past plan, no CWA)?</td><td>School card progress bar · Action Plan (⚠ overdue)</td></tr>
+            <tr><td>Exactly what should I ask teacher X to do?</td><td>Drill → Action Plan → Recommended Action</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="sep"></div>
+
+    <!-- ════════ HOW IT WORKS ════════ -->
+    <section id="how-it-works">
+      <div class="sec-hdr">
+        <div class="sec-hdr-icon si-blue">⚙️</div>
+        <h3>How the Dashboard Works</h3>
+      </div>
+      <p style="color:#64748b;font-size:12.5px;line-height:1.7;margin-bottom:14px">
+        The dashboard reads live data directly from the six Course Mapping Google Sheets every time you open or refresh it.
+        No manual export or data entry is needed.
+      </p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h4>Teacher fills the Google Sheet</h4>
+            <p>Each teacher opens their school's Course Mapping Sheet, goes to their class tab (e.g., <code>Class 5</code>), and fills in the columns: <strong>Term</strong> (column F), <strong>Chapter Start Date</strong> (column H), and <strong>CWA Date</strong> (column K) for every chapter they teach.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h4>Dashboard fetches data in real time</h4>
+            <p>When you open this dashboard (or click <strong>Refresh</strong>), it pulls all 90 tabs across the 6 schools simultaneously. This takes about 5–15 seconds. Each school card shows a loading skeleton while data arrives.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h4>Dashboard computes progress and flags issues</h4>
+            <p>For every class and subject it counts chapters, checks which have Start Dates, which have CWA Dates, checks if the T1/T2 split meets the target, and generates specific action items. All of this matches the LMCS Course Progress Summary v4 standard.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <h4>You act on the flags</h4>
+            <p>Open any school card → go to the <strong>Action Plan</strong> tab → read the specific issue and recommended action per class and subject → follow up with the relevant teacher.</p>
+          </div>
+        </div>
+      </div>
+      <div class="callout callout-amber">
+        <strong>⚡ Refresh after teacher updates</strong>
+        <p>The dashboard shows data as of the last fetch. Once a teacher tells you they've updated the sheet, click the <strong>Refresh</strong> button (top right) to pull the latest data. The page does not auto-refresh.</p>
+      </div>
+    </section>
+
+    <div class="sep"></div>
+
+    <!-- ════════ GLOBAL CHIPS ════════ -->
+    <section id="global-chips">
+      <div class="sec-hdr">
+        <div class="sec-hdr-icon si-green">📊</div>
+        <h3>Global Stats Bar</h3>
+      </div>
+      <p style="color:#64748b;font-size:12.5px;line-height:1.7;margin-bottom:16px">
+        The bar just below the header shows a live summary across all 6 schools. These numbers update as each school loads.
+      </p>
+      <div class="chip-row">
+        <div class="chip-m"><div class="lbl">T1 CWA Completion</div><div class="val val-green">74%</div><div class="sub">CWA filled / T1 chapters</div></div>
+        <div class="chip-m"><div class="lbl">T2 CWA Completion</div><div class="val val-amber">18%</div><div class="sub">CWA filled / T2 chapters</div></div>
+        <div class="chip-m"><div class="lbl">Overall CWA</div><div class="val val-green">52%</div><div class="sub">All CWA / All chapters</div></div>
+        <div class="chip-m alert"><div class="lbl">Unassigned Chapters</div><div class="val val-red">12</div><div class="sub">No Term assigned</div></div>
+        <div class="chip-m alert"><div class="lbl">Critical Issues</div><div class="val val-red">7</div><div class="sub">Needs immediate action</div></div>
+        <div class="chip-m warn"><div class="lbl">Attention Items</div><div class="val val-amber">14</div><div class="sub">Follow up required</div></div>
+      </div>
+      <div class="tbl-wrap">
+        <table class="gtbl">
+          <thead><tr><th>Stat</th><th>What it means</th><th>Ideal value</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>T1 CWA Completion</td>
+              <td>Percentage of all T1 chapters (across all 6 schools) where the CWA Date has been filled in by teachers. Measures how many T1 chapters are confirmed as completed.</td>
+              <td style="color:#22c55e">≥ 80% by end of T1</td>
+            </tr>
+            <tr>
+              <td>T2 CWA Completion</td>
+              <td>Same metric for Term 2. Expected to be low at session start and rise as T2 progresses (Nov 2026 onwards).</td>
+              <td style="color:#22c55e">≥ 80% by end of T2</td>
+            </tr>
+            <tr>
+              <td>Overall CWA</td>
+              <td>Combined CWA completion rate across both terms and all schools. A session-wide health indicator.</td>
+              <td style="color:#22c55e">Rising through the year</td>
+            </tr>
+            <tr>
+              <td style="color:#ef4444">Unassigned Chapters</td>
+              <td>Chapters where the Term column is blank — neither T1 nor T2. These chapters are invisible to all progress tracking and indicate incomplete mapping. <strong style="color:#ef4444">This must be zero.</strong></td>
+              <td style="color:#22c55e">0 at all times</td>
+            </tr>
+            <tr>
+              <td style="color:#ef4444">Critical Issues</td>
+              <td>Count of subject-level action items that need immediate attention — unassigned chapters, overdue chapters with no CWA, or mapping not started.</td>
+              <td style="color:#22c55e">0</td>
+            </tr>
+            <tr>
+              <td style="color:#f59e0b">Attention Items</td>
+              <td>Count of subject-level items that need a follow-up this week — CWA dates not yet filled, distribution targets slightly off, or T2 chapters not yet assigned.</td>
+              <td style="color:#22c55e">Decreasing week-on-week</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="sep"></div>
+
+    <!-- ════════ SCHOOL CARDS ════════ -->
+    <section id="school-cards">
+      <div class="sec-hdr">
+        <div class="sec-hdr-icon si-green">🏫</div>
+        <h3>Reading a School Card</h3>
+      </div>
+      <p style="color:#64748b;font-size:12.5px;line-height:1.7;margin-bottom:16px">
+        Each school has one card on the main screen. Here is what every part of the card means:
+      </p>
+
+      <!-- Mock card -->
+      <div class="mock" style="max-width:380px">
+        <div class="mock-top">
+          <div>
+            <div class="mock-name">LMS 3</div>
+            <div class="mock-sub">Course Mapping T1 &amp; T2 &nbsp;·&nbsp; 2026-27</div>
+            <div style="display:flex;gap:5px;margin-top:7px;flex-wrap:wrap">
+              <span class="issue-pill ip-red">✗ 3 unassigned</span>
+              <span class="issue-pill ip-red">⚠ 2 critical</span>
+              <span class="issue-pill ip-amber">• 4 attention</span>
+            </div>
+          </div>
+          <!-- Donut mock -->
+          <div class="donut-mini">
+            <svg width="52" height="52" viewBox="0 0 52 52">
+              <circle class="dm-bg" cx="26" cy="26" r="20"/>
+              <circle class="dm-fill" cx="26" cy="26" r="20" stroke="#22c55e"
+                stroke-dasharray="125.66" stroke-dashoffset="40" stroke-width="5" stroke-linecap="round"/>
+            </svg>
+            <div class="dm-lbl" style="color:#22c55e">68<small>%</small></div>
+          </div>
+        </div>
+        <div class="mock-mid">
+          <div class="pb-wrap">
+            <div class="pb-top">
+              <div class="pb-label"><span style="font-size:8.5px;font-weight:700;background:#1e3a5f;color:#60a5fa;padding:1px 6px;border-radius:20px">TERM 1</span> 87 CWA / 120 ch.</div>
+              <span class="pb-pct" style="color:#f59e0b">73%</span>
+            </div>
+            <div class="pb-track"><div class="pb-fill" style="width:73%;background:#f59e0b"></div></div>
+          </div>
+          <div class="pb-wrap">
+            <div class="pb-top">
+              <div class="pb-label"><span style="font-size:8.5px;font-weight:700;background:#2d1b69;color:#a78bfa;padding:1px 6px;border-radius:20px">TERM 2</span> 22 CWA / 88 ch.</div>
+              <span class="pb-pct" style="color:#ef4444">25%</span>
+            </div>
+            <div class="pb-track"><div class="pb-fill" style="width:25%;background:#ef4444"></div></div>
+          </div>
+        </div>
+        <div class="mock-bot">
+          <span class="mock-bot-txt"><strong style="color:#94a3b8">208</strong> chapters &nbsp;|&nbsp; <strong style="color:#ef4444">3</strong> unassigned</span>
+          <span style="background:#052e16;border:1px solid #166534;color:#22c55e;border-radius:5px;padding:4px 10px;font-size:10px;font-weight:700">View Details →</span>
+        </div>
+      </div>
+
+      <div class="tbl-wrap">
+        <table class="gtbl">
+          <thead><tr><th>Card Element</th><th>What it tells you</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>School name &amp; subtitle</td>
+              <td>School name (LMS 1–6). The card border turns red when there are critical issues.</td>
+            </tr>
+            <tr>
+              <td>Issue pills <span class="issue-pill ip-red" style="margin:0 2px">✗ 3 unassigned</span> <span class="issue-pill ip-red" style="margin:0 2px">⚠ 2 critical</span> <span class="issue-pill ip-amber" style="margin:0 2px">• 4 attention</span></td>
+              <td><strong style="color:#e2e8f0">Unassigned:</strong> chapters with no Term in column F — must be fixed first.<br>
+                  <strong style="color:#e2e8f0">Critical:</strong> overdue chapters, mapping not started — needs immediate follow-up.<br>
+                  <strong style="color:#e2e8f0">Attention:</strong> CWA dates missing, distribution off — follow up this week.<br>
+                  <span class="issue-pill ip-green" style="margin:0">✓ All mapped</span> appears only when there are zero issues.</td>
+            </tr>
+            <tr>
+              <td>Donut ring (top right)</td>
+              <td>Overall CWA completion % across the entire school (both terms). Color: 🟢 ≥ 80% · 🟡 50–79% · 🔴 &lt; 50%. If there are unassigned chapters the ring turns red regardless of the percentage.</td>
+            </tr>
+            <tr>
+              <td>Term 1 progress bar</td>
+              <td>CWA completion for T1: how many T1 chapters have a CWA date filled in. Format: <em>CWA filled / Total T1 chapters = %</em>. A ⚠ overdue flag appears if some chapters are past their planned date with no CWA.</td>
+            </tr>
+            <tr>
+              <td>Term 2 progress bar</td>
+              <td>Same metric for T2. T2 typically starts low and should rise from November 2026.</td>
+            </tr>
+            <tr>
+              <td>Bottom row: total chapters / unassigned</td>
+              <td>Total chapter count across all classes. Unassigned count shown in red if &gt; 0.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="sep"></div>
+
+    <!-- ════════ COLOR SYSTEM ════════ -->
+    <section id="color-system">
+      <div class="sec-hdr">
+        <div class="sec-hdr-icon si-slate">🎨</div>
+        <h3>Color System at a Glance</h3>
+      </div>
+      <div class="tbl-wrap">
+        <table class="gtbl">
+          <thead><tr><th>Color</th><th>Meaning</th><th>When you see it</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#22c55e;margin-right:6px;vertical-align:middle"></span>Green</td>
+              <td>On target / Complete</td>
+              <td>CWA ≥ 80%, status = Complete, school card has no issues</td>
+            </tr>
+            <tr>
+              <td><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#f59e0b;margin-right:6px;vertical-align:middle"></span>Amber</td>
+              <td>Needs attention</td>
+              <td>CWA 50–79%, CWA Not Updated status, attention-level action items</td>
+            </tr>
+            <tr>
+              <td><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#ef4444;margin-right:6px;vertical-align:middle"></span>Red</td>
+              <td>Critical / Incomplete</td>
+              <td>CWA &lt; 50%, unassigned chapters, mapping incomplete, overdue chapters</td>
+            </tr>
+            <tr>
+              <td><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#60a5fa;margin-right:6px;vertical-align:middle"></span>Blue</td>
+              <td>Distribution Issue</td>
+              <td>T1/T2 chapter split is outside the ±5% tolerance of the target</td>
+            </tr>
+            <tr>
+              <td><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#334155;margin-right:6px;vertical-align:middle"></span>Slate / Grey</td>
+              <td>No data / Skipped / Pending</td>
+              <td>Tab not yet filled, class skipped (no Term data), T2 not yet assigned</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="sep"></div>
+
+    <!-- ════════ OPENING A SCHOOL ════════ -->
+    <section id="drill-open">
+      <div class="sec-hdr">
+        <div class="sec-hdr-icon si-green">🔍</div>
+        <h3>Opening a School's Drill-Down Panel</h3>
+      </div>
+      <p style="color:#64748b;font-size:12.5px;line-height:1.7;margin-bottom:14px">
+        Click anywhere on a school card (or the <strong>View Details →</strong> button) to open the slide-in panel for that school.
+        The panel has three tabs: Class Overview, Subject Detail, and Action Plan.
+      </p>
+      <div class="callout callout-slate">
+        <strong>Summary pills at the top of the panel</strong>
+        <p>The coloured pills just inside the panel header show the school's T1 CWA %, T2 CWA %, Overall CWA %, Total chapters, and — if present — Unassigned count and Critical count. These give you a quick snapshot before diving into the tabs.</p>
+      </div>
+    </section>
+
+    <div class="sep"></div>
+
+    <!-- ════════ CLASS OVERVIEW TAB ════════ -->
+    <section id="tab-overview">
+      <div class="sec-hdr">
+        <div class="sec-hdr-icon si-blue">📋</div>
+        <h3>Tab 1 — Class Overview</h3>
+      </div>
+      <p style="color:#64748b;font-size:12.5px;line-height:1.7;margin-bottom:14px">
+        One row per class (M-I through Class 12). All subjects for a class are combined into a single aggregate row here.
+        Use this tab to quickly identify which <em>classes</em> are behind.
+      </p>
+      <div class="tbl-wrap">
+        <table class="gtbl">
+          <thead><tr><th>Column</th><th>What it shows</th><th>Flag when…</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Class</td>
+              <td>Class name (e.g., Class 7). Green badge.</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>Total Ch.</td>
+              <td>Total chapters across all subjects for this class. Color indicates overall CWA % level.</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>Unassigned</td>
+              <td>Chapters with no Term in column F. ⚠ symbol appears when &gt; 0.</td>
+              <td style="color:#ef4444">Any value &gt; 0 is a problem</td>
+            </tr>
+            <tr>
+              <td>T1 CWA Completion</td>
+              <td>Mini progress bar: CWA filled / T1 chapters. Shows overdue count in red if present.</td>
+              <td style="color:#ef4444">Bar is red or shows ⚠ overdue</td>
+            </tr>
+            <tr>
+              <td>T2 CWA Completion</td>
+              <td>Same for T2. Expected low at year start.</td>
+              <td style="color:#f59e0b">Still 0% well into T2 season</td>
+            </tr>
+            <tr>
+              <td>Overall</td>
+              <td>Combined CWA % for the class (both terms together).</td>
+              <td style="color:#ef4444">Below 50% in the second half of the term</td>
+            </tr>
+            <tr>
+              <td>Worst Status</td>
+              <td>The single worst status badge among all subjects in this class. See the 4 Status Values section below.</td>
+              <td style="color:#ef4444">Mapping Incomplete or CWA Not Updated</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout callout-green">
+        <strong>✓ "Not available / skipped" rows</strong>
+        <p>If a class row shows "Not available / skipped" it means the Google Sheet tab for that class either has no Term data entered yet (v4 auto-skip rule) or could not be fetched. Check the sheet directly and ensure the tab is named exactly as expected (e.g., <code>Class 11</code>, not <code>Cl 11</code>).</p>
+      </div>
+    </section>
+
+    <div class="sep"></div>
+
+    <!-- ════════ SUBJECT DETAIL TAB ════════ -->
+    <section id="tab-subjects">
+      <div class="sec-hdr">
+        <div class="sec-hdr-icon si-purple">📚</div>
+        <h3>Tab 2 — Subject Detail</h3>
+      </div>
+      <p style="color:#64748b;font-size:12.5px;line-height:1.7;margin-bottom:14px">
+        The most granular view: one row per class-subject pair. Scroll horizontally within each class section to see all 13 columns.
+        This is where you identify exactly which teacher (subject + class) needs to take action.
+      </p>
+      <div class="tbl-wrap">
+        <table class="gtbl">
+          <thead><tr><th>Column</th><th>What it means</th></tr></thead>
+          <tbody>
+            <tr><td>Subject</td><td>Subject name as entered in the sheet (e.g., Mathematics, English).</td></tr>
+            <tr>
+              <td>Total</td>
+              <td>Total chapters for this subject in this class.</td>
+            </tr>
+            <tr>
+              <td style="color:#ef4444">Unassigned</td>
+              <td>Chapters with no Term assigned. ⚠ shown in red when &gt; 0. This must be resolved before all other metrics make sense.</td>
+            </tr>
+            <tr>
+              <td>T1 Ch.</td>
+              <td>Chapters tagged Term 1 (via the TERM column in the sheet).</td>
+            </tr>
+            <tr>
+              <td>T1 Sched</td>
+              <td>T1 chapters that have a Start Date filled in (chapter is scheduled/planned).</td>
+            </tr>
+            <tr>
+              <td>T1 CWA</td>
+              <td>T1 chapters where the CWA Date is filled (chapter is confirmed completed). Shows <strong>NA</strong> for Milestone classes (M-I, M-II, M-III).</td>
+            </tr>
+            <tr>
+              <td>T1 % <small>(dist)</small></td>
+              <td><strong>Distribution percentage</strong>: T1 chapters ÷ Total chapters. This measures whether the right proportion of the syllabus is allocated to T1 — not how many chapters are done. Target: ~60% for most classes, ~50% for Class 10 &amp; 12.</td>
+            </tr>
+            <tr>
+              <td>T1 Status</td>
+              <td>One of 4 status chips (see below). The worst applicable status is shown.</td>
+            </tr>
+            <tr>
+              <td>T2 Ch. / T2 Sched / T2 CWA / T2% / T2 Status</td>
+              <td>Exact same columns for Term 2. T2 CWA also shows <strong>NA</strong> for Milestone classes.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout callout-blue">
+        <strong>ℹ T1% measures distribution, not completion</strong>
+        <p>A T1% of 62% means 62% of the subject's chapters have been <em>assigned</em> to Term 1 in the sheet — it does NOT mean 62% of chapters are finished. Completion is tracked separately via the CWA column.</p>
+      </div>
+    </section>
+
+    <div class="sep"></div>
+
+    <!-- ════════ ACTION PLAN TAB ════════ -->
+    <section id="tab-action">
+      <div class="sec-hdr">
+        <div class="sec-hdr-icon si-red">📌</div>
+        <h3>Tab 3 — Action Plan</h3>
+      </div>
+      <p style="color:#64748b;font-size:12.5px;line-height:1.7;margin-bottom:14px">
+        This is your primary working tab as Academic Coordinator. Every issue identified by the dashboard is listed here
+        in priority order, with a specific recommended action for each.
+      </p>
+
+      <div class="tbl-wrap">
+        <table class="gtbl">
+          <thead><tr><th>Priority Level</th><th>Badge</th><th>What it means</th><th>Typical deadline</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>🔴 Critical</td>
+              <td><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:#450a0a;color:#ef4444;border:1px solid #7f1d1d">⚠ Critical</span></td>
+              <td>Unassigned chapters, overdue chapters with no CWA date, mapping not started</td>
+              <td style="color:#ef4444">Same day / within 24 hrs</td>
+            </tr>
+            <tr>
+              <td>🟡 Attention</td>
+              <td><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:#1c1400;color:#f59e0b;border:1px solid #78350f">• Attention</span></td>
+              <td>CWA dates not yet filled (but not overdue), T1/T2 distribution outside target range</td>
+              <td style="color:#f59e0b">This week</td>
+            </tr>
+            <tr>
+              <td>ℹ️ Plan Ahead</td>
+              <td><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:#0c1a2e;color:#60a5fa;border:1px solid #1e3a5f">ℹ Plan Ahead</span></td>
+              <td>T2 chapters not yet assigned (acceptable in T1, but prepare before T2 starts)</td>
+              <td style="color:#60a5fa">Before Nov 2026</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p style="color:#64748b;font-size:12.5px;margin-bottom:12px">Each action item shows:</p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num" style="background:rgba(239,68,68,.12);border-color:#7f1d1d;color:#ef4444">●</div>
+          <div class="step-body">
+            <h4>Tags — Class · Subject · Severity</h4>
+            <p>Coloured tags tell you exactly which class and subject the issue belongs to, so you know which teacher to contact.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num" style="background:rgba(239,68,68,.12);border-color:#7f1d1d;color:#ef4444">●</div>
+          <div class="step-body">
+            <h4>Issue statement</h4>
+            <p>A plain-English description of what the problem is — e.g., "T1: 5/12 Mathematics chapters have no CWA date ⚠ 2 past planned completion date".</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num" style="background:rgba(239,68,68,.12);border-color:#7f1d1d;color:#ef4444">●</div>
+          <div class="step-body">
+            <h4>▶ Recommended Action</h4>
+            <p>A specific instruction you can read directly to the teacher or use as the basis for your follow-up message — including which column to update in the Google Sheet.</p>
+          </div>
+        </div>
+      </div>
+      <div class="callout callout-green">
+        <strong>✓ No items = fully compliant</strong>
+        <p>If the Action Plan tab shows a ✅ "No action items found" message for a school, all classes are fully mapped and CWA dates are up to date for that school. Well done to that school's teachers!</p>
+      </div>
+    </section>
+
+    <div class="sep"></div>
+
+    <!-- ════════ METRICS EXPLAINED ════════ -->
+    <section id="metrics-explained">
+      <div class="sec-hdr">
+        <div class="sec-hdr-icon si-blue">📐</div>
+        <h3>Metrics Explained</h3>
+      </div>
+
+      <div class="tbl-wrap">
+        <table class="gtbl">
+          <thead><tr><th>Metric</th><th>Formula</th><th>What it measures</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Total Chapters</td>
+              <td>Count of all rows with a Subject in the sheet tab</td>
+              <td>Full size of the syllabus for this class-subject</td>
+            </tr>
+            <tr>
+              <td>Unassigned</td>
+              <td>Total – T1 chapters – T2 chapters</td>
+              <td>Chapters not yet tagged to any term in column F</td>
+            </tr>
+            <tr>
+              <td>T1 Chapters</td>
+              <td>Rows where the Term column contains "1"</td>
+              <td>Chapters allocated to Term 1</td>
+            </tr>
+            <tr>
+              <td>T1 Scheduled</td>
+              <td>T1 rows where Start Date (column H) is filled</td>
+              <td>T1 chapters the teacher has put on the calendar</td>
+            </tr>
+            <tr>
+              <td>T1 CWA</td>
+              <td>T1 rows where CWA Date (column K) is filled</td>
+              <td>T1 chapters confirmed completed (assessment done)</td>
+            </tr>
+            <tr>
+              <td><strong>T1 % (distribution)</strong></td>
+              <td>T1 Chapters ÷ Total Chapters</td>
+              <td>What fraction of the syllabus is in T1. Target: ~60% (or 50% for Class 10/12)</td>
+            </tr>
+            <tr>
+              <td>T1 CWA % (completion)</td>
+              <td>T1 CWA ÷ T1 Chapters</td>
+              <td>How many of the T1 chapters have been confirmed as completed</td>
+            </tr>
+            <tr>
+              <td>Overdue</td>
+              <td>T1/T2 chapters where Start Date + Days Planned &lt; today AND no CWA date</td>
+              <td>Chapters that should already be done based on the teacher's own plan, but have no CWA date — ⚠ shown in red</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="sep"></div>
+
+    <!-- ════════ STATUS VALUES ════════ -->
+    <section id="status-values">
+      <div class="sec-hdr">
+        <div class="sec-hdr-icon si-red">🚦</div>
+        <h3>The 4 Status Values</h3>
+      </div>
+      <p style="color:#64748b;font-size:12.5px;line-height:1.7;margin-bottom:16px">
+        Every subject-term combination is assigned exactly one of these four statuses, in the priority order shown below.
+        The worst applicable status is always shown — so a subject showing "CWA Not Updated" has already passed the mapping check.
+      </p>
+
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
+
+        <div class="callout callout-red">
+          <strong>1 — ✗ Mapping Incomplete <span class="schip s-mapping" style="font-size:10px">✗ Mapping Incomplete</span></strong>
+          <p><strong style="color:#fca5a5">Trigger:</strong> One or more chapters for this subject have no Term assigned (Unassigned &gt; 0).<br>
+          <strong style="color:#fca5a5">Why it matters:</strong> Chapters without a Term are invisible to all other tracking. T1%, CWA%, and overdue counts are all wrong until this is fixed.<br>
+          <strong style="color:#fca5a5">Fix:</strong> Teacher opens the Google Sheet → column F (Term) → fills in "Term 1" or "Term 2" for every blank row in this subject.<br>
+          <strong style="color:#fca5a5">Priority: Highest — fix this first.</strong></p>
+        </div>
+
+        <div class="callout callout-amber">
+          <strong>2 — ⚠ CWA Not Updated <span class="schip s-cwa" style="font-size:10px">⚠ CWA Not Updated</span></strong>
+          <p><strong style="color:#fcd34d">Trigger:</strong> All chapters are assigned to a Term, but one or more chapters are missing a CWA Date (column K).<br>
+          <strong style="color:#fcd34d">Why it matters:</strong> The CWA (Course-Wise Assessment) date is the confirmation that a chapter has been taught and assessed. Without it, we cannot confirm progress.<br>
+          <strong style="color:#fcd34d">Fix:</strong> Teacher opens the Google Sheet → column K (CWA Date) → fills in the date each chapter was completed. If marked ⚠ overdue, this is urgent.<br>
+          <strong style="color:#fcd34d">Note:</strong> Not checked for Milestone classes (M-I, M-II, M-III) — shows "NA" instead.<br>
+          <strong style="color:#fcd34d">Priority: Second — after mapping is complete.</strong></p>
+        </div>
+
+        <div style="background:#0c1a2e;border:1px solid #1e3a5f;border-left:3px solid #3b82f6;border-radius:9px;padding:14px 16px">
+          <strong style="display:block;font-family:'Poppins',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;color:#60a5fa">3 — ↔ Distribution Issue <span class="schip s-dist" style="font-size:10px">↔ Distribution Issue</span></strong>
+          <p style="font-size:12.5px;color:#94a3b8;line-height:1.7"><strong style="color:#93c5fd">Trigger:</strong> Mapping is complete and all CWA dates are filled, but the T1/T2 chapter split is outside the ±5% tolerance of the target.<br>
+          <strong style="color:#93c5fd">Why it matters:</strong> An imbalanced split means either T1 is overloaded or T2 has too many chapters to cover in the available time.<br>
+          <strong style="color:#93c5fd">Fix:</strong> Teacher reviews column F for this subject and reassigns chapters between T1 and T2 to meet the target split.<br>
+          <strong style="color:#93c5fd">Priority: Third.</strong></p>
+        </div>
+
+        <div class="callout callout-green">
+          <strong>4 — ✓ Complete <span class="schip s-complete" style="font-size:10px">✓ Complete</span></strong>
+          <p><strong style="color:#86efac">All checks passed:</strong> no unassigned chapters, all CWA dates filled, T1/T2 split within target (±5%). No action required for this subject.</p>
+        </div>
+
+      </div>
+
+      <div class="callout callout-slate">
+        <strong>Other status values you may see</strong>
+        <ul>
+          <li><span class="schip s-pending" style="font-size:10px">Pending</span> — T2 chapters not yet assigned (T2 chapter count = 0). Normal during T1 season; needs attention before T2 begins.</li>
+          <li><span class="schip s-milestone" style="font-size:10px">N/A</span> — Shown for Milestone classes (M-I, M-II, M-III) where CWA is not applicable.</li>
+        </ul>
+      </div>
+    </section>
+
+    <div class="sep"></div>
+
+    <!-- ════════ TARGET DISTRIBUTION ════════ -->
+    <section id="target-distribution">
+      <div class="sec-hdr">
+        <div class="sec-hdr-icon si-blue">⚖️</div>
+        <h3>Target T1/T2 Distribution</h3>
+      </div>
+      <p style="color:#64748b;font-size:12.5px;line-height:1.7;margin-bottom:16px">
+        The dashboard checks that each subject's chapters are correctly split between Term 1 and Term 2.
+        There are two targets depending on the class:
+      </p>
+
+      <div class="target-cards">
+        <div class="target-card">
+          <div class="classes">M-I, M-II, M-III, Class 1–9, Class 11</div>
+          <div class="target-bar">
+            <div class="t1-seg" style="width:60%">T1: 60%</div>
+            <div class="t2-seg" style="width:40%">T2: 40%</div>
+          </div>
+          <div class="target-note">
+            More chapters in T1 to account for the longer T1 season.<br>
+            <strong style="color:#60a5fa">Acceptable range: T1 = 55%–65%</strong> (±5% tolerance)
+          </div>
+        </div>
+        <div class="target-card">
+          <div class="classes">Class 10 &amp; Class 12</div>
+          <div class="target-bar">
+            <div class="t1-seg" style="width:50%">T1: 50%</div>
+            <div class="t2-seg" style="width:50%">T2: 50%</div>
+          </div>
+          <div class="target-note">
+            Equal split for board exam classes to ensure balanced revision time.<br>
+            <strong style="color:#60a5fa">Acceptable range: T1 = 45%–55%</strong> (±5% tolerance)
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-amber">
+        <strong>⚠ ±5% tolerance is built in</strong>
+        <p>A subject with T1 = 62% for a Class 7 subject is fine (within 55%–65%). A subject with T1 = 70% for Class 7 would flag as a <span class="schip s-dist" style="font-size:10px">↔ Distribution Issue</span>. The exact target percentages are also visible in the Action Plan remarks text for each flagged subject.</p>
+      </div>
+    </section>
+
+    <div class="sep"></div>
+
+    <!-- ════════ MILESTONE CLASSES ════════ -->
+    <section id="milestone-classes">
+      <div class="sec-hdr">
+        <div class="sec-hdr-icon si-green">🌱</div>
+        <h3>Milestone Classes (M-I, M-II, M-III)</h3>
+      </div>
+      <div class="callout callout-slate">
+        <strong>CWA is not applicable for Milestone classes</strong>
+        <p>
+          Classes M-I (Montessori I), M-II, and M-III follow a different assessment model — there is no CWA date requirement.<br><br>
+          On the dashboard:
+          <ul>
+            <li>The T1 CWA and T2 CWA columns in Subject Detail show <strong style="color:#64748b">NA</strong></li>
+            <li>The status check skips the "CWA Not Updated" condition — a Milestone class can only flag as "Mapping Incomplete" (unassigned chapters), "Distribution Issue", or "Complete"</li>
+            <li>The class header in Subject Detail shows <em style="color:#475569">Milestone class — CWA not applicable</em></li>
+          </ul>
+          You still need to ensure that all Milestone chapters are assigned to a Term and that the T1/T2 split meets the 60/40 target.
+        </p>
+      </div>
+    </section>
+
+    <div class="sep"></div>
+
+    <!-- ════════ WEEKLY ROUTINE ════════ -->
+    <section id="weekly-routine">
+      <div class="sec-hdr">
+        <div class="sec-hdr-icon si-amber">📅</div>
+        <h3>Weekly Compliance Routine</h3>
+      </div>
+      <p style="color:#64748b;font-size:12.5px;line-height:1.7;margin-bottom:14px">
+        Follow this routine every week to ensure all 6 schools are on track:
+      </p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h4>Open the dashboard and refresh</h4>
+            <p>Visit <code>course-progress.html</code> (linked from the Tools Hub). Click <strong>Refresh</strong> to pull the latest data from all 6 sheets.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h4>Check the global stats bar first</h4>
+            <p>Look at <strong>Unassigned Chapters</strong> and <strong>Critical Issues</strong>. If either is non-zero, these need to be resolved before anything else. Note which schools have a red card border.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h4>Open each school with issues</h4>
+            <p>Click on schools that show red issue pills. Go directly to the <strong>Action Plan</strong> tab. Start from the 🔴 Critical section at the top.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <h4>Follow up with teachers</h4>
+            <p>For each action item: note the Class, Subject, and Recommended Action. Contact the relevant teacher with specific instructions (the action text in the panel tells you exactly which column to update). Give a deadline — same day for Critical, 3–5 days for Attention.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <h4>Re-check after teacher updates</h4>
+            <p>Once the teacher says they've updated the sheet, refresh the dashboard and verify the issue has cleared. A subject should move from <span class="schip s-mapping" style="font-size:10px">✗ Mapping Incomplete</span> to <span class="schip s-cwa" style="font-size:10px">⚠ CWA Not Updated</span> to <span class="schip s-complete" style="font-size:10px">✓ Complete</span> over time.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">6</div>
+          <div class="step-body">
+            <h4>Before T2 begins (October 2026)</h4>
+            <p>Review all <strong>Plan Ahead</strong> items in every school. All subjects must have T2 chapters assigned (column F = "Term 2") before T2 teaching starts in November.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="checklist">
+        <div class="checklist-hdr">📋 Weekly Compliance Checklist</div>
+        <div class="checklist-item"><div class="cl-box"></div><div><strong>Unassigned chapters = 0 across all 6 schools</strong>Every chapter row in every class must have "Term 1" or "Term 2" in column F.</div></div>
+        <div class="checklist-item"><div class="cl-box"></div><div><strong>No overdue chapters without CWA dates</strong>If Start Date + Days Planned is in the past, CWA Date must be filled in.</div></div>
+        <div class="checklist-item"><div class="cl-box"></div><div><strong>Critical Issues count = 0</strong>All red action items resolved and verified on the dashboard.</div></div>
+        <div class="checklist-item"><div class="cl-box"></div><div><strong>T1 CWA % rising week-on-week for active classes</strong>CWA completion should improve as teachers complete chapters and update the sheet.</div></div>
+        <div class="checklist-item"><div class="cl-box"></div><div><strong>All active T1 subjects show Complete or CWA Not Updated status</strong>No subject should remain at "Mapping Incomplete" after the first two weeks of term.</div></div>
+        <div class="checklist-item"><div class="cl-box"></div><div><strong>[Oct 2026] T2 chapters assigned for all subjects</strong>Before T2 begins, every subject must have its T2 chapters tagged in column F.</div></div>
+      </div>
+    </section>
+
+    <div class="sep"></div>
+
+    <!-- ════════ WHAT TEACHERS MUST FILL ════════ -->
+    <section id="teacher-guide">
+      <div class="sec-hdr">
+        <div class="sec-hdr-icon si-green">✏️</div>
+        <h3>What Teachers Must Fill — Column by Column</h3>
+      </div>
+      <p style="color:#64748b;font-size:12.5px;line-height:1.7;margin-bottom:14px">
+        Share this with teachers when following up. All required columns are in the Google Sheet under their class tab.
+      </p>
+      <div class="tbl-wrap">
+        <table class="gtbl">
+          <thead><tr><th>Column</th><th>Field Name</th><th>What to enter</th><th>Dashboard uses it for</th><th>Priority</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>F</td>
+              <td>Term</td>
+              <td>Type exactly <code>Term 1</code> or <code>Term 2</code> for every chapter row</td>
+              <td>T1/T2 distribution %; Unassigned count; all status checks</td>
+              <td style="color:#ef4444">🔴 Mandatory — fill before anything else</td>
+            </tr>
+            <tr>
+              <td>H</td>
+              <td>Chapter Start Date</td>
+              <td>Enter the date teaching of that chapter begins (DD-Mon-YYYY format recommended)</td>
+              <td>Scheduled count; overdue detection</td>
+              <td style="color:#f59e0b">🟡 Fill when chapter is planned</td>
+            </tr>
+            <tr>
+              <td>I</td>
+              <td>No. of Days Planned</td>
+              <td>Enter the number of teaching days planned for that chapter</td>
+              <td>Overdue detection (Start Date + Days &lt; today without CWA = overdue)</td>
+              <td style="color:#f59e0b">🟡 Fill when chapter is planned</td>
+            </tr>
+            <tr>
+              <td>K</td>
+              <td>CWA Date</td>
+              <td>Enter the date the chapter's CWA (Course-Wise Assessment) was conducted — once the chapter is fully taught and assessed</td>
+              <td>CWA completion %; overdue flag cleared; status = Complete</td>
+              <td style="color:#ef4444">🔴 Mandatory — fill once chapter is done</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-red">
+        <strong>⚠ Common teacher mistakes that cause red flags</strong>
+        <ul>
+          <li>Leaving the Term column (F) blank — causes "Mapping Incomplete" for the subject</li>
+          <li>Typing "T1", "Term1", or "1" instead of "Term 1" — the dashboard won't recognise it and marks the row as unassigned</li>
+          <li>Forgetting to update column K (CWA Date) after completing a chapter — the chapter stays flagged as "not updated" and may become overdue</li>
+          <li>Using "Term 2/1" for shared chapters — this is ambiguous and can cause double-counting; assign to one term only</li>
+        </ul>
+      </div>
+    </section>
+
+    <div class="sep"></div>
+
+    <!-- ════════ TROUBLESHOOTING ════════ -->
+    <section id="troubleshoot">
+      <div class="sec-hdr">
+        <div class="sec-hdr-icon si-slate">🛠️</div>
+        <h3>Troubleshooting</h3>
+      </div>
+      <div class="tbl-wrap">
+        <table class="gtbl">
+          <thead><tr><th>Problem you see</th><th>Likely cause</th><th>Fix</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Yellow notice bar: "Some sheets couldn't be loaded"</td>
+              <td>One or more sheets are not set to "Anyone with the link → Viewer"</td>
+              <td>Open the affected Google Sheet → Share → General Access → change to "Anyone with the link" → Viewer → Done. Then Refresh the dashboard.</td>
+            </tr>
+            <tr>
+              <td>A school card stays on "Fetching data…" for &gt; 30 seconds</td>
+              <td>Network issue or all tabs of that school failed to load</td>
+              <td>Check your internet connection. Try clicking Refresh. If it persists, open the Google Sheet directly to verify it's accessible.</td>
+            </tr>
+            <tr>
+              <td>A class shows "Not available / skipped"</td>
+              <td>Tab name doesn't match exactly, or the tab has no Term data at all</td>
+              <td>Open the Google Sheet and verify the tab is named exactly: <code>M-I</code>, <code>M-II</code>, <code>M-III</code>, <code>Class 1</code> through <code>Class 12</code>. Capitalization and spaces matter.</td>
+            </tr>
+            <tr>
+              <td>All subjects in a class show 0 unassigned but status is still "Mapping Incomplete"</td>
+              <td>Data may not have refreshed yet after teacher edit</td>
+              <td>Click the Refresh button. Allow 10–15 seconds for all tabs to reload.</td>
+            </tr>
+            <tr>
+              <td>T1 CWA shows 0% for a class even though teacher says chapters are done</td>
+              <td>Teacher has not filled column K (CWA Date)</td>
+              <td>Ask teacher to open the sheet, go to the class tab, find all completed chapter rows, and enter the CWA date in column K. Then Refresh.</td>
+            </tr>
+            <tr>
+              <td>Overdue count (⚠) appears but teacher says the chapter was covered</td>
+              <td>CWA Date (column K) was not filled even though chapter is complete</td>
+              <td>Teacher must enter the actual CWA date in column K. The overdue flag disappears once K is filled.</td>
+            </tr>
+            <tr>
+              <td>Distribution Issue for a subject even though T1/T2 seems balanced</td>
+              <td>Some chapters still have blank Term (unassigned), reducing the denominator</td>
+              <td>Fix unassigned chapters first (column F). The distribution % recalculates automatically once all rows have a term.</td>
+            </tr>
+            <tr>
+              <td>Class 9 shows wrong column data (subjects look garbled)</td>
+              <td>Class 9 has an extra "Unit No." column that shifts standard columns</td>
+              <td>The dashboard handles this automatically via column header detection. If you see garbled data, the sheet headers in Class 9 may have been altered — check that row 2 headers match the standard template.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-blue">
+        <strong>ℹ Need further help?</strong>
+        <p>If the dashboard shows unexpected data after verifying all the above, contact the LMCS admin team. Include a screenshot of the issue and the name of the school and class where the problem appears.</p>
+      </div>
+    </section>
+
+    <div class="sep"></div>
+
+    <!-- ════════ QUICK REFERENCE ════════ -->
+    <section>
+      <div class="sec-hdr">
+        <div class="sec-hdr-icon si-green">⚡</div>
+        <h3>Quick Reference Card</h3>
+      </div>
+      <div class="tbl-wrap">
+        <table class="gtbl">
+          <thead><tr><th>Status chip</th><th>Means</th><th>Cause</th><th>Action column</th></tr></thead>
+          <tbody>
+            <tr><td><span class="schip s-mapping">✗ Mapping Incomplete</span></td><td>Unassigned chapters exist</td><td>Column F blank for some rows</td><td>Fix column F (Term)</td></tr>
+            <tr><td><span class="schip s-cwa">⚠ CWA Not Updated</span></td><td>CWA dates missing</td><td>Chapter done but column K not filled</td><td>Fill column K (CWA Date)</td></tr>
+            <tr><td><span class="schip s-dist">↔ Distribution Issue</span></td><td>T1/T2 split off-target</td><td>Too many/few chapters in one term</td><td>Reassign rows in column F</td></tr>
+            <tr><td><span class="schip s-complete">✓ Complete</span></td><td>All checks passed</td><td>—</td><td>No action needed</td></tr>
+            <tr><td><span class="schip s-pending">Pending</span></td><td>T2 not yet assigned</td><td>T2 chapter count = 0</td><td>Assign before T2 begins</td></tr>
+            <tr><td><span class="schip s-milestone">N/A</span></td><td>Milestone class, CWA not needed</td><td>M-I / M-II / M-III</td><td>Only check Term &amp; distribution</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tbl-wrap">
+        <table class="gtbl">
+          <thead><tr><th>Color</th><th>Completion level</th></tr></thead>
+          <tbody>
+            <tr><td><span style="color:#22c55e;font-weight:700">● Green</span></td><td>≥ 80% — on track</td></tr>
+            <tr><td><span style="color:#f59e0b;font-weight:700">● Amber</span></td><td>50–79% — needs attention</td></tr>
+            <tr><td><span style="color:#ef4444;font-weight:700">● Red</span></td><td>&lt; 50% — critical / action required</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tbl-wrap">
+        <table class="gtbl">
+          <thead><tr><th>Class group</th><th>T1 target</th><th>T2 target</th><th>Acceptable range</th></tr></thead>
+          <tbody>
+            <tr><td>M-I, M-II, M-III, Class 1–9, Class 11</td><td>60%</td><td>40%</td><td>T1: 55%–65%</td></tr>
+            <tr><td>Class 10, Class 12</td><td>50%</td><td>50%</td><td>T1: 45%–55%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div><!-- /content -->
+</div><!-- /layout -->
+
+<div class="footer">
+  La Montessori Chain of Schools &nbsp;·&nbsp; Internal Tools &nbsp;·&nbsp; Session 2026-27 &nbsp;·&nbsp;
+  <a href="index.html">Tools Hub</a> &nbsp;·&nbsp;
+  <a href="course-progress.html">Open Dashboard</a>
+</div>
+
+<script>
+// Highlight active nav link based on scroll position
+const sections = document.querySelectorAll('section[id], h3[id]');
+const navLinks  = document.querySelectorAll('.nav-link');
+const allAnchors = document.querySelectorAll('[id]');
+
+function onScroll() {
+  let current = '';
+  allAnchors.forEach(el => {
+    if (window.scrollY >= el.offsetTop - 80) current = el.id;
+  });
+  navLinks.forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+}
+window.addEventListener('scroll', onScroll, {passive:true});
+
+// Smooth scroll for nav links
+navLinks.forEach(link => {
+  link.addEventListener('click', e => {
+    const id = link.getAttribute('href').slice(1);
+    const el = document.getElementById(id);
+    if (el) { e.preventDefault(); el.scrollIntoView({behavior:'smooth', block:'start'}); }
+  });
+});
+</script>
+</body>
+</html>
