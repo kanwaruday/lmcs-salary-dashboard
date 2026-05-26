@@ -8,11 +8,9 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',sans-serif;background:#0d1117;color:#e2e8f0;min-height:100vh;font-size:12px}
-
-/* BG GRID */
 body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(34,197,94,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(34,197,94,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
 
-/* HEADER */
+/* ── HEADER ── */
 .hdr{position:relative;z-index:10;background:linear-gradient(135deg,#14532d,#166534 55%,#15803d);color:#fff;padding:9px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #166534}
 .hdr-brand{display:flex;align-items:center;gap:10px}
 .hdr-logo{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:7px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:800;font-size:13px;color:#fff;flex-shrink:0}
@@ -26,121 +24,192 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .btn-refresh:hover{background:rgba(255,255,255,.22)}
 .btn-refresh svg{width:11px;height:11px}
 
-/* CHIPS STRIP */
-.chips-strip{position:relative;z-index:1;background:#111827;border-bottom:1px solid #1e293b;padding:10px 20px;display:flex;gap:8px;overflow-x:auto}
+/* ── CHIPS STRIP ── */
+.chips-strip{position:relative;z-index:1;background:#111827;border-bottom:1px solid #1e293b;padding:10px 20px;display:flex;gap:8px;overflow-x:auto;align-items:stretch}
 .chip{background:#0d1321;border:1px solid #1e293b;border-radius:6px;padding:6px 14px;display:flex;flex-direction:column;gap:1px;min-width:106px;flex-shrink:0}
+.chip.alert{border-color:#7f1d1d;background:#1c0a0a}
+.chip.warn{border-color:#78350f;background:#1c1400}
 .chip-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:#475569;font-weight:700}
 .chip-val{font-family:'Poppins',sans-serif;font-size:16px;font-weight:800;line-height:1.1;color:#22c55e}
-.chip-val.amber{color:#f59e0b}
-.chip-val.muted{color:#64748b}
+.chip-val.red{color:#ef4444}.chip-val.amber{color:#f59e0b}.chip-val.muted{color:#64748b}
+.chip-sub{font-size:9px;color:#334155;margin-top:1px}
 
-/* NOTICE */
+/* ── NOTICE ── */
 .notice{position:relative;z-index:1;background:#1c1400;border:1px solid #78350f;color:#fbbf24;padding:7px 16px;font-size:11px;display:none;align-items:center;gap:8px;margin:12px 20px 0;border-radius:7px}
 
-/* MAIN */
+/* ── MAIN ── */
 .main{position:relative;z-index:1;padding:16px 20px;max-width:1440px;margin:0 auto}
-
-/* SECTION LABEL */
 .sec-lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#475569;margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .sec-lbl::after{content:'';flex:1;height:1px;background:#1e293b}
-.sec-badge{background:#052e16;color:#22c55e;border:1px solid #166534;padding:1px 8px;border-radius:20px;font-size:8.5px;font-weight:700}
+.sec-badge{padding:1px 8px;border-radius:20px;font-size:8.5px;font-weight:700}
+.sb-green{background:#052e16;color:#22c55e;border:1px solid #166534}
+.sb-red{background:#450a0a;color:#ef4444;border:1px solid #7f1d1d}
+.sb-amber{background:#1c1400;color:#f59e0b;border:1px solid #78350f}
 
-/* LEGEND */
 .legend{display:flex;align-items:center;gap:12px;font-size:10px;color:#475569;flex-wrap:wrap;margin-bottom:14px}
 .ld{display:flex;align-items:center;gap:5px}
 .ld-dot{width:8px;height:8px;border-radius:50%}
 
-/* SCHOOL GRID */
+/* ── SCHOOL GRID ── */
 .school-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
 
-/* SCHOOL CARD */
+/* ── SCHOOL CARD ── */
 .scard{background:#111827;border:1.5px solid #1e293b;border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .18s,transform .18s,box-shadow .18s;position:relative}
 .scard::before{content:'';position:absolute;inset:0;opacity:0;background:linear-gradient(135deg,rgba(34,197,94,.05),transparent);transition:opacity .18s;pointer-events:none}
 .scard:hover{transform:translateY(-2px);border-color:#22c55e;box-shadow:0 12px 32px rgba(34,197,94,.1)}
 .scard:hover::before{opacity:1}
 .scard.active{border-color:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.12)}
-
-/* CARD TOP */
-.scard-top{background:linear-gradient(135deg,#0d1a10,#111c14);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #1e293b}
+.scard.has-critical{border-color:#7f1d1d}
+.scard.has-critical:hover{border-color:#ef4444;box-shadow:0 12px 32px rgba(239,68,68,.12)}
+.scard-top{background:linear-gradient(135deg,#0d1a10,#111c14);padding:13px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #1e293b}
+.scard-meta{flex:1}
 .scard-name{font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;color:#f1f5f9}
 .scard-sub{font-size:10px;color:#475569;margin-top:2px}
+.scard-issues{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+.issue-pill{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px}
+.ip-red{background:#450a0a;color:#ef4444;border:1px solid #7f1d1d}
+.ip-amber{background:#1c1400;color:#f59e0b;border:1px solid #78350f}
+.ip-green{background:#052e16;color:#22c55e;border:1px solid #166534}
 
-/* DONUT */
+/* ── DONUT ── */
 .donut-wrap{position:relative;width:52px;height:52px;flex-shrink:0}
 .donut-wrap svg{transform:rotate(-90deg)}
 .d-bg{fill:none;stroke:#1e293b;stroke-width:5}
 .d-fill{fill:none;stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset 1s ease}
-.d-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;font-weight:800;line-height:1;color:#22c55e}
+.d-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;font-weight:800;line-height:1}
 .d-text small{font-size:7.5px;color:#475569;font-weight:600}
 
-/* CARD MID */
-.scard-mid{padding:13px 16px}
+/* ── PROGRESS ROW ── */
+.scard-mid{padding:12px 16px}
 .prog-row{margin-bottom:10px}
 .prog-row:last-child{margin-bottom:0}
 .prog-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
 .prog-left{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:#64748b}
 .term-chip{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;padding:1px 6px;border-radius:20px}
-.tc-1{background:#1e3a5f;color:#60a5fa}
-.tc-2{background:#2d1b69;color:#a78bfa}
+.tc-1{background:#1e3a5f;color:#60a5fa}.tc-2{background:#2d1b69;color:#a78bfa}
 .prog-pct{font-size:12px;font-weight:800}
 .prog-track{background:#0d1321;border-radius:99px;height:6px;overflow:hidden;border:1px solid #1a2234}
 .prog-fill{height:100%;border-radius:99px;transition:width 1s ease}
-
-/* CARD BOTTOM */
 .scard-bot{background:#0d1117;border-top:1px solid #1e293b;padding:9px 16px;display:flex;align-items:center;justify-content:space-between}
-.scard-info-txt{font-size:10px;color:#334155}
-.scard-info-txt strong{color:#475569}
+.scard-bot-txt{font-size:10px;color:#334155}
+.scard-bot-txt strong{color:#475569}
 .btn-view{background:#052e16;border:1px solid #166534;color:#22c55e;border-radius:5px;padding:4px 10px;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.2px;transition:background .12s}
 .btn-view:hover{background:#14532d}
 
-/* SKELETON */
+/* ── SKELETON ── */
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .skel{background:linear-gradient(90deg,#1e293b 25%,#263448 50%,#1e293b 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px}
 
-/* OVERLAY */
+/* ── OVERLAY ── */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:199;opacity:0;pointer-events:none;transition:opacity .28s}
 .overlay.on{opacity:1;pointer-events:all}
 
-/* DRILL PANEL */
-.drill{position:fixed;top:0;right:-660px;width:660px;height:100vh;background:#111827;z-index:200;display:flex;flex-direction:column;transition:right .3s cubic-bezier(.4,0,.2,1);border-left:1px solid #1e293b}
+/* ── DRILL PANEL ── */
+.drill{position:fixed;top:0;right:-720px;width:720px;height:100vh;background:#111827;z-index:200;display:flex;flex-direction:column;transition:right .3s cubic-bezier(.4,0,.2,1);border-left:1px solid #1e293b}
 .drill.open{right:0}
-.drill-hdr{background:linear-gradient(135deg,#14532d,#15803d);padding:16px 20px;display:flex;align-items:flex-start;gap:12px;flex-shrink:0}
+.drill-hdr{background:linear-gradient(135deg,#14532d,#15803d);padding:14px 20px;display:flex;align-items:flex-start;gap:12px;flex-shrink:0}
 .drill-hdr-info{flex:1}
 .drill-hdr h2{font-family:'Poppins',sans-serif;font-size:17px;font-weight:800;color:#fff}
 .drill-hdr p{font-size:10px;color:rgba(255,255,255,.6);margin-top:3px}
 .btn-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
 .btn-close:hover{background:rgba(255,255,255,.25)}
-.drill-pills{display:flex;gap:8px;padding:11px 20px;background:#0d1117;border-bottom:1px solid #1e293b;flex-shrink:0;flex-wrap:wrap}
+
+/* ── DRILL PILLS ── */
+.drill-pills{display:flex;gap:8px;padding:10px 20px;background:#0d1117;border-bottom:1px solid #1e293b;flex-shrink:0;flex-wrap:wrap}
 .dpill{background:#111827;border:1px solid #1e293b;border-radius:99px;padding:4px 12px;font-size:11px;font-weight:700}
 .dpill span{color:#475569;font-weight:500;margin-right:3px;font-size:10px}
-.drill-body{flex:1;overflow-y:auto;padding:16px 20px}
 
-/* CLASS TABLE */
+/* ── DRILL TABS ── */
+.drill-tabs{display:flex;background:#0f1117;border-bottom:1px solid #1e293b;padding:0 20px;gap:2px;flex-shrink:0}
+.dtab{padding:8px 14px;border:none;background:none;color:#64748b;cursor:pointer;font-family:'Poppins',sans-serif;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;border-bottom:2px solid transparent;transition:all .15s;display:flex;align-items:center;gap:6px}
+.dtab:hover{color:#94a3b8}
+.dtab.active{color:#22c55e;border-bottom-color:#22c55e}
+.dtab .tbadge{font-size:8.5px;font-weight:800;padding:1px 5px;border-radius:20px;background:#450a0a;color:#ef4444}
+.dtab .tbadge.warn{background:#1c1400;color:#f59e0b}
+
+/* ── DRILL BODY / PANELS ── */
+.drill-body{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.dt-panel{display:none;flex:1;overflow-y:auto;padding:16px 20px}
+.dt-panel.active{display:block}
+
+/* ── OVERVIEW TABLE ── */
 .ctbl{width:100%;border-collapse:collapse}
 .ctbl thead th{background:#0d1321;color:#475569;font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:8px 10px;text-align:left;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:1}
-.ctbl thead th:first-child{border-radius:7px 0 0 0}
-.ctbl thead th:last-child{border-radius:0 7px 0 0}
 .ctbl tbody tr{border-bottom:1px solid #0f172a;transition:background .1s}
 .ctbl tbody tr:last-child{border-bottom:none}
 .ctbl tbody tr:hover td{background:#0d1321}
 .ctbl td{padding:9px 10px;vertical-align:middle}
-
 .cls-badge{display:inline-block;font-family:'Poppins',sans-serif;font-size:11px;font-weight:700;background:#052e16;color:#22c55e;border:1px solid #166534;padding:2px 9px;border-radius:20px;white-space:nowrap}
 .mini-prog{display:flex;align-items:center;gap:7px}
 .mini-track{flex:1;height:5px;background:#0d1321;border-radius:99px;overflow:hidden;border:1px solid #1a2234}
 .mini-fill{height:100%;border-radius:99px;transition:width .8s ease}
-.mini-pct{font-size:11px;font-weight:800;width:34px;text-align:right}
+.mini-pct{font-size:11px;font-weight:800;width:32px;text-align:right}
 .mini-counts{font-size:9px;color:#334155;margin-top:2px}
-.ov-cell{font-family:'Poppins',sans-serif;font-size:14px;font-weight:800}
-
-/* STATUS CHIPS */
-.schip{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;white-space:nowrap;letter-spacing:.2px}
+.ov-cell{font-family:'Poppins',sans-serif;font-size:13px;font-weight:800}
+.schip{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;white-space:nowrap}
 .s-done{background:#052e16;color:#22c55e;border:1px solid #166534}
 .s-prog{background:#1c1400;color:#f59e0b;border:1px solid #78350f}
 .s-pend{background:#0d1321;color:#475569;border:1px solid #1e293b}
+.s-crit{background:#450a0a;color:#ef4444;border:1px solid #7f1d1d}
 .s-na{background:#0d1321;color:#334155;border:1px solid #1a2234}
 
-/* SCROLLBAR */
+/* ── OVERDUE BADGE ── */
+.overdue-badge{font-size:9px;font-weight:700;color:#ef4444;background:#450a0a;border:1px solid #7f1d1d;border-radius:20px;padding:1px 6px;white-space:nowrap}
+
+/* ── SUBJECT VIEW ── */
+.subj-section{margin-bottom:20px}
+.subj-sec-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.subj-cls-badge{font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;background:#052e16;color:#22c55e;border:1px solid #166534;padding:3px 12px;border-radius:20px}
+.subj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:8px}
+.subj-card{background:#0d1321;border:1px solid #1e293b;border-radius:8px;padding:10px 12px}
+.subj-card.crit{border-color:#7f1d1d;background:#1c0a0a}
+.subj-card.warn{border-color:#78350f;background:#1c1400}
+.subj-card.good{border-color:#166534;background:#0a1f10}
+.subj-name{font-family:'Poppins',sans-serif;font-size:10px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.subj-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.subj-term-row{margin-bottom:5px}
+.subj-term-lbl{display:flex;align-items:center;justify-content:space-between;font-size:9px;color:#475569;margin-bottom:3px}
+.subj-term-lbl span:last-child{font-weight:700;font-size:9.5px}
+.subj-track{background:#111827;border-radius:99px;height:4px;overflow:hidden}
+.subj-fill{height:100%;border-radius:99px;transition:width .8s ease}
+.subj-overdue{display:inline-block;margin-top:5px;font-size:8.5px;font-weight:700;color:#ef4444;background:#450a0a;border:1px solid #7f1d1d;border-radius:20px;padding:1px 5px}
+.subj-nodata{font-size:9px;color:#334155;font-style:italic;margin-top:4px}
+
+/* ── REMARKS / ACTION PLAN ── */
+.remarks-intro{background:#0d1321;border:1px solid #1e293b;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#64748b;line-height:1.6}
+.remarks-intro strong{color:#94a3b8;display:block;margin-bottom:4px;font-family:'Poppins',sans-serif;font-size:12px}
+
+.rem-group{margin-bottom:18px}
+.rem-group-hdr{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.rem-group-hdr::after{content:'';flex:1;height:1px}
+.rgh-red{color:#ef4444}.rgh-red::after{background:#7f1d1d}
+.rgh-amber{color:#f59e0b}.rgh-amber::after{background:#78350f}
+.rgh-blue{color:#60a5fa}.rgh-blue::after{background:#1e3a5f}
+.rgh-muted{color:#475569}.rgh-muted::after{background:#1e293b}
+
+.rem-item{background:#0d1321;border-radius:8px;padding:12px 14px;margin-bottom:8px;border-left:3px solid}
+.rem-item.crit{border-color:#ef4444;background:#1c0a0a}
+.rem-item.warn{border-color:#f59e0b;background:#1c1400}
+.rem-item.info{border-color:#3b82f6;background:#0c1a2e}
+.rem-item.good{border-color:#22c55e;background:#0a1f10}
+
+.rem-tags{display:flex;gap:5px;margin-bottom:7px;flex-wrap:wrap}
+.rtag{font-size:8.5px;font-weight:700;padding:2px 7px;border-radius:20px}
+.rtag-class{background:#052e16;color:#22c55e;border:1px solid #166534}
+.rtag-subj{background:#1e3a5f;color:#60a5fa;border:1px solid #1e3a8f}
+.rtag-crit{background:#450a0a;color:#ef4444;border:1px solid #7f1d1d}
+.rtag-warn{background:#1c1400;color:#f59e0b;border:1px solid #78350f}
+.rtag-info{background:#0c1a2e;color:#60a5fa;border:1px solid #1e3a5f}
+
+.rem-issue{font-size:11.5px;font-weight:600;color:#e2e8f0;margin-bottom:6px;line-height:1.4}
+.rem-action-hdr{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#475569;margin-bottom:3px}
+.rem-action{font-size:11px;color:#64748b;line-height:1.55}
+
+.no-remarks{text-align:center;padding:40px 20px;color:#334155}
+.no-remarks .icon{font-size:32px;margin-bottom:8px}
+.no-remarks p{font-size:12px;color:#475569}
+
+/* ── SCROLLBAR ── */
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:#0d1117}
 ::-webkit-scrollbar-thumb{background:#1e293b;border-radius:3px}
@@ -158,13 +227,13 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 </head>
 <body>
 
-<!-- ── HEADER ── -->
+<!-- ══════════ HEADER ══════════ -->
 <div class="hdr">
   <div class="hdr-brand">
     <div class="hdr-logo">LM</div>
     <div>
       <h1>LMCS — Course Progress Dashboard</h1>
-      <p>T1 &amp; T2 Live Tracking &nbsp;·&nbsp; Session 2026-27 &nbsp;·&nbsp; All 6 Schools &nbsp;·&nbsp; Confidential</p>
+      <p>Academic Coordinator View &nbsp;·&nbsp; T1 &amp; T2 Live Tracking &nbsp;·&nbsp; Session 2026-27 &nbsp;·&nbsp; All 6 Schools</p>
     </div>
   </div>
   <div class="hdr-right">
@@ -177,57 +246,84 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   </div>
 </div>
 
-<!-- ── CHIPS STRIP ── -->
+<!-- ══════════ CHIPS STRIP ══════════ -->
 <div class="chips-strip">
-  <div class="chip"><div class="chip-lbl">Schools</div><div class="chip-val muted">6</div></div>
+  <div class="chip"><div class="chip-lbl">Schools Tracked</div><div class="chip-val muted">6</div></div>
   <div class="chip"><div class="chip-lbl">Classes / School</div><div class="chip-val muted">15</div></div>
   <div class="chip"><div class="chip-lbl">Avg T1 Progress</div><div class="chip-val" id="cT1">—</div></div>
   <div class="chip"><div class="chip-lbl">Avg T2 Progress</div><div class="chip-val amber" id="cT2">—</div></div>
   <div class="chip"><div class="chip-lbl">Overall Progress</div><div class="chip-val" id="cOverall">—</div></div>
   <div class="chip"><div class="chip-lbl">Total Chapters</div><div class="chip-val muted" id="cChapters">—</div></div>
+  <div class="chip alert"><div class="chip-lbl">Critical Issues</div><div class="chip-val red" id="cCritical">—</div><div class="chip-sub">Needs immediate action</div></div>
+  <div class="chip warn"><div class="chip-lbl">Attention Items</div><div class="chip-val amber" id="cAttention">—</div><div class="chip-sub">Follow up required</div></div>
 </div>
 
-<!-- ── NOTICE ── -->
-<div class="notice" id="notice">⚠&nbsp; Some sheets couldn't be loaded. Open Google Sheets → Share → set to <strong>Anyone with the link → Viewer</strong>.</div>
+<!-- ══════════ NOTICE ══════════ -->
+<div class="notice" id="notice">⚠&nbsp; Some sheets couldn't be loaded. In Google Sheets → Share → set to <strong>Anyone with the link → Viewer</strong>.</div>
 
-<!-- ── MAIN ── -->
+<!-- ══════════ MAIN ══════════ -->
 <div class="main">
   <div class="sec-lbl">
     All Schools — Live Progress
-    <span class="sec-badge" id="loadedBadge">0 / 6 loaded</span>
+    <span class="sec-badge sb-green" id="loadedBadge">0 / 6 loaded</span>
+    <span class="sec-badge sb-red" id="critBadge" style="display:none"></span>
     <span></span>
   </div>
-
   <div class="legend">
     <div class="ld"><div class="ld-dot" style="background:#22c55e"></div>≥ 80% Complete</div>
     <div class="ld"><div class="ld-dot" style="background:#f59e0b"></div>50 – 79%</div>
-    <div class="ld"><div class="ld-dot" style="background:#ef4444"></div>&lt; 50%</div>
-    <div class="ld"><div class="ld-dot" style="background:#334155"></div>No data yet</div>
+    <div class="ld"><div class="ld-dot" style="background:#ef4444"></div>&lt; 50% / Overdue</div>
+    <div class="ld"><div class="ld-dot" style="background:#334155"></div>No data entered</div>
   </div>
-
   <div class="school-grid" id="schoolGrid"></div>
 </div>
 
-<!-- ── OVERLAY ── -->
+<!-- ══════════ OVERLAY ══════════ -->
 <div class="overlay" id="overlay" onclick="closeDrill()"></div>
 
-<!-- ── DRILL PANEL ── -->
+<!-- ══════════ DRILL PANEL ══════════ -->
 <div class="drill" id="drill">
+
+  <!-- Drill Header -->
   <div class="drill-hdr">
     <div class="drill-hdr-info">
       <h2 id="drillTitle">—</h2>
-      <p>Course Mapping T1 &amp; T2 &nbsp;·&nbsp; Session 2026-27 &nbsp;·&nbsp; Class-wise Breakdown</p>
+      <p>Course Mapping T1 &amp; T2 &nbsp;·&nbsp; Session 2026-27 &nbsp;·&nbsp; Academic Coordinator View</p>
     </div>
     <button class="btn-close" onclick="closeDrill()">✕</button>
   </div>
+
+  <!-- Summary Pills -->
   <div class="drill-pills" id="drillPills"></div>
-  <div class="drill-body" id="drillBody"></div>
+
+  <!-- Tabs -->
+  <div class="drill-tabs">
+    <button class="dtab active" id="tab-overview"  onclick="showDTab('overview',this)">Class Overview</button>
+    <button class="dtab"        id="tab-subjects"  onclick="showDTab('subjects',this)">By Subject</button>
+    <button class="dtab"        id="tab-remarks"   onclick="showDTab('remarks',this)">
+      Action Plan <span class="tbadge" id="tabBadgeCrit" style="display:none"></span>
+    </button>
+  </div>
+
+  <!-- Tab Panels -->
+  <div class="drill-body">
+
+    <!-- TAB 1: CLASS OVERVIEW -->
+    <div class="dt-panel active" id="dt-overview"></div>
+
+    <!-- TAB 2: BY SUBJECT -->
+    <div class="dt-panel" id="dt-subjects"></div>
+
+    <!-- TAB 3: ACTION PLAN -->
+    <div class="dt-panel" id="dt-remarks"></div>
+
+  </div>
 </div>
 
 <script>
-/* ════════════════════════════════════════════════
-   CONFIG — schools & tabs
-════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════════════════ */
 const SCHOOLS = [
   {name:'LMS 1', id:'1BorpCdePG7O6iZiwgGwNpWZBl7I1IGAT-OAh0fw2yMs'},
   {name:'LMS 2', id:'1ejXKsnK3a2kNGEboTs-yQ2d3Tpk3xG5JRtm9DAmiYXs'},
@@ -241,27 +337,43 @@ const TABS = [
   'Class 1','Class 2','Class 3','Class 4','Class 5','Class 6',
   'Class 7','Class 8','Class 9','Class 10','Class 11','Class 12'
 ];
-// Column indices (A=0 … K=10)
-const C = { TERM:5, DAYS:8, CWA:10 };
 
-/* ════════════════════════════════════════════════
+// Column indices (A=0 … N=13)
+const C = { SUBJECT:1, TERM:5, START_DATE:7, DAYS:8, CWA:10 };
+
+// Subject colours
+const SUBJ_STYLE = {
+  'English':           {bar:'#3b82f6', dot:'#3b82f6', bg:'tc-1'},
+  'Hindi':             {bar:'#a78bfa', dot:'#a78bfa', bg:'tc-2'},
+  'Math':              {bar:'#22c55e', dot:'#22c55e', bg:'sb-green'},
+  'General Awareness': {bar:'#f59e0b', dot:'#f59e0b', bg:''},
+  'Mathematics':       {bar:'#22c55e', dot:'#22c55e', bg:''},
+  'Science':           {bar:'#34d399', dot:'#34d399', bg:''},
+  'Social Studies':    {bar:'#fb923c', dot:'#fb923c', bg:''},
+  'Computer':          {bar:'#60a5fa', dot:'#60a5fa', bg:''},
+  'default':           {bar:'#94a3b8', dot:'#94a3b8', bg:''},
+};
+function subjStyle(name) { return SUBJ_STYLE[name] || SUBJ_STYLE['default']; }
+
+/* ═══════════════════════════════════════════════════════
    DATA STORE
-════════════════════════════════════════════════ */
-const store = {};
+═══════════════════════════════════════════════════════ */
+const store = {};   // store[schoolIdx][tabName] = { prog, subjects, remarks }
 let loadedCount = 0, errShown = false, activeIdx = null;
+let globalCritical = 0, globalAttention = 0;
 
-/* ════════════════════════════════════════════════
-   FETCH — Google gviz endpoint (no API key needed for public sheets)
-════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   FETCH + PARSE
+═══════════════════════════════════════════════════════ */
 async function fetchTab(sheetId, tab) {
   const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(tab)}`;
   const res  = await fetch(url, {cache:'no-cache'});
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const text = await res.text();
   const s = text.indexOf('{'), e = text.lastIndexOf('}');
-  if (s < 0 || e < 0) throw new Error('Unexpected response');
+  if (s < 0 || e < 0) throw new Error('Bad response');
   const data = JSON.parse(text.slice(s, e + 1));
-  if (data.status === 'error') throw new Error(data.errors?.[0]?.detailed_message || 'Sheet error');
+  if (data.status === 'error') throw new Error(data.errors?.[0]?.detailed_message || 'Error');
   return data.table;
 }
 
@@ -275,53 +387,160 @@ function parseRows(table) {
   ).filter(r => r.some(v => v !== ''));
 }
 
-/* ════════════════════════════════════════════════
-   PROGRESS CALCULATION
-   A chapter is complete when CWA Date (col K) is filled.
-   Only rows with Term 1/2 and Days Planned > 0 are counted.
-════════════════════════════════════════════════ */
-function calcProg(rows) {
-  const t1 = {total:0, done:0}, t2 = {total:0, done:0};
+function parseDate(str) {
+  if (!str || str === '') return null;
+  // "15-Apr-2026" or "15/Apr/2026"
+  const months = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+  const m1 = str.match(/^(\d{1,2})[\/-]([A-Za-z]{3,})[\/-](\d{4})$/);
+  if (m1) {
+    const mon = months[m1[2].toLowerCase().slice(0,3)];
+    if (mon !== undefined) return new Date(+m1[3], mon, +m1[1]);
+  }
+  // "2026-04-15"
+  const m2 = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m2) return new Date(+m2[1], +m2[2]-1, +m2[3]);
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/* ═══════════════════════════════════════════════════════
+   PROCESS ROWS — overall + per-subject + overdue
+═══════════════════════════════════════════════════════ */
+function processRows(rows) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const subjects = {};
+  const overall  = { t1:{total:0,done:0,overdue:0}, t2:{total:0,done:0,overdue:0} };
+
   for (const r of rows) {
     const term = (r[C.TERM] || '').toLowerCase();
     if (!term.includes('term')) continue;
-    if ((parseFloat(r[C.DAYS]) || 0) <= 0) continue;
-    const b = term.includes('1') ? t1 : term.includes('2') ? t2 : null;
-    if (!b) continue;
-    b.total++;
+    const days = parseFloat(r[C.DAYS]) || 0;
+    if (days <= 0) continue;
+
+    const rawSubj = (r[C.SUBJECT] || '').trim();
+    if (!rawSubj) continue;
+    if (!subjects[rawSubj]) subjects[rawSubj] = { t1:{total:0,done:0,overdue:0}, t2:{total:0,done:0,overdue:0} };
+
+    const isT1 = term.includes('1');
+    const b  = isT1 ? subjects[rawSubj].t1 : subjects[rawSubj].t2;
+    const ob = isT1 ? overall.t1 : overall.t2;
+    b.total++;  ob.total++;
+
     const cwa = (r[C.CWA] || '').trim();
-    if (cwa && cwa !== '0') b.done++;
+    if (cwa && cwa !== '0') {
+      b.done++; ob.done++;
+    } else {
+      const start = parseDate(r[C.START_DATE]);
+      if (start) {
+        const expectedEnd = new Date(start.getTime() + days * 86400000);
+        if (today > expectedEnd) { b.overdue++; ob.overdue++; }
+      }
+    }
   }
+
+  // Attach pct helper
   const pct = b => b.total > 0 ? Math.round(b.done / b.total * 100) : null;
-  return { t1: {...t1, pct: pct(t1)}, t2: {...t2, pct: pct(t2)} };
+  overall.t1.pct = pct(overall.t1);
+  overall.t2.pct = pct(overall.t2);
+  Object.values(subjects).forEach(s => { s.t1.pct = pct(s.t1); s.t2.pct = pct(s.t2); });
+
+  return { overall: { t1: overall.t1, t2: overall.t2 }, subjects };
 }
 
-function overallPct(p) {
-  const tot  = (p.t1.total || 0) + (p.t2.total || 0);
-  const done = (p.t1.done  || 0) + (p.t2.done  || 0);
-  return tot > 0 ? Math.round(done / tot * 100) : null;
+/* ═══════════════════════════════════════════════════════
+   GENERATE REMARKS — smart action items for AC
+═══════════════════════════════════════════════════════ */
+function generateRemarks(tabName, subjects) {
+  const remarks = [];
+
+  Object.entries(subjects).forEach(([subj, d]) => {
+    const {t1, t2} = d;
+    const noT1 = t1.total === 0;
+    const noT2 = t2.total === 0;
+
+    // ── CRITICAL: No data at all ──────────────────────────
+    if (noT1 && noT2) {
+      remarks.push({ level:'critical', subject:subj,
+        issue: `No chapter mapping data entered for ${subj}`,
+        action: `Immediately reach out to the ${subj} teacher and share the Course Mapping template. Ensure all chapters, start dates, and planned days are filled before the next review cycle.` });
+      return;
+    }
+
+    // ── CRITICAL: T1 chapters overdue ────────────────────
+    if (t1.overdue > 0) {
+      remarks.push({ level:'critical', subject:subj,
+        issue: `${t1.overdue} T1 chapter${t1.overdue > 1 ? 's have' : ' has'} passed planned completion — CWA date not recorded`,
+        action: `Follow up with the ${subj} teacher immediately. Confirm whether the chapters were completed and ask them to update CWA dates. If chapters are delayed, discuss a revised plan and adjust the mapping sheet accordingly.` });
+    }
+
+    // ── CRITICAL: T2 chapters overdue ────────────────────
+    if (t2.overdue > 0) {
+      remarks.push({ level:'critical', subject:subj,
+        issue: `${t2.overdue} T2 chapter${t2.overdue > 1 ? 's have' : ' has'} passed planned completion — CWA date not recorded`,
+        action: `Follow up with the ${subj} teacher on T2 chapter completion. If chapters were taught, CWA dates must be updated. If behind schedule, discuss how to cover remaining syllabus before board/assessment dates.` });
+    }
+
+    // ── ATTENTION: T1 incomplete, none overdue ────────────
+    if (!noT1 && t1.done < t1.total && t1.overdue === 0) {
+      const pending = t1.total - t1.done;
+      remarks.push({ level:'attention', subject:subj,
+        issue: `T1: ${pending} chapter${pending > 1 ? 's' : ''} not yet marked complete (${t1.done}/${t1.total} done)`,
+        action: `Remind the ${subj} teacher to update CWA dates as chapters are completed. This may be in progress — verify during the next class observation or check-in meeting.` });
+    }
+
+    // ── ATTENTION: T2 incomplete, none overdue ────────────
+    if (!noT2 && t2.done < t2.total && t2.overdue === 0) {
+      const pending = t2.total - t2.done;
+      remarks.push({ level:'attention', subject:subj,
+        issue: `T2: ${pending} chapter${pending > 1 ? 's' : ''} not yet marked complete (${t2.done}/${t2.total} done)`,
+        action: `Monitor the ${subj} teacher's T2 progress. Check if chapters are on schedule based on the planned dates. Update the status in the next monthly review.` });
+    }
+
+    // ── INFO: T2 mapping not yet entered ─────────────────
+    if (noT2 && !noT1) {
+      remarks.push({ level:'info', subject:subj,
+        issue: `T2 chapter mapping not yet entered for ${subj}`,
+        action: `Ensure the ${subj} teacher maps T2 chapters before Term 2 begins (typically Nov 2026). Include chapter names, planned start dates, and days allocated per chapter.` });
+    }
+  });
+
+  // Sort: critical → attention → info
+  const order = {critical:0, attention:1, info:2};
+  remarks.sort((a, b) => (order[a.level]||9) - (order[b.level]||9));
+  return remarks;
 }
 
-/* ════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════
    COLOR HELPERS
-════════════════════════════════════════════════ */
-function col(pct) {
+═══════════════════════════════════════════════════════ */
+function col(pct, overdue) {
+  if (overdue > 0) return {stroke:'#ef4444', text:'#ef4444', bar:'#ef4444', chip:'s-crit'};
   if (pct === null) return {stroke:'#334155', text:'#475569', bar:'#334155', chip:'s-na'};
-  if (pct >= 80)    return {stroke:'#22c55e', text:'#22c55e', bar:'#22c55e', chip:'s-done'};
-  if (pct >= 50)    return {stroke:'#f59e0b', text:'#f59e0b', bar:'#f59e0b', chip:'s-prog'};
-  return              {stroke:'#ef4444', text:'#ef4444', bar:'#ef4444', chip:'s-pend'};
+  if (pct >= 80)   return {stroke:'#22c55e', text:'#22c55e', bar:'#22c55e', chip:'s-done'};
+  if (pct >= 50)   return {stroke:'#f59e0b', text:'#f59e0b', bar:'#f59e0b', chip:'s-prog'};
+  return             {stroke:'#ef4444', text:'#ef4444', bar:'#ef4444', chip:'s-crit'};
 }
 const fmt = pct => pct === null ? '—' : pct + '%';
 
-/* ════════════════════════════════════════════════
-   DONUT RING
-════════════════════════════════════════════════ */
-function donut(pct) {
-  const r = 20, circ = +(2 * Math.PI * r).toFixed(2);
-  const c   = col(pct);
-  const off = pct !== null ? +(circ * (1 - pct / 100)).toFixed(2) : circ;
-  return `
-  <div class="donut-wrap">
+function overallPct(p) {
+  const tot  = (p.t1.total||0) + (p.t2.total||0);
+  const done = (p.t1.done||0)  + (p.t2.done||0);
+  return tot > 0 ? Math.round(done/tot*100) : null;
+}
+
+function statusChip(pct, overdue) {
+  if (overdue > 0) return `<span class="schip s-crit">&#9888; ${overdue} Overdue</span>`;
+  if (pct === null) return `<span class="schip s-na">No data</span>`;
+  if (pct === 100)  return `<span class="schip s-done">&#10003; Complete</span>`;
+  if (pct > 0)      return `<span class="schip s-prog">In Progress</span>`;
+  return `<span class="schip s-pend">Pending</span>`;
+}
+
+function donut(pct, overdue) {
+  const r = 20, circ = +(2*Math.PI*r).toFixed(2);
+  const c   = col(pct, overdue||0);
+  const off = pct !== null ? +(circ*(1-pct/100)).toFixed(2) : circ;
+  return `<div class="donut-wrap">
     <svg width="52" height="52" viewBox="0 0 52 52">
       <circle class="d-bg" cx="26" cy="26" r="${r}"/>
       <circle class="d-fill" cx="26" cy="26" r="${r}"
@@ -333,54 +552,71 @@ function donut(pct) {
   </div>`;
 }
 
-/* ════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════
    RENDER — School card
-════════════════════════════════════════════════ */
+═══════════════════════════════════════════════════════ */
+function getSchoolIssues(idx) {
+  let critical = 0, attention = 0;
+  TABS.forEach(tab => {
+    const d = store[idx]?.[tab];
+    if (!d) return;
+    d.remarks.forEach(r => { if (r.level==='critical') critical++; else if (r.level==='attention') attention++; });
+  });
+  return {critical, attention};
+}
+
 function progRow(label, chipCls, p) {
-  const c = col(p.pct);
-  return `
-  <div class="prog-row">
+  const c = col(p.pct, p.overdue||0);
+  return `<div class="prog-row">
     <div class="prog-top">
       <div class="prog-left">
         <span class="term-chip ${chipCls}">${label}</span>
-        ${p.total > 0 ? `${p.done}/${p.total} chapters` : '<span style="color:#334155">—</span>'}
+        ${p.total > 0 ? `${p.done}/${p.total} chapters${p.overdue > 0 ? ` &nbsp;<span style="color:#ef4444;font-size:9px;font-weight:700">&#9888; ${p.overdue} overdue</span>` : ''}` : '<span style="color:#334155">No data</span>'}
       </div>
       <span class="prog-pct" style="color:${c.text}">${fmt(p.pct)}</span>
     </div>
     <div class="prog-track">
-      <div class="prog-fill" style="width:${p.pct ?? 0}%;background:${c.bar}"></div>
+      <div class="prog-fill" style="width:${p.pct??0}%;background:${c.bar}"></div>
     </div>
   </div>`;
 }
 
 function renderCard(s, idx, agg) {
+  const issues = getSchoolIssues(idx);
   const op  = overallPct(agg);
   const tot = agg.t1.total + agg.t2.total;
-  return `
-  <div class="scard" id="card-${idx}" onclick="openDrill(${idx})">
+  const overdueAll = (agg.t1.overdue||0) + (agg.t2.overdue||0);
+  const hasCrit = issues.critical > 0 || overdueAll > 0;
+
+  const issuePills = [];
+  if (issues.critical > 0) issuePills.push(`<span class="issue-pill ip-red">&#9888; ${issues.critical} critical</span>`);
+  if (issues.attention > 0) issuePills.push(`<span class="issue-pill ip-amber">&#8226; ${issues.attention} attention</span>`);
+  if (!hasCrit && issues.attention === 0 && tot > 0) issuePills.push(`<span class="issue-pill ip-green">&#10003; All mapped</span>`);
+
+  return `<div class="scard ${hasCrit?'has-critical':''}" id="card-${idx}" onclick="openDrill(${idx})">
     <div class="scard-top">
-      <div>
+      <div class="scard-meta">
         <div class="scard-name">${s.name}</div>
         <div class="scard-sub">Course Mapping T1 &amp; T2 &nbsp;·&nbsp; 2026-27</div>
+        ${issuePills.length ? `<div class="scard-issues">${issuePills.join('')}</div>` : ''}
       </div>
-      ${donut(op)}
+      ${donut(op, overdueAll)}
     </div>
     <div class="scard-mid">
       ${progRow('Term 1','tc-1',agg.t1)}
       ${progRow('Term 2','tc-2',agg.t2)}
     </div>
     <div class="scard-bot">
-      <span class="scard-info-txt"><strong>${tot.toLocaleString('en-IN')}</strong> chapters tracked</span>
-      <button class="btn-view">View Classes →</button>
+      <span class="scard-bot-txt"><strong>${tot.toLocaleString('en-IN')}</strong> chapters tracked</span>
+      <button class="btn-view">View Details →</button>
     </div>
   </div>`;
 }
 
 function renderSkeleton(s, idx) {
-  return `
-  <div class="scard" id="card-${idx}" style="pointer-events:none">
+  return `<div class="scard" id="card-${idx}" style="pointer-events:none">
     <div class="scard-top" style="min-height:78px">
-      <div>
+      <div class="scard-meta">
         <div class="scard-name">${s.name}</div>
         <div class="scard-sub" style="color:#334155">Fetching data…</div>
       </div>
@@ -394,73 +630,198 @@ function renderSkeleton(s, idx) {
   </div>`;
 }
 
-/* ════════════════════════════════════════════════
-   RENDER — Drill-down panel
-════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   RENDER — Drill TAB 1: Class Overview
+═══════════════════════════════════════════════════════ */
+function renderOverviewTab(idx) {
+  const d = store[idx] || {};
+
+  const mBar = (p) => {
+    const c = col(p.pct, p.overdue||0);
+    return `<div class="mini-prog">
+      <div class="mini-track"><div class="mini-fill" style="width:${p.pct??0}%;background:${c.bar}"></div></div>
+      <span class="mini-pct" style="color:${c.text}">${fmt(p.pct)}</span>
+    </div>
+    <div class="mini-counts">${p.done}/${p.total} ch.${p.overdue>0?` &nbsp;<span style="color:#ef4444;font-weight:700">&#9888;${p.overdue}</span>`:''}</div>`;
+  };
+
+  const rows = TABS.map(tab => {
+    const x = d[tab];
+    if (!x) return `<tr><td><span class="cls-badge">${tab}</span></td><td colspan="4"><span class="schip s-na">Not available</span></td></tr>`;
+    const {overall} = x;
+    const op2 = overallPct(overall);
+    const ov  = (overall.t1.overdue||0) + (overall.t2.overdue||0);
+    const oc  = col(op2, ov);
+    return `<tr>
+      <td><span class="cls-badge">${tab}</span></td>
+      <td>${mBar(overall.t1)}</td>
+      <td>${mBar(overall.t2)}</td>
+      <td class="ov-cell" style="color:${oc.text}">${fmt(op2)}</td>
+      <td>${statusChip(op2, ov)}</td>
+    </tr>`;
+  });
+
+  return `<table class="ctbl">
+    <thead><tr><th>Class</th><th>Term 1</th><th>Term 2</th><th>Overall</th><th>Status</th></tr></thead>
+    <tbody>${rows.join('')}</tbody>
+  </table>`;
+}
+
+/* ═══════════════════════════════════════════════════════
+   RENDER — Drill TAB 2: By Subject
+═══════════════════════════════════════════════════════ */
+function renderSubjectsTab(idx) {
+  const d = store[idx] || {};
+  const sections = [];
+
+  TABS.forEach(tab => {
+    const x = d[tab];
+    const subjects = x ? x.subjects : {};
+    const subjectNames = Object.keys(subjects);
+
+    const cards = subjectNames.length > 0 ? subjectNames.map(subj => {
+      const sd = subjects[subj];
+      const st = subjStyle(subj);
+      const ov = (sd.t1.overdue||0) + (sd.t2.overdue||0);
+      const cardClass = ov > 0 ? 'crit' : (sd.t1.done < sd.t1.total && sd.t1.total > 0) ? 'warn' : (sd.t1.pct === 100 && (sd.t2.pct === 100 || sd.t2.total === 0)) ? 'good' : '';
+      const t1c = col(sd.t1.pct, sd.t1.overdue||0);
+      const t2c = col(sd.t2.pct, sd.t2.overdue||0);
+      return `<div class="subj-card ${cardClass}">
+        <div class="subj-name" style="color:${st.dot}">
+          ${subj}
+          <div class="subj-dot" style="background:${st.dot}"></div>
+        </div>
+        <div class="subj-term-row">
+          <div class="subj-term-lbl"><span>T1</span><span style="color:${t1c.text}">${fmt(sd.t1.pct)}</span></div>
+          <div class="subj-track"><div class="subj-fill" style="width:${sd.t1.pct??0}%;background:${st.bar}"></div></div>
+          <div style="font-size:9px;color:#334155;margin-top:2px">${sd.t1.done}/${sd.t1.total} ch.</div>
+        </div>
+        <div class="subj-term-row">
+          <div class="subj-term-lbl"><span>T2</span><span style="color:${t2c.text}">${fmt(sd.t2.pct)}</span></div>
+          <div class="subj-track"><div class="subj-fill" style="width:${sd.t2.pct??0}%;background:${st.bar}"></div></div>
+          <div style="font-size:9px;color:#334155;margin-top:2px">${sd.t2.done}/${sd.t2.total} ch.</div>
+        </div>
+        ${ov > 0 ? `<div class="subj-overdue">&#9888; ${ov} overdue</div>` : ''}
+        ${sd.t1.total === 0 && sd.t2.total === 0 ? `<div class="subj-nodata">No data entered</div>` : ''}
+      </div>`;
+    }).join('') : `<div style="font-size:11px;color:#334155;padding:8px 0">No data available for this class</div>`;
+
+    sections.push(`<div class="subj-section">
+      <div class="subj-sec-hdr">
+        <span class="subj-cls-badge">${tab}</span>
+      </div>
+      <div class="subj-grid">${cards}</div>
+    </div>`);
+  });
+
+  return sections.join('');
+}
+
+/* ═══════════════════════════════════════════════════════
+   RENDER — Drill TAB 3: Action Plan (Remarks)
+═══════════════════════════════════════════════════════ */
+function renderRemarksTab(idx) {
+  const d = store[idx] || {};
+  const allRemarks = [];
+
+  TABS.forEach(tab => {
+    const x = d[tab];
+    if (!x) return;
+    x.remarks.forEach(r => allRemarks.push({...r, tab}));
+  });
+
+  allRemarks.sort((a,b) => ({critical:0,attention:1,info:2}[a.level]||9) - ({critical:0,attention:1,info:2}[b.level]||9));
+
+  if (allRemarks.length === 0) {
+    return `<div class="no-remarks">
+      <div class="icon">✅</div>
+      <p>No action items found.<br>All data appears to be complete and up to date.</p>
+    </div>`;
+  }
+
+  const groups = [
+    { key:'critical', label:'🔴 Critical — Immediate Action Required', cls:'rgh-red',
+      items: allRemarks.filter(r => r.level === 'critical') },
+    { key:'attention', label:'🟡 Attention — Follow Up This Week', cls:'rgh-amber',
+      items: allRemarks.filter(r => r.level === 'attention') },
+    { key:'info', label:'ℹ️ Plan Ahead — Before Term 2 Begins', cls:'rgh-blue',
+      items: allRemarks.filter(r => r.level === 'info') },
+  ];
+
+  const intro = `<div class="remarks-intro">
+    <strong>📋 Academic Coordinator — Action Plan</strong>
+    This section lists issues found in the course mapping data for <strong>${SCHOOLS[idx]?.name}</strong>,
+    sorted by urgency. Use this as your weekly check-in guide. Critical issues should be resolved
+    within 2 working days; Attention items within the week; Info items before T2 starts in Nov 2026.
+  </div>`;
+
+  const groupHTML = groups.filter(g => g.items.length > 0).map(g => {
+    const items = g.items.map(r => {
+      const levelTag = r.level === 'critical'
+        ? `<span class="rtag rtag-crit">&#9888; Critical</span>`
+        : r.level === 'attention'
+        ? `<span class="rtag rtag-warn">&#8226; Attention</span>`
+        : `<span class="rtag rtag-info">&#8505; Plan Ahead</span>`;
+      return `<div class="rem-item ${r.level==='critical'?'crit':r.level==='attention'?'warn':'info'}">
+        <div class="rem-tags">
+          ${levelTag}
+          <span class="rtag rtag-class">${r.tab}</span>
+          <span class="rtag rtag-subj">${r.subject}</span>
+        </div>
+        <div class="rem-issue">${r.issue}</div>
+        <div class="rem-action-hdr">&#10148; Recommended Action</div>
+        <div class="rem-action">${r.action}</div>
+      </div>`;
+    }).join('');
+    return `<div class="rem-group">
+      <div class="rem-group-hdr ${g.cls}">${g.label}</div>
+      ${items}
+    </div>`;
+  }).join('');
+
+  return intro + groupHTML;
+}
+
+/* ═══════════════════════════════════════════════════════
+   DRILL PANEL — Open / Close / Tab Switch
+═══════════════════════════════════════════════════════ */
 function openDrill(idx) {
   activeIdx = idx;
   const d = store[idx] || {};
   document.getElementById('drillTitle').textContent = SCHOOLS[idx].name;
 
   // Summary pills
-  let t1T=0,t1D=0,t2T=0,t2D=0;
-  TABS.forEach(t => {const x=d[t];if(!x)return;t1T+=x.prog.t1.total;t1D+=x.prog.t1.done;t2T+=x.prog.t2.total;t2D+=x.prog.t2.done;});
-  const t1p  = t1T > 0 ? Math.round(t1D/t1T*100) : null;
-  const t2p  = t2T > 0 ? Math.round(t2D/t2T*100) : null;
-  const opp  = (t1T+t2T) > 0 ? Math.round((t1D+t2D)/(t1T+t2T)*100) : null;
-  const pill = (lbl, val) =>
-    `<div class="dpill" style="color:${col(val).text}"><span>${lbl}</span>${fmt(val)}</div>`;
-
-  document.getElementById('drillPills').innerHTML =
-    pill('T1', t1p) + pill('T2', t2p) + pill('Overall', opp) +
-    `<div class="dpill"><span>Chapters</span>${(t1T+t2T).toLocaleString('en-IN')}</div>`;
-
-  // Class table
-  const mBar = p => {
-    const c = col(p.pct);
-    return `
-      <div class="mini-prog">
-        <div class="mini-track"><div class="mini-fill" style="width:${p.pct??0}%;background:${c.bar}"></div></div>
-        <span class="mini-pct" style="color:${c.text}">${fmt(p.pct)}</span>
-      </div>
-      <div class="mini-counts">${p.done}/${p.total} ch.</div>`;
-  };
-  const statusChip = pct => {
-    if (pct === null)  return `<span class="schip s-na">No data</span>`;
-    if (pct === 100)   return `<span class="schip s-done">&#10003; Complete</span>`;
-    if (pct > 0)       return `<span class="schip s-prog">In Progress</span>`;
-    return `<span class="schip s-pend">Pending</span>`;
-  };
-
-  const rows = TABS.map(tab => {
-    const x = d[tab];
-    if (!x) return `
-      <tr>
-        <td><span class="cls-badge">${tab}</span></td>
-        <td colspan="4"><span class="schip s-na">Not available</span></td>
-      </tr>`;
-    const {prog} = x;
-    const op2 = overallPct(prog);
-    const oc  = col(op2);
-    return `
-      <tr>
-        <td><span class="cls-badge">${tab}</span></td>
-        <td>${mBar(prog.t1)}</td>
-        <td>${mBar(prog.t2)}</td>
-        <td class="ov-cell" style="color:${oc.text}">${fmt(op2)}</td>
-        <td>${statusChip(op2)}</td>
-      </tr>`;
+  let t1T=0,t1D=0,t2T=0,t2D=0,critCnt=0,attCnt=0;
+  TABS.forEach(tab => {
+    const x = d[tab]; if (!x) return;
+    t1T+=x.overall.t1.total; t1D+=x.overall.t1.done;
+    t2T+=x.overall.t2.total; t2D+=x.overall.t2.done;
+    x.remarks.forEach(r => { if(r.level==='critical') critCnt++; else if(r.level==='attention') attCnt++; });
   });
+  const t1p = t1T > 0 ? Math.round(t1D/t1T*100) : null;
+  const t2p = t2T > 0 ? Math.round(t2D/t2T*100) : null;
+  const opp = (t1T+t2T) > 0 ? Math.round((t1D+t2D)/(t1T+t2T)*100) : null;
+  const pill = (lbl,val,color) =>
+    `<div class="dpill" style="color:${color||col(val).text}"><span>${lbl}</span>${fmt(val)}</div>`;
+  document.getElementById('drillPills').innerHTML =
+    pill('T1',t1p) + pill('T2',t2p) + pill('Overall',opp) +
+    `<div class="dpill"><span>Chapters</span>${(t1T+t2T).toLocaleString('en-IN')}</div>` +
+    (critCnt > 0 ? `<div class="dpill" style="color:#ef4444;border-color:#7f1d1d;background:#1c0a0a"><span>Critical</span>${critCnt}</div>` : '') +
+    (attCnt  > 0 ? `<div class="dpill" style="color:#f59e0b;border-color:#78350f;background:#1c1400"><span>Attention</span>${attCnt}</div>` : '');
 
-  document.getElementById('drillBody').innerHTML = `
-    <table class="ctbl">
-      <thead>
-        <tr>
-          <th>Class</th><th>Term 1</th><th>Term 2</th><th>Overall</th><th>Status</th>
-        </tr>
-      </thead>
-      <tbody>${rows.join('')}</tbody>
-    </table>`;
+  // Remarks tab badge
+  const badge = document.getElementById('tabBadgeCrit');
+  if (critCnt > 0) { badge.textContent = critCnt; badge.className='tbadge'; badge.style.display='inline'; }
+  else if (attCnt > 0) { badge.textContent = attCnt; badge.className='tbadge warn'; badge.style.display='inline'; }
+  else { badge.style.display='none'; }
+
+  // Render all 3 tabs
+  document.getElementById('dt-overview').innerHTML = renderOverviewTab(idx);
+  document.getElementById('dt-subjects').innerHTML = renderSubjectsTab(idx);
+  document.getElementById('dt-remarks').innerHTML  = renderRemarksTab(idx);
+
+  // Reset to overview tab
+  showDTab('overview', document.getElementById('tab-overview'));
 
   document.getElementById('drill').classList.add('open');
   document.getElementById('overlay').classList.add('on');
@@ -475,80 +836,102 @@ function closeDrill() {
   document.querySelectorAll('.scard').forEach(c => c.classList.remove('active'));
 }
 
-/* ════════════════════════════════════════════════
-   STATS BAR UPDATE
-════════════════════════════════════════════════ */
-function updateStats() {
-  let t1T=0,t1D=0,t2T=0,t2D=0;
-  Object.values(store).forEach(d =>
-    TABS.forEach(t => {const x=d[t];if(!x)return;t1T+=x.prog.t1.total;t1D+=x.prog.t1.done;t2T+=x.prog.t2.total;t2D+=x.prog.t2.done;})
-  );
-  const pct = (d,t) => t > 0 ? Math.round(d/t*100)+'%' : '—';
-  document.getElementById('cT1').textContent      = pct(t1D, t1T);
-  document.getElementById('cT2').textContent      = pct(t2D, t2T);
-  document.getElementById('cOverall').textContent = pct(t1D+t2D, t1T+t2T);
-  document.getElementById('cChapters').textContent = (t1T+t2T).toLocaleString('en-IN');
-  document.getElementById('loadedBadge').textContent = `${loadedCount} / 6 loaded`;
+function showDTab(name, btn) {
+  document.querySelectorAll('.dt-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.dtab').forEach(t => t.classList.remove('active'));
+  document.getElementById('dt-' + name).classList.add('active');
+  btn.classList.add('active');
 }
 
-/* ════════════════════════════════════════════════
-   LOAD ONE SCHOOL (all 15 tabs in parallel)
-════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   GLOBAL STATS BAR UPDATE
+═══════════════════════════════════════════════════════ */
+function updateStats() {
+  let t1T=0,t1D=0,t2T=0,t2D=0;
+  globalCritical = 0; globalAttention = 0;
+
+  Object.values(store).forEach(d =>
+    TABS.forEach(tab => {
+      const x = d[tab]; if (!x) return;
+      t1T+=x.overall.t1.total; t1D+=x.overall.t1.done;
+      t2T+=x.overall.t2.total; t2D+=x.overall.t2.done;
+      x.remarks.forEach(r => { if(r.level==='critical') globalCritical++; else if(r.level==='attention') globalAttention++; });
+    })
+  );
+
+  const pct = (d,t) => t > 0 ? Math.round(d/t*100)+'%' : '—';
+  document.getElementById('cT1').textContent       = pct(t1D,t1T);
+  document.getElementById('cT2').textContent       = pct(t2D,t2T);
+  document.getElementById('cOverall').textContent  = pct(t1D+t2D,t1T+t2T);
+  document.getElementById('cChapters').textContent = (t1T+t2T).toLocaleString('en-IN');
+  document.getElementById('cCritical').textContent = globalCritical > 0 ? globalCritical : '0';
+  document.getElementById('cAttention').textContent= globalAttention > 0 ? globalAttention : '0';
+  document.getElementById('loadedBadge').textContent = `${loadedCount} / 6 loaded`;
+
+  const critBadge = document.getElementById('critBadge');
+  if (globalCritical > 0) {
+    critBadge.textContent = `${globalCritical} Critical Issues`;
+    critBadge.style.display = 'inline';
+  } else { critBadge.style.display = 'none'; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   LOAD ONE SCHOOL — all 15 tabs in parallel
+═══════════════════════════════════════════════════════ */
 async function loadSchool(idx) {
   const s = SCHOOLS[idx];
   const results = await Promise.allSettled(TABS.map(t => fetchTab(s.id, t)));
   store[idx] = {};
-  let t1T=0,t1D=0,t2T=0,t2D=0, anyErr=false;
+  let t1T=0,t1D=0,t1O=0,t2T=0,t2D=0,t2O=0,anyErr=false;
 
   TABS.forEach((tab, i) => {
     const r = results[i];
     if (r.status === 'fulfilled') {
-      const rows = parseRows(r.value);
-      const prog = calcProg(rows);
-      store[idx][tab] = {prog};
-      t1T+=prog.t1.total; t1D+=prog.t1.done;
-      t2T+=prog.t2.total; t2D+=prog.t2.done;
+      const rows    = parseRows(r.value);
+      const {overall, subjects} = processRows(rows);
+      const remarks = generateRemarks(tab, subjects);
+      store[idx][tab] = {overall, subjects, remarks};
+      t1T+=overall.t1.total; t1D+=overall.t1.done; t1O+=(overall.t1.overdue||0);
+      t2T+=overall.t2.total; t2D+=overall.t2.done; t2O+=(overall.t2.overdue||0);
     } else {
       anyErr = true;
-      console.warn(`${s.name} / ${tab}:`, r.reason?.message);
+      console.warn(`${s.name}/${tab}:`, r.reason?.message);
     }
   });
 
-  if (anyErr && !errShown) {
-    errShown = true;
-    document.getElementById('notice').style.display = 'flex';
-  }
+  if (anyErr && !errShown) { errShown=true; document.getElementById('notice').style.display='flex'; }
 
   const agg = {
-    t1: {total:t1T, done:t1D, pct: t1T>0 ? Math.round(t1D/t1T*100) : null},
-    t2: {total:t2T, done:t2D, pct: t2T>0 ? Math.round(t2D/t2T*100) : null},
+    t1: {total:t1T, done:t1D, overdue:t1O, pct: t1T>0 ? Math.round(t1D/t1T*100) : null},
+    t2: {total:t2T, done:t2D, overdue:t2O, pct: t2T>0 ? Math.round(t2D/t2T*100) : null},
   };
 
   const el = document.getElementById(`card-${idx}`);
   if (el) el.outerHTML = renderCard(s, idx, agg);
   loadedCount++;
-  if (activeIdx === idx) openDrill(idx);
+  if (activeIdx === idx) openDrill(idx); // refresh if drill open
   updateStats();
 }
 
-/* ════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════
    INIT / RELOAD
-════════════════════════════════════════════════ */
+═══════════════════════════════════════════════════════ */
 function reload() {
   Object.keys(store).forEach(k => delete store[k]);
-  loadedCount = 0; errShown = false;
+  loadedCount = 0; errShown = false; globalCritical = 0; globalAttention = 0;
   init();
 }
 
 function init() {
-  document.getElementById('schoolGrid').innerHTML =
-    SCHOOLS.map((s, i) => renderSkeleton(s, i)).join('');
+  document.getElementById('schoolGrid').innerHTML = SCHOOLS.map((s,i) => renderSkeleton(s,i)).join('');
   document.getElementById('lastUpdated').textContent =
     new Date().toLocaleString('en-IN', {dateStyle:'medium', timeStyle:'short'});
-  ['cT1','cT2','cOverall','cChapters'].forEach(id => document.getElementById(id).textContent = '—');
+  ['cT1','cT2','cOverall','cChapters','cCritical','cAttention'].forEach(id =>
+    document.getElementById(id).textContent = '—');
   document.getElementById('notice').style.display = 'none';
+  document.getElementById('critBadge').style.display = 'none';
   document.getElementById('loadedBadge').textContent = '0 / 6 loaded';
-  Promise.all(SCHOOLS.map((_, i) => loadSchool(i)));
+  Promise.all(SCHOOLS.map((_,i) => loadSchool(i)));
 }
 
 init();
