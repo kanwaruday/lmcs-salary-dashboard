@@ -54,18 +54,24 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .card-amber::before{background:linear-gradient(135deg,rgba(245,158,11,.05),transparent)}
 .card-amber:hover::before{opacity:1}
 
+.card-red{border-color:#7f1d1d}.card-red:hover{border-color:#ef4444;box-shadow:0 12px 32px rgba(239,68,68,.12)}
+.card-red::before{background:linear-gradient(135deg,rgba(239,68,68,.06),transparent)}
+.card-red:hover::before{opacity:1}
+
 /* CARD INNER */
 .card-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px}
 .ci-blue{background:rgba(59,130,246,.15)}
 .ci-indigo{background:rgba(99,102,241,.15)}
 .ci-green{background:rgba(34,197,94,.12)}
 .ci-amber{background:rgba(245,158,11,.12)}
+.ci-red{background:rgba(239,68,68,.12)}
 
 .card-top{display:flex;align-items:center;gap:10px}
 .card-badge{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:2px 7px;border-radius:20px;margin-left:auto;flex-shrink:0}
 .badge-live{background:#052e16;color:#22c55e;border:1px solid #166534}
 .badge-admin{background:#1e1b4b;color:#a5b4fc;border:1px solid #4338ca}
 .badge-ref{background:#1c1400;color:#fbbf24;border:1px solid #92400e}
+.badge-doc{background:#3f0c0c;color:#fca5a5;border:1px solid #991b1b}
 
 .card-title{font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;color:#f1f5f9;line-height:1.3}
 .card-desc{font-size:11px;color:#64748b;line-height:1.55;flex:1}
@@ -212,6 +218,57 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 
   </div>
 
+  <!-- SCHOOL BYE LAWS -->
+  <div class="sec-lbl">School Bye Laws</div>
+  <div class="cards">
+
+    <a href="bye-laws/index.html" class="card card-red">
+      <div class="card-top">
+        <div class="card-icon ci-red">📜</div>
+        <div class="card-badge badge-doc">2026</div>
+      </div>
+      <div>
+        <div class="card-title">LMCS Bye Laws 2026</div>
+        <div class="card-desc">Full index of all bye-law documents — abbreviations, vision &amp; mission, student CoC, employee CoC and administrative CoC.</div>
+      </div>
+      <div class="card-footer">
+        <span class="card-url">bye-laws/index.html</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="bye-laws/student-code-of-conduct/index.html" class="card card-red">
+      <div class="card-top">
+        <div class="card-icon ci-red">🧑‍🎓</div>
+        <div class="card-badge badge-doc">Student</div>
+      </div>
+      <div>
+        <div class="card-title">Student Code of Conduct</div>
+        <div class="card-desc">Starting at LMS, transport &amp; attendance, fees, behaviour &amp; uniform, academic tips, examination rules and FAQ.</div>
+      </div>
+      <div class="card-footer">
+        <span class="card-url">bye-laws/student-code-of-conduct/</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="bye-laws/employee-code-of-conduct/index.html" class="card card-red">
+      <div class="card-top">
+        <div class="card-icon ci-red">👩‍🏫</div>
+        <div class="card-badge badge-doc">Employee</div>
+      </div>
+      <div>
+        <div class="card-title">Employee Code of Conduct</div>
+        <div class="card-desc">HR &amp; appointments, service rules, job roles, leaves, fines, transport fees, school rules and examination process.</div>
+      </div>
+      <div class="card-footer">
+        <span class="card-url">bye-laws/employee-code-of-conduct/</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+  </div>
+
   <!-- QUICK LINKS -->
   <div class="quick-strip">
     <span class="qs-label">Quick Access</span>
@@ -220,6 +277,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <a href="admin.html#log" class="qs-link"><span class="qs-dot" style="background:#f59e0b"></span>Change Log</a>
     <a href="course-mapping-progress.html" class="qs-link"><span class="qs-dot" style="background:#22c55e"></span>Course Mapping Progress</a>
     <a href="guide.html" class="qs-link"><span class="qs-dot" style="background:#f59e0b"></span>Coordinator Guide</a>
+    <a href="bye-laws/index.html" class="qs-link"><span class="qs-dot" style="background:#ef4444"></span>Bye Laws 2026</a>
   </div>
 
 </div>
