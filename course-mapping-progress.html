@@ -255,6 +255,41 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 ::-webkit-scrollbar-thumb{background:#1e293b;border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:#334155}
 
+/* ─────────────────────────────────────
+   SUBJECT FILTER PANEL
+───────────────────────────────────── */
+.view-nav{justify-content:space-between}
+.filter-wrap{position:relative;display:flex;align-items:center;padding:0 14px;flex-shrink:0}
+.filter-btn{display:flex;align-items:center;gap:6px;background:none;border:1px solid #1e293b;border-radius:7px;color:#64748b;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Poppins',sans-serif;letter-spacing:.2px;white-space:nowrap}
+.filter-btn:hover{border-color:#334155;color:#94a3b8;background:#111827}
+.filter-btn.has-excl{border-color:#78350f;color:#f59e0b;background:#1c1400}
+.filter-cnt{font-size:9px;font-weight:800;background:#7f1d1d;color:#ef4444;padding:1px 6px;border-radius:20px}
+.filter-panel{position:absolute;top:calc(100% + 6px);right:0;width:300px;max-height:400px;background:#111827;border:1px solid #1e293b;border-radius:10px;box-shadow:0 16px 40px rgba(0,0,0,.7);z-index:50;display:none;flex-direction:column}
+.filter-panel.open{display:flex}
+.fp-hdr{padding:11px 14px;border-bottom:1px solid #1e293b;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.fp-hdr-left{font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;color:#f1f5f9}
+.fp-hdr-left small{font-weight:400;font-size:10px;color:#475569;font-family:'Inter',sans-serif;display:block;margin-top:1px}
+.fp-restore{background:none;border:none;color:#475569;font-size:10px;font-weight:600;cursor:pointer;padding:3px 7px;border-radius:5px;border:1px solid #1e293b;transition:all .13s}
+.fp-restore:hover{color:#94a3b8;border-color:#334155}
+.fp-search-wrap{padding:8px 12px;border-bottom:1px solid #0f172a;flex-shrink:0}
+.fp-search{width:100%;background:#0d1321;border:1px solid #1e293b;border-radius:6px;padding:5px 10px;color:#e2e8f0;font-size:11px;font-family:'Inter',sans-serif;outline:none;transition:border-color .13s}
+.fp-search:focus{border-color:#334155}
+.fp-search::placeholder{color:#334155}
+.fp-list{overflow-y:auto;padding:4px 0;flex:1}
+.fp-label{display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;transition:background .1s;user-select:none}
+.fp-label:hover{background:#0d1321}
+.fp-label input[type=checkbox]{width:14px;height:14px;accent-color:#22c55e;flex-shrink:0;cursor:pointer}
+.fp-label-txt{font-size:11.5px;color:#94a3b8;flex:1;line-height:1.3}
+.fp-label.excluded .fp-label-txt{color:#475569;text-decoration:line-through}
+.fp-empty{padding:14px;text-align:center;font-size:11px;color:#334155}
+.fp-footer{padding:8px 14px;border-top:1px solid #1e293b;font-size:10px;color:#334155;line-height:1.55;flex-shrink:0}
+
+/* Exclusion banner */
+.excl-banner{position:relative;z-index:1;background:#1c1400;border-bottom:1px solid #78350f;padding:6px 20px;font-size:11px;color:#f59e0b;display:none;align-items:center;gap:10px;flex-shrink:0}
+.excl-banner-txt{flex:1}
+.excl-banner button{background:none;border:none;color:#f59e0b;font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;transition:color .13s}
+.excl-banner button:hover{color:#fbbf24}
+
 @media(max-width:640px){
   .school-grid{grid-template-columns:1fr}
   .schools-view,.sp-body .stp,.sv-matrix,.sv-overview{padding:12px 14px}
@@ -288,13 +323,37 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 
 <!-- ══════════ VIEW NAV ══════════ -->
 <div class="view-nav">
-  <button class="vnav-tab active" id="vt-schools" onclick="navigate('#schools')">
-    🏫 &nbsp;Schools
-    <span class="vcnt" id="vcnt-crit"></span>
-  </button>
-  <button class="vnav-tab" id="vt-subjects" onclick="navigate('#subjects')">
-    📚 &nbsp;By Subject
-  </button>
+  <div style="display:flex">
+    <button class="vnav-tab active" id="vt-schools" onclick="navigate('#schools')">
+      🏫 &nbsp;Schools
+      <span class="vcnt" id="vcnt-crit"></span>
+    </button>
+    <button class="vnav-tab" id="vt-subjects" onclick="navigate('#subjects')">
+      📚 &nbsp;By Subject
+    </button>
+  </div>
+  <!-- Subject exclusion filter -->
+  <div class="filter-wrap" id="filterWrap">
+    <button class="filter-btn" id="filterBtn" onclick="toggleFilterPanel(event)">
+      ⚙ Filter Subjects
+      <span class="filter-cnt" id="filterCnt" style="display:none">0</span>
+    </button>
+    <div class="filter-panel" id="filterPanel">
+      <div class="fp-hdr">
+        <div class="fp-hdr-left">
+          Filter Subjects
+          <small>Uncheck to exclude from all calculations</small>
+        </div>
+        <button class="fp-restore" onclick="restoreAllSubjects()">Restore all</button>
+      </div>
+      <div class="fp-search-wrap">
+        <input class="fp-search" type="search" placeholder="Search subjects…"
+          oninput="renderFilterList(this.value)" autocomplete="off">
+      </div>
+      <div class="fp-list" id="fpList"></div>
+      <div class="fp-footer">Changes apply instantly across all views and persist on refresh.</div>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════ CHIPS STRIP ══════════ -->
@@ -310,6 +369,13 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 
 <!-- ══════════ NOTICE ══════════ -->
 <div class="notice" id="notice">⚠&nbsp; Some sheets couldn't be loaded. In Google Sheets → Share → set to <strong>Anyone with the link → Viewer</strong>.</div>
+
+<!-- ══════════ EXCLUSION BANNER ══════════ -->
+<div class="excl-banner" id="exclBanner">
+  <span class="excl-banner-txt" id="exclBannerTxt"></span>
+  <button onclick="toggleFilterPanel(event)">Edit filters</button>
+  <button onclick="restoreAllSubjects()">Restore all</button>
+</div>
 
 <!-- ══════════ APP ══════════ -->
 <div id="app"></div>
@@ -694,7 +760,9 @@ function getIssues(idx) {
   let critical=0,attention=0;
   TABS.forEach(tab => {
     const d = store[idx]?.[tab]; if (!d) return;
-    d.remarks.forEach(r => { if(r.level==='critical') critical++; else if(r.level==='attention') attention++; });
+    d.remarks
+      .filter(r => !excludedSubjects.has(r.subject))
+      .forEach(r => { if(r.level==='critical') critical++; else if(r.level==='attention') attention++; });
   });
   return {critical,attention};
 }
@@ -751,7 +819,8 @@ function renderCard(s, idx, agg) {
 
 function updateSchoolCard(idx, agg) {
   const el = document.getElementById(`card-${idx}`);
-  if (el) el.outerHTML = renderCard(SCHOOLS[idx], idx, agg);
+  // Always render with filtered agg so exclusion changes reflect immediately
+  if (el) el.outerHTML = renderCard(SCHOOLS[idx], idx, agg ?? schoolAggWithout(idx));
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -769,14 +838,17 @@ function renderSchoolPage(idx) {
     return;
   }
 
-  // Aggregate for pills
+  // Aggregate for pills — use filtered aggregates (respects exclusions)
   let total=0,unassigned=0,t1T=0,t1C=0,t2T=0,t2C=0,critCnt=0,attCnt=0;
   TABS.forEach(tab => {
     const x=d[tab]; if (!x) return;
-    total+=x.agg.total; unassigned+=x.agg.unassigned;
-    t1T+=x.agg.t1.total; t1C+=x.agg.t1.cwa;
-    t2T+=x.agg.t2.total; t2C+=x.agg.t2.cwa;
-    x.remarks.forEach(r => { if(r.level==='critical') critCnt++; else if(r.level==='attention') attCnt++; });
+    const a = aggWithout(x);
+    total+=a.total; unassigned+=a.unassigned;
+    t1T+=a.t1.total; t1C+=a.t1.cwa;
+    t2T+=a.t2.total; t2C+=a.t2.cwa;
+    x.remarks
+      .filter(r => !excludedSubjects.has(r.subject))
+      .forEach(r => { if(r.level==='critical') critCnt++; else if(r.level==='attention') attCnt++; });
   });
   const t1p = t1T>0 ? Math.round(t1C/t1T*100) : null;
   const t2p = t2T>0 ? Math.round(t2C/t2T*100) : null;
@@ -841,11 +913,13 @@ function renderOverviewTab(idx) {
   const rows = TABS.map(tab => {
     const x = d[tab];
     if (!x) return `<tr><td><span class="cls-badge">${tab}</span></td><td colspan="6" style="color:#334155;font-size:11px">Not available / skipped</td></tr>`;
-    const {agg,isMilestone} = x;
+    const {isMilestone} = x;
+    const agg = aggWithout(x);  // respect exclusions
     const complAll = (agg.t1.total+agg.t2.total)>0 ? Math.round((agg.t1.cwa+agg.t2.cwa)/(agg.t1.total+agg.t2.total)*100) : null;
+    const inclSubjects = x.subjOrder.filter(s => !excludedSubjects.has(s));
     const wst = worstStatus([
-      ...Object.values(x.subjects).map(s=>s.t1Status),
-      ...Object.values(x.subjects).map(s=>s.t2Status)
+      ...inclSubjects.map(s=>x.subjects[s].t1Status),
+      ...inclSubjects.map(s=>x.subjects[s].t2Status)
     ]);
     return `<tr>
       <td><span class="cls-badge">${tab}</span></td>
@@ -880,7 +954,8 @@ function renderSubjectsTab(idx) {
       inner = `<div style="padding:8px 0;font-size:11px;color:#334155">Not available or skipped (no Term data)</div>`;
     } else {
       const {subjects,subjOrder,isMilestone} = x;
-      const rows = subjOrder.map(subj => {
+      const inclOrder = subjOrder.filter(s => !excludedSubjects.has(s));
+      const rows = inclOrder.map(subj => {
         const s = subjects[subj];
         const cwaCellT1 = isMilestone ? `<td class="num-cell" style="color:#334155">NA</td>` : `<td class="num-cell" style="color:${barColor(s.t1.complPct!==null?Math.round(s.t1.complPct*100):null)}">${s.t1.cwa}</td>`;
         const cwaCellT2 = isMilestone ? `<td class="num-cell" style="color:#334155">NA</td>` : `<td class="num-cell" style="color:${barColor(s.t2.complPct!==null?Math.round(s.t2.complPct*100):null)}">${s.t2.cwa}</td>`;
@@ -927,7 +1002,10 @@ function renderSubjectsTab(idx) {
 function renderRemarksTab(idx) {
   const d = store[idx] || {};
   const all = [];
-  TABS.forEach(tab => { const x=d[tab]; if(!x) return; x.remarks.forEach(r=>all.push({...r,tab})); });
+  TABS.forEach(tab => {
+    const x=d[tab]; if(!x) return;
+    x.remarks.filter(r => !excludedSubjects.has(r.subject)).forEach(r=>all.push({...r,tab}));
+  });
   all.sort((a,b)=>({critical:0,attention:1,info:2}[a.level]||9)-({critical:0,attention:1,info:2}[b.level]||9));
 
   if (!all.length) return `<div class="no-remarks"><div class="icon">✅</div>
@@ -976,7 +1054,9 @@ let svSearchQuery = '';
 
 function renderSubjectView(selectedSubject) {
   const app = document.getElementById('app');
-  const subjects = getSortedSubjects(svSearchQuery);
+  // Only show non-excluded subjects in the chip selector
+  const subjects = getSortedSubjects(svSearchQuery).filter(s => !excludedSubjects.has(s));
+  const exclCount = excludedSubjects.size;
 
   const chipsHTML = subjects.length
     ? subjects.map(s => {
@@ -993,7 +1073,7 @@ function renderSubjectView(selectedSubject) {
             oninput="onSvSearch(this.value)" autocomplete="off">
           <button class="sv-clear ${svSearchQuery?'show':''}" onclick="clearSvSearch()">✕</button>
         </div>
-        <span class="sv-filter-hint">${subjects.length} subject${subjects.length!==1?'s':''} found · Click to drill in</span>
+        <span class="sv-filter-hint">${subjects.length} subject${subjects.length!==1?'s':''} shown${exclCount?` · <span style="color:#f59e0b">${exclCount} excluded</span>`:''} · Click to drill in</span>
       </div>
       <div class="sv-chips" id="svChips">${chipsHTML}</div>
     </div>`;
@@ -1007,11 +1087,12 @@ function renderSubjectView(selectedSubject) {
 
 function onSvSearch(val) {
   svSearchQuery = val;
-  const subjects = getSortedSubjects(val);
+  const subjects = getSortedSubjects(val).filter(s => !excludedSubjects.has(s));
+  const exclCount = excludedSubjects.size;
   const clearBtn = document.querySelector('.sv-clear');
   if (clearBtn) clearBtn.classList.toggle('show', !!val);
   const hintEl = document.querySelector('.sv-filter-hint');
-  if (hintEl) hintEl.textContent = `${subjects.length} subject${subjects.length!==1?'s':''} found · Click to drill in`;
+  if (hintEl) hintEl.innerHTML = `${subjects.length} subject${subjects.length!==1?'s':''} shown${exclCount?` · <span style="color:#f59e0b">${exclCount} excluded</span>`:''} · Click to drill in`;
   const chipsEl = document.getElementById('svChips');
   const sel = currentRoute.subject;
   if (chipsEl) chipsEl.innerHTML = subjects.length
@@ -1031,7 +1112,8 @@ function selectSubject(subj) {
 
 /* ── Subject overview: all subjects × schools table ── */
 function renderSubjectOverview() {
-  const subjects = getSortedSubjects(svSearchQuery);
+  // Only show subjects that are NOT excluded
+  const subjects = getSortedSubjects(svSearchQuery).filter(s => !excludedSubjects.has(s));
   if (!subjects.length) return `<div style="padding:48px 24px;text-align:center;color:#334155;font-size:13px">Loading subjects…</div>`;
 
   const loaded = SCHOOLS.filter((_,i) => !!store[i]);
@@ -1179,6 +1261,172 @@ function escHtml(str) {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   SUBJECT EXCLUSIONS
+   Persisted in localStorage. Excluded subjects are removed from
+   all aggregate calculations and views — only the filter panel
+   shows them (so you can re-include them).
+═══════════════════════════════════════════════════════════ */
+const EXCL_KEY = 'lmcs_excluded_subjects';
+const excludedSubjects = new Set(
+  JSON.parse(localStorage.getItem(EXCL_KEY) || '[]')
+);
+
+function saveExclusions() {
+  localStorage.setItem(EXCL_KEY, JSON.stringify([...excludedSubjects]));
+}
+
+/* Recompute aggregate for one tab, skipping excluded subjects */
+function aggWithout(tabData) {
+  let total=0, unassigned=0;
+  const t1={total:0,sched:0,cwa:0,overdue:0};
+  const t2={total:0,sched:0,cwa:0,overdue:0};
+  tabData.subjOrder.filter(s => !excludedSubjects.has(s)).forEach(subj => {
+    const s = tabData.subjects[subj];
+    total += s.total; unassigned += s.unassigned;
+    ['total','sched','cwa','overdue'].forEach(k => { t1[k]+=s.t1[k]; t2[k]+=s.t2[k]; });
+  });
+  return {
+    total, unassigned,
+    t1:{...t1, distPct:total>0?t1.total/total:0, complPct:t1.total>0?t1.cwa/t1.total:null},
+    t2:{...t2, distPct:total>0?t2.total/total:0, complPct:t2.total>0?t2.cwa/t2.total:null},
+  };
+}
+
+/* Recompute aggregate across all tabs for a school */
+function schoolAggWithout(idx) {
+  let total=0, unassigned=0;
+  const t1={total:0,sched:0,cwa:0,overdue:0};
+  const t2={total:0,sched:0,cwa:0,overdue:0};
+  TABS.forEach(tab => {
+    const x = store[idx]?.[tab]; if (!x) return;
+    const a = aggWithout(x);
+    total += a.total; unassigned += a.unassigned;
+    ['total','sched','cwa','overdue'].forEach(k => { t1[k]+=a.t1[k]; t2[k]+=a.t2[k]; });
+  });
+  return {
+    total, unassigned,
+    t1:{...t1, distPct:total>0?t1.total/total:0, complPct:t1.total>0?t1.cwa/t1.total:null},
+    t2:{...t2, distPct:total>0?t2.total/total:0, complPct:t2.total>0?t2.cwa/t2.total:null},
+  };
+}
+
+/* Toggle one subject's exclusion and refresh everything */
+function toggleSubject(subj) {
+  if (excludedSubjects.has(subj)) excludedSubjects.delete(subj);
+  else excludedSubjects.add(subj);
+  saveExclusions();
+  applyExclusionChange();
+}
+
+function restoreAllSubjects() {
+  excludedSubjects.clear();
+  saveExclusions();
+  applyExclusionChange();
+}
+
+/* Re-render whatever is currently on screen after an exclusion change */
+function applyExclusionChange() {
+  updateBanner();
+  updateStats();
+  renderFilterList();        // refresh checklist without closing the panel
+
+  if (currentRoute.view === 'schools') {
+    SCHOOLS.forEach((_, i) => {
+      if (store[i]) updateSchoolCard(i, schoolAggWithout(i));
+    });
+  } else if (currentRoute.view === 'school') {
+    renderSchoolPage(currentRoute.idx);
+  } else if (currentRoute.view === 'subjects') {
+    // If the currently-selected subject is now excluded, drop to overview
+    const sel = currentRoute.subject;
+    if (sel && excludedSubjects.has(sel)) navigate('#subjects');
+    else renderSubjectView(sel);
+  }
+}
+
+/* Show / update the exclusion banner */
+function updateBanner() {
+  const banner = document.getElementById('exclBanner');
+  const txt    = document.getElementById('exclBannerTxt');
+  const cnt    = excludedSubjects.size;
+  if (!banner) return;
+  if (cnt === 0) {
+    banner.style.display = 'none';
+  } else {
+    const names = [...excludedSubjects].join(', ');
+    txt.textContent = `⚠ ${cnt} subject${cnt>1?'s':''} excluded from all calculations: ${names}`;
+    banner.style.display = 'flex';
+  }
+}
+
+/* Update the filter button badge */
+function updateFilterBadge() {
+  const cnt    = excludedSubjects.size;
+  const btn    = document.getElementById('filterBtn');
+  const cntEl  = document.getElementById('filterCnt');
+  if (!btn || !cntEl) return;
+  btn.classList.toggle('has-excl', cnt > 0);
+  cntEl.textContent    = cnt;
+  cntEl.style.display  = cnt > 0 ? 'inline' : 'none';
+}
+
+/* Toggle filter panel open/close */
+function toggleFilterPanel(e) {
+  e?.stopPropagation();
+  const panel = document.getElementById('filterPanel');
+  if (!panel) return;
+  const opening = !panel.classList.contains('open');
+  panel.classList.toggle('open', opening);
+  if (opening) {
+    renderFilterList();
+    // Close on outside click
+    setTimeout(() => document.addEventListener('click', closePanelOutside, {once:true}), 0);
+  }
+}
+
+function closePanelOutside(e) {
+  const wrap = document.getElementById('filterWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('filterPanel')?.classList.remove('open');
+  } else {
+    // Click was inside — re-attach listener
+    document.addEventListener('click', closePanelOutside, {once:true});
+  }
+}
+
+/* Render (or refresh) the checklist inside the filter panel */
+function renderFilterList(query = '') {
+  const list = document.getElementById('fpList');
+  if (!list) return;
+  updateFilterBadge();
+
+  const q = query.toLowerCase().trim();
+  const all = getSortedSubjects('').filter(s => !q || s.toLowerCase().includes(q));
+
+  if (!all.length) {
+    list.innerHTML = `<div class="fp-empty">${subjectRegistry.size ? 'No subjects match.' : 'Loading subjects…'}</div>`;
+    return;
+  }
+
+  // Excluded at top, then included — both alphabetical
+  const excl = all.filter(s =>  excludedSubjects.has(s));
+  const incl = all.filter(s => !excludedSubjects.has(s));
+
+  const row = (s, isExcl) => {
+    const safeId = `fp-${s.replace(/\W/g,'_')}`;
+    return `<label class="fp-label ${isExcl?'excluded':''}" for="${safeId}">
+      <input type="checkbox" id="${safeId}" ${isExcl?'':'checked'}
+        onchange="toggleSubject('${escHtml(s)}')">
+      <span class="fp-label-txt">${escHtml(s)}</span>
+    </label>`;
+  };
+
+  list.innerHTML =
+    (excl.length ? `<div style="padding:6px 14px 2px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#7f1d1d">Excluded</div>${excl.map(s=>row(s,true)).join('')}<div style="height:1px;background:#1e293b;margin:4px 0"></div>` : '') +
+    incl.map(s => row(s, false)).join('') ;
+}
+
+/* ═══════════════════════════════════════════════════════════
    GLOBAL STATS
 ═══════════════════════════════════════════════════════════ */
 const store = {};
@@ -1189,10 +1437,16 @@ function updateStats() {
   globalCritical=0; globalAttention=0;
   Object.values(store).forEach(d => TABS.forEach(tab => {
     const x=d[tab]; if(!x) return;
-    t1T+=x.agg.t1.total; t1C+=x.agg.t1.cwa;
-    t2T+=x.agg.t2.total; t2C+=x.agg.t2.cwa;
-    unassigned+=x.agg.unassigned;
-    x.remarks.forEach(r => { if(r.level==='critical') globalCritical++; else if(r.level==='attention') globalAttention++; });
+    // Sum only included subjects
+    x.subjOrder.filter(s => !excludedSubjects.has(s)).forEach(subj => {
+      const s = x.subjects[subj];
+      t1T+=s.t1.total; t1C+=s.t1.cwa;
+      t2T+=s.t2.total; t2C+=s.t2.cwa;
+      unassigned+=s.unassigned;
+    });
+    x.remarks
+      .filter(r => !excludedSubjects.has(r.subject))
+      .forEach(r => { if(r.level==='critical') globalCritical++; else if(r.level==='attention') globalAttention++; });
   }));
   const pct=(c,t)=>t>0?Math.round(c/t*100)+'%':'—';
   const $ = id => document.getElementById(id);
@@ -1252,9 +1506,11 @@ async function loadSchool(idx) {
 
   loadedCount++;
   updateStats();
+  updateBanner();
+  renderFilterList();  // populate panel with newly discovered subjects
 
-  // Update school card if we're on the schools view
-  if (currentRoute.view === 'schools') updateSchoolCard(idx, agg);
+  // Update school card with filtered aggregate
+  if (currentRoute.view === 'schools') updateSchoolCard(idx, schoolAggWithout(idx));
 
   // Re-render school detail page if this school is currently open
   if (currentRoute.view === 'school' && currentRoute.idx === idx) renderSchoolPage(idx);
@@ -1269,6 +1525,7 @@ function reload() {
   subjectRegistry.clear();
   svSearchQuery = '';
   renderedSchoolIdx = -1;
+  // Note: excludedSubjects intentionally preserved across reloads
   init();
 }
 
@@ -1278,6 +1535,8 @@ function init() {
   ['cT1','cT2','cOverall','cUnassigned','cCritical','cAttention']
     .forEach(id => { const el=document.getElementById(id); if(el) el.textContent='—'; });
   document.getElementById('notice').style.display = 'none';
+  updateBanner();       // show banner immediately if exclusions were saved
+  updateFilterBadge();  // show badge on filter button if exclusions exist
 
   // Render initial view, then start loading
   applyRoute();
