@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMCS — Daily Progress & CWA Tracking</title>
+<style>
+:root{--red:#CE0000;--red-h:#a50000;--red-lt:rgba(206,0,0,.07);--dark:#1a1a1a;--gray:#555;--lgray:#f5f5f5;--border:#ddd;--white:#fff}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(--dark);min-height:100vh;font-size:13px;line-height:1.6;display:flex;flex-direction:column}
+
+/* ── HEADER ── */
+.hdr{background:var(--red);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;border-bottom:1px solid var(--red-h)}
+.hdr-brand{display:flex;align-items:center;gap:10px}
+.hdr-logo{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:4px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;flex-shrink:0}
+.hdr h1{font-size:14px;font-weight:700;letter-spacing:.3px}
+.hdr p{font-size:9.5px;opacity:.75;margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.hdr-ts{font-size:10px;opacity:.65}
+.hdr-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.92);padding:5px 12px;border-radius:4px;font-size:11px;font-weight:600;text-decoration:none;cursor:pointer;transition:background .15s;white-space:nowrap}
+.hdr-btn:hover{background:rgba(255,255,255,.22)}
+.hdr-btn svg{width:11px;height:11px}
+
+/* ── CHIPS STRIP ── */
+.chips-strip{background:var(--lgray);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;gap:8px;overflow-x:auto;align-items:stretch;flex-shrink:0}
+.chip{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:6px 14px;display:flex;flex-direction:column;gap:1px;min-width:110px;flex-shrink:0}
+.chip.alert{border-color:#fecaca;background:#fff8f8}.chip.warn{border-color:#fde68a;background:#fffbeb}.chip.ok{border-color:#bbf7d0;background:#f0fdf4}
+.chip-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:var(--gray);font-weight:700}
+.chip-val{font-size:18px;font-weight:700;line-height:1.1;color:#16a34a}
+.chip-val.red{color:var(--red)}.chip-val.amber{color:#d97706}.chip-val.muted{color:#9ca3af}.chip-val.blue{color:#1d4ed8}
+.chip-sub{font-size:9px;color:#9ca3af;margin-top:1px}
+
+/* ── FILTER BAR ── */
+.filter-bar{background:var(--white);border-bottom:1px solid var(--border);padding:8px 24px;display:flex;align-items:center;gap:12px;flex-shrink:0;flex-wrap:wrap}
+.filter-bar label{font-size:11px;font-weight:700;color:var(--gray);display:flex;align-items:center;gap:6px}
+.filter-bar select,.filter-bar input[type=date]{background:var(--white);border:1.5px solid var(--border);border-radius:4px;padding:4px 8px;font-size:12px;font-family:inherit;color:var(--dark);outline:none;transition:border-color .13s}
+.filter-bar select:focus,.filter-bar input[type=date]:focus{border-color:var(--red)}
+.filter-btn-group{display:flex;gap:4px;margin-left:auto}
+.filt-btn{background:var(--lgray);border:1.5px solid var(--border);border-radius:4px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--gray);cursor:pointer;transition:all .13s}
+.filt-btn:hover,.filt-btn.active{background:var(--red-lt);border-color:var(--red);color:var(--red)}
+
+/* ── TABS ── */
+.tabs-bar{background:var(--white);border-bottom:1px solid var(--border);display:flex;padding:0 24px;gap:2px;flex-shrink:0}
+.tab-btn{padding:10px 18px;border:none;background:none;color:var(--gray);cursor:pointer;font-family:'Segoe UI',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;border-bottom:2px solid transparent;transition:all .15s;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.tab-btn:hover{color:var(--red)}.tab-btn.active{color:var(--red);border-bottom-color:var(--red)}
+.tab-badge{font-size:8.5px;font-weight:800;padding:1px 5px;border-radius:20px;background:#fee2e2;color:var(--red)}
+.tab-badge.amber{background:#fef3c7;color:#b45309}
+
+/* ── APP BODY ── */
+#appBody{flex:1;overflow:auto;position:relative}
+.tab-panel{display:none;padding:20px 24px;max-width:1440px;margin:0 auto}
+.tab-panel.active{display:block}
+
+/* ── NOTICE ── */
+.notice{background:#fff3cd;border:1px solid #ffc107;color:#92400e;padding:7px 16px;font-size:11px;display:none;align-items:center;gap:8px;border-radius:4px;margin-bottom:14px}
+
+/* ── LOADING ── */
+.loading-state{text-align:center;padding:60px 20px;color:var(--gray)}
+.loading-state .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-state p{font-size:13px;color:var(--gray)}
+
+/* ── SECTION HEADING ── */
+.sec-hdr{font-size:.95rem;font-weight:700;color:var(--red);border-bottom:2px solid var(--red);padding-bottom:.3rem;margin:1.5rem 0 .75rem}
+.sec-hdr:first-child{margin-top:0}
+.sec-sub{font-size:.82rem;color:var(--gray);margin-bottom:1rem}
+
+/* ── SCHOOL GROUP (Activity Feed) ── */
+.school-group{margin-bottom:24px}
+.school-group-hdr{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--lgray);border:1px solid var(--border);border-radius:6px 6px 0 0;border-bottom:none}
+.school-group-name{font-size:13px;font-weight:700;color:var(--dark)}
+.school-group-meta{font-size:10px;color:var(--gray);margin-left:auto}
+.class-group{border:1px solid var(--border);border-radius:0 0 6px 6px;overflow:hidden;margin-bottom:12px}
+.class-group:last-child{border-radius:0 0 6px 6px}
+
+/* Entry table */
+.entry-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.entry-table thead th{background:var(--red);color:#fff;padding:6px 10px;text-align:left;font-size:.75rem;font-weight:700;letter-spacing:.3px;white-space:nowrap}
+.entry-table tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+.entry-table tbody tr:last-child{border-bottom:none}
+.entry-table tbody tr:nth-child(even) td{background:var(--lgray)}
+.entry-table tbody tr:hover td{background:rgba(206,0,0,.03)}
+.entry-table td{padding:7px 10px;vertical-align:top}
+.class-badge{display:inline-block;background:#fee2e2;color:var(--red);border:1px solid #fecaca;padding:1px 8px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap}
+.teacher-cell{font-size:.8rem;color:var(--gray)}
+.chapter-cell{font-weight:600;color:var(--dark);max-width:180px}
+.desc-cell{font-size:.78rem;color:var(--gray);max-width:200px;line-height:1.4}
+.time-cell{font-size:.75rem;color:#9ca3af;white-space:nowrap}
+.subj-chip{display:inline-block;background:var(--lgray);border:1px solid var(--border);padding:1px 7px;border-radius:3px;font-size:10px;font-weight:600;color:var(--gray)}
+
+/* ── ACTIVITY TAGS ── */
+.tag-chip{font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap;display:inline-block}
+.tag-cwa       {background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
+.tag-ott       {background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe}
+.tag-teaching  {background:#ede9fe;color:#6d28d9;border:1px solid #ddd6fe}
+.tag-revise    {background:#fef3c7;color:#b45309;border:1px solid #fde68a}
+.tag-remedial  {background:#fee2e2;color:var(--red);border:1px solid #fecaca}
+.tag-qa        {background:var(--lgray);color:var(--gray);border:1px solid var(--border)}
+.tag-default   {background:var(--lgray);color:var(--gray);border:1px solid var(--border)}
+
+/* ── CWA GAP TABLE ── */
+.gap-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:6px;margin-bottom:1.5rem}
+.gap-table{width:100%;border-collapse:collapse;min-width:800px;font-size:.82rem}
+.gap-table thead th{background:var(--red);color:#fff;padding:8px 12px;text-align:left;font-size:.75rem;font-weight:700;letter-spacing:.3px;white-space:nowrap}
+.gap-table tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+.gap-table tbody tr:last-child{border-bottom:none}
+.gap-table tbody tr:nth-child(even) td{background:var(--lgray)}
+.gap-table tbody tr:hover td{background:rgba(206,0,0,.03)}
+.gap-table td{padding:8px 12px;vertical-align:middle}
+.gap-count{font-size:13px;font-weight:700;text-align:center}
+.gap-count.red{color:var(--red)}.gap-count.green{color:#15803d}.gap-count.muted{color:#9ca3af}
+.action-note{font-size:.78rem;color:var(--gray);line-height:1.4}
+
+/* ── WEEKLY PULSE ── */
+.weekly-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:1.5rem}
+.day-card{background:var(--lgray);border:1px solid var(--border);border-radius:6px;padding:10px 8px;text-align:center}
+.day-card.today{border-color:var(--red);background:#fff8f8}
+.day-card.empty{opacity:.45}
+.day-name{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.4px}
+.day-date{font-size:11px;color:var(--dark);font-weight:600;margin-top:2px}
+.day-uploads{font-size:20px;font-weight:700;color:var(--dark);margin-top:6px;line-height:1}
+.day-uploads.red{color:var(--red)}.day-uploads.green{color:#15803d}.day-uploads.amber{color:#d97706}
+.day-cwa{font-size:10px;color:#15803d;font-weight:600;margin-top:3px}
+.day-label{font-size:9px;color:#9ca3af}
+
+.school-pulse{margin-bottom:14px;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.sp-hdr{background:var(--lgray);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:10px}
+.sp-name{font-size:12px;font-weight:700;color:var(--dark)}
+.sp-meta{font-size:10px;color:var(--gray);margin-left:auto}
+.sp-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.sp-table th{background:#fafafa;color:var(--gray);font-size:.72rem;font-weight:700;letter-spacing:.3px;text-transform:uppercase;padding:5px 10px;text-align:center;border-bottom:1px solid var(--border)}
+.sp-table th:first-child{text-align:left}
+.sp-table td{padding:5px 10px;border-bottom:1px solid #f3f4f6;text-align:center;vertical-align:middle}
+.sp-table td:first-child{text-align:left;font-weight:600}
+.sp-table tbody tr:last-child td{border-bottom:none}
+.day-cell{font-size:11px;font-weight:700}
+.day-cell.empty{color:#d1d5db}
+.day-cell.some{color:#1d4ed8}
+.day-cell.cwa{color:#15803d}
+
+/* ── UPLOAD COMPLIANCE ── */
+.compliance-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:1.5rem}
+.comp-card{background:var(--white);border:1.5px solid var(--border);border-radius:6px;padding:12px 14px}
+.comp-card.today{border-color:#bbf7d0;background:#f0fdf4}
+.comp-card.recent{border-color:#fde68a;background:#fffbeb}
+.comp-card.stale{border-color:#fecaca;background:#fff8f8}
+.comp-card.never{border-color:var(--border);background:var(--lgray);opacity:.6}
+.comp-school{font-size:12px;font-weight:700;color:var(--dark);margin-bottom:3px}
+.comp-last{font-size:.8rem;color:var(--gray)}
+.comp-age{font-size:.75rem;font-weight:700;margin-top:4px}
+.comp-card.today .comp-age{color:#15803d}
+.comp-card.recent .comp-age{color:#b45309}
+.comp-card.stale .comp-age{color:var(--red)}
+.comp-teacher{font-size:.75rem;color:#9ca3af;margin-top:2px}
+.comp-count{font-size:.75rem;color:var(--gray)}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--lgray)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:48px 20px;color:var(--gray)}
+.empty-state .icon{font-size:36px;margin-bottom:10px}
+.empty-state h3{font-size:14px;font-weight:700;color:var(--dark);margin-bottom:6px}
+.empty-state p{font-size:12px;line-height:1.6}
+
+@media(max-width:640px){.tab-panel{padding:12px 14px}.chips-strip,.filter-bar{padding:8px 14px}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-logo">LM</div>
+    <div>
+      <h1>LMCS — Daily Progress &amp; CWA Tracking</h1>
+      <p id="hdrCtx">Daily classwork vs. Course Mapping comparison &nbsp;·&nbsp; Session 2026-27</p>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <span class="hdr-ts" id="lastUpdated"></span>
+    <a href="course-mapping-progress.html" class="hdr-btn">📊 Course Mapping</a>
+    <a href="course-mapping-admin.html" class="hdr-btn">⚙ Admin</a>
+    <a href="index.html" class="hdr-btn">← Back</a>
+    <button class="hdr-btn" onclick="reloadAll()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Refresh
+    </button>
+  </div>
+</div>
+
+<!-- CHIPS STRIP -->
+<div class="chips-strip">
+  <div class="chip ok"><div class="chip-lbl">Uploads Today</div><div class="chip-val" id="cUploads">—</div><div class="chip-sub">entries logged today</div></div>
+  <div class="chip"><div class="chip-lbl">Schools Active Today</div><div class="chip-val blue" id="cSchools">—</div><div class="chip-sub">out of 6 schools</div></div>
+  <div class="chip ok"><div class="chip-lbl">CWA Events Today</div><div class="chip-val" id="cCWAToday">—</div><div class="chip-sub">assessments conducted</div></div>
+  <div class="chip alert"><div class="chip-lbl">CWA Gaps</div><div class="chip-val red" id="cGaps">—</div><div class="chip-sub">done but not in mapping</div></div>
+  <div class="chip warn"><div class="chip-lbl">Missing Uploads</div><div class="chip-val amber" id="cMissing">—</div><div class="chip-sub">schools silent today</div></div>
+  <div class="chip"><div class="chip-lbl">Last Entry</div><div class="chip-val muted" style="font-size:13px" id="cLastEntry">—</div><div class="chip-sub" id="cLastTime">—</div></div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <label>
+    📅 Date
+    <input type="date" id="filterDate" onchange="applyFilters()">
+  </label>
+  <label>
+    🏫 School
+    <select id="filterSchool" onchange="applyFilters()">
+      <option value="">All Schools</option>
+    </select>
+  </label>
+  <label>
+    📚 Subject
+    <select id="filterSubject" onchange="applyFilters()">
+      <option value="">All Subjects</option>
+    </select>
+  </label>
+  <div class="filter-btn-group">
+    <button class="filt-btn active" id="qToday" onclick="setQuickDate('today')">Today</button>
+    <button class="filt-btn" id="qYest" onclick="setQuickDate('yesterday')">Yesterday</button>
+    <button class="filt-btn" id="qWeek" onclick="setQuickDate('week')">This Week</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-bar">
+  <button class="tab-btn active" id="tab-feed" onclick="showTab('feed',this)">
+    📋 Activity Feed
+  </button>
+  <button class="tab-btn" id="tab-gaps" onclick="showTab('gaps',this)">
+    ⚠ CWA Gap Report
+    <span class="tab-badge" id="gapBadge" style="display:none">0</span>
+  </button>
+  <button class="tab-btn" id="tab-weekly" onclick="showTab('weekly',this)">
+    📊 Weekly Pulse
+  </button>
+  <button class="tab-btn" id="tab-comply" onclick="showTab('comply',this)">
+    ✅ Upload Compliance
+  </button>
+</div>
+
+<!-- APP BODY -->
+<div id="appBody">
+  <div class="tab-panel active" id="panel-feed">
+    <div class="loading-state" id="loadingFeed">
+      <div class="spinner"></div>
+      <p>Loading daily classwork records…</p>
+    </div>
+  </div>
+  <div class="tab-panel" id="panel-gaps">
+    <div class="loading-state" id="loadingGaps">
+      <div class="spinner"></div>
+      <p>Loading daily sheet and Course Mapping data to compare…</p>
+    </div>
+  </div>
+  <div class="tab-panel" id="panel-weekly">
+    <div class="loading-state" id="loadingWeekly">
+      <div class="spinner"></div>
+      <p>Building weekly pulse…</p>
+    </div>
+  </div>
+  <div class="tab-panel" id="panel-comply">
+    <div class="loading-state" id="loadingComply">
+      <div class="spinner"></div>
+      <p>Checking upload compliance…</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   CONFIGURATION
+   School name mapping matches the daily classwork sheet's "School Name"
+   column to the LMS school indices used in the Course Mapping system.
+═══════════════════════════════════════════════════════════ */
+const DAILY_SHEET_ID = '1z5hzpMRHMru6ulpYs2lsGZr7quAywwpQ_zySa3rvGUA';
+
+// Load shared config from localStorage (written by course-mapping-admin.html)
+const CONFIG_KEY = 'lmcs_cmp_config';
+const DEFAULT_SCHOOLS = [
+  {name:'LMS 1', id:'1BorpCdePG7O6iZiwgGwNpWZBl7I1IGAT-OAh0fw2yMs'},
+  {name:'LMS 2', id:'1ejXKsnK3a2kNGEboTs-yQ2d3Tpk3xG5JRtm9DAmiYXs'},
+  {name:'LMS 3', id:'1MYTOPH_zFIK8xnQk3SsKIgsX5eT5mZgHaJpMgyoJhL8'},
+  {name:'LMS 4', id:'1nwPLQprQoQJ35xKDWSi2Y4YDzbvUPZ688u5QwOYmSxU'},
+  {name:'LMS 5', id:'172YKw1cMMcG5UZ0jjI8RzO2tGxnVWG3QVCEsDY6CZHg'},
+  {name:'LMS 6', id:'1PkZYbeVCdKeqCbbX2eXAwk7c8w7NAHUOSQKmO6nDZtE'},
+];
+
+// Daily sheet school name → LMS index (0-based)
+// These are the exact names as they appear in the "School Name" column.
+// Update via Admin Panel → Daily Sheet section.
+const DAILY_SCHOOL_NAMES = [
+  'La Montessori School Kullu',         // LMS 1 → index 0
+  'La Montessori School Kelheli',       // LMS 2 → index 1
+  'La Montessori School Dunkhra',       // LMS 3 → index 2
+  'La Montessori School NerChowk',      // LMS 4 → index 3
+  'La Montessori School Sayoli',        // LMS 5 → index 4
+  'La Montessori School Jogindernagar', // LMS 6 → index 5
+];
+
+function loadCfg() {
+  try {
+    const s = localStorage.getItem(CONFIG_KEY);
+    if (s) { const p = JSON.parse(s); return p; }
+  } catch(e) {}
+  return null;
+}
+const savedCfg = loadCfg();
+const CM_SCHOOLS = (savedCfg?.schools) || DEFAULT_SCHOOLS;
+const CM_CLASSES = (savedCfg?.classes) || [
+  {tab:'M-I',cwaApplicable:false},{tab:'M-II',cwaApplicable:false},{tab:'M-III',cwaApplicable:false},
+  {tab:'Class 1',cwaApplicable:true},{tab:'Class 2',cwaApplicable:true},{tab:'Class 3',cwaApplicable:true},
+  {tab:'Class 4',cwaApplicable:true},{tab:'Class 5',cwaApplicable:true},{tab:'Class 6',cwaApplicable:true},
+  {tab:'Class 7',cwaApplicable:true},{tab:'Class 8',cwaApplicable:true},{tab:'Class 9',cwaApplicable:true},
+  {tab:'Class 10',cwaApplicable:true},{tab:'Class 11',cwaApplicable:true},{tab:'Class 12',cwaApplicable:true},
+];
+const CM_TABS = CM_CLASSES.map(c => c.tab);
+
+/* ═══════════════════════════════════════════════════════════
+   CLASS NAME MAPPING
+   Daily sheet uses Roman numerals and "M" for Montessori.
+   Maps to Course Mapping tab names (M-I, Class 2, Class 8, etc.)
+═══════════════════════════════════════════════════════════ */
+const ROMAN = {I:1,II:2,III:3,IV:4,V:5,VI:6,VII:7,VIII:8,IX:9,X:10,XI:11,XII:12};
+
+function mapDailyClass(classStr, sectionStr) {
+  const c = String(classStr||'').trim().toUpperCase();
+  const s = String(sectionStr||'').trim().toUpperCase();
+
+  // Montessori: Class="M", Section tells the level
+  if (c === 'M' || c === 'MONTESSORI' || c === 'MONT') {
+    if (ROMAN[s] === 1 || s === '1' || s === 'I')   return 'M-I';
+    if (ROMAN[s] === 2 || s === '2' || s === 'II')  return 'M-II';
+    if (ROMAN[s] === 3 || s === '3' || s === 'III') return 'M-III';
+    return 'M-I';
+  }
+
+  // Roman numeral class (II → Class 2, VIII → Class 8)
+  if (ROMAN[c]) return `Class ${ROMAN[c]}`;
+
+  // Arabic numeral
+  const n = parseInt(c);
+  if (!isNaN(n) && n >= 1 && n <= 12) return `Class ${n}`;
+
+  return null; // unmapped
+}
+
+/* Tags can be comma-separated lists: "Chapter Teaching, OTT, CWA" */
+function splitTags(tagStr) {
+  return String(tagStr||'').split(',').map(t => t.trim()).filter(Boolean);
+}
+function hasCWA(tagStr) {
+  return splitTags(tagStr).some(t => t.toUpperCase() === 'CWA');
+}
+function hasOTT(tagStr) {
+  return splitTags(tagStr).some(t => t.toUpperCase() === 'OTT');
+}
+
+function normalizeSubject(s) {
+  return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,12);
+}
+
+function subjectsMatch(a, b) {
+  const na = normalizeSubject(a);
+  const nb = normalizeSubject(b);
+  return na === nb || (na.length >= 3 && nb.length >= 3 && (na.includes(nb) || nb.includes(na)));
+}
+
+function lmsName(idx) {
+  return CM_SCHOOLS[idx]?.name || `LMS ${idx+1}`;
+}
+
+function dailySchoolToLMS(schoolName) {
+  const n = String(schoolName||'').trim();
+  const idx = DAILY_SCHOOL_NAMES.findIndex(s =>
+    s.toLowerCase() === n.toLowerCase() ||
+    n.toLowerCase().includes(s.toLowerCase().split(' ').slice(-1)[0].toLowerCase())
+  );
+  return idx >= 0 ? idx : null;
+}
+
+/* Returns the primary tag chip (most significant from a comma-separated list) */
+function primaryTag(tagStr) {
+  const tags = splitTags(tagStr);
+  const order = ['CWA','OTT','Remediation','Chapter Teaching','New Words','Question & Answers','Activity','RT','Laboratory','Field Trip'];
+  for (const o of order) {
+    if (tags.some(t => t.toLowerCase() === o.toLowerCase())) return o;
+  }
+  return tags[0] || '';
+}
+
+function tagClass(tagStr) {
+  const primary = primaryTag(tagStr).toLowerCase();
+  if (primary === 'cwa')                   return 'tag-cwa';
+  if (primary === 'ott')                   return 'tag-ott';
+  if (primary.includes('teach'))           return 'tag-teaching';
+  if (primary.includes('revis') || primary.includes('remediation')) return 'tag-remedial';
+  if (primary.includes('q') && primary.includes('a')) return 'tag-qa';
+  return 'tag-default';
+}
+
+/* Renders all tags in a row as chips (up to 3 to keep cells compact) */
+function tagChipsHTML(tagStr) {
+  const tags = splitTags(tagStr);
+  const shown = tags.slice(0, 3);
+  const extra = tags.length > 3 ? `<span class="tag-chip tag-default">+${tags.length-3}</span>` : '';
+  return shown.map(t => `<span class="tag-chip ${tagClass(t)}">${esc(t)}</span>`).join(' ') + extra;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DATA STORE
+═══════════════════════════════════════════════════════════ */
+let allRecords   = [];   // parsed daily sheet rows
+let cmStore      = {};   // Course Mapping data: cmStore[lmsIdx][tabName] = {subjects,...}
+let cmLoaded     = false;
+let activeDate   = null; // current filter date (null = show all/week)
+let activeSchool = '';
+let activeSubject= '';
+
+/* ═══════════════════════════════════════════════════════════
+   FETCH — DAILY SHEET
+═══════════════════════════════════════════════════════════ */
+async function fetchDailySheet() {
+  // Fetch the 2000 most recent rows (avoids 10MB+ full-sheet fetch)
+  const query = encodeURIComponent('SELECT * ORDER BY B DESC LIMIT 2000');
+  const url = `https://docs.google.com/spreadsheets/d/${DAILY_SHEET_ID}/gviz/tq?tqx=out:json&tq=${query}`;
+  const res  = await fetch(url, {cache:'no-cache'});
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  const s = text.indexOf('{'), e = text.lastIndexOf('}');
+  const data = JSON.parse(text.slice(s, e+1));
+  if (data.status === 'error') throw new Error(data.errors?.[0]?.detailed_message || 'Error');
+  return data.table;
+}
+
+function parseDailyTable(table) {
+  if (!table?.rows) return [];
+  // Col indices (0-based): 0=School, 1=Date, 2=Teacher, 3=Class, 4=Section,
+  // 5=Subject, 6=Book(CW), 7=Chapter(CW), 8=Desc(CW), 9=Tag(CW),
+  // 10=Book(HW), 11=Chapter(HW), 12=Desc(HW), 13=Tag(HW)
+  const rows = [];
+  for (const row of table.rows) {
+    const cell = (i) => {
+      const c = row.c?.[i];
+      return (!c || c.v == null) ? '' : String(c.f ?? c.v).trim();
+    };
+    const school  = cell(0);
+    const dateRaw = cell(1);
+    const lmsIdx  = dailySchoolToLMS(school);
+    if (lmsIdx === null) continue; // skip demo/unknown schools
+
+    // Parse date
+    const dateObj = new Date(dateRaw);
+    if (isNaN(dateObj.getTime())) continue;
+
+    const classStr   = cell(3);
+    const section    = cell(4);
+    const classMapped = mapDailyClass(classStr, section);
+
+    rows.push({
+      school, lmsIdx, dateObj,
+      dateStr: dateObj.toISOString().slice(0,10), // YYYY-MM-DD
+      timeStr: dateObj.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}),
+      teacher:    cell(2),
+      classRaw:   classStr,
+      section,
+      classMapped,
+      subject:    cell(5),
+      cwBook:     cell(6),
+      cwChapter:  cell(7),
+      cwDesc:     cell(8),
+      cwTag:      cell(9),
+      hwBook:     cell(10),
+      hwChapter:  cell(11),
+      hwDesc:     cell(12),
+      hwTag:      cell(13),
+    });
+  }
+  return rows;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FETCH — COURSE MAPPING (for CWA gap report)
+   Replicates the fetchTab logic from course-mapping-progress.html
+═══════════════════════════════════════════════════════════ */
+async function fetchCMTab(sheetId, tab) {
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(tab)}`;
+  const res = await fetch(url, {cache:'no-cache'});
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  const s = text.indexOf('{'), e = text.lastIndexOf('}');
+  const data = JSON.parse(text.slice(s, e+1));
+  if (data.status === 'error') throw new Error('Error');
+  return data.table;
+}
+
+function detectCMColumns(table) {
+  const map = {SUBJECT:1,TERM:5,CWA:10};
+  if (!table?.cols) return map;
+  table.cols.forEach((col, i) => {
+    const lbl = (col.label||col.id||'').toLowerCase().trim();
+    if (lbl === 'subject')    map.SUBJECT = i;
+    else if (lbl === 'term')  map.TERM    = i;
+    else if (lbl === 'cwa date') map.CWA  = i;
+  });
+  return map;
+}
+
+function parseCMTab(table) {
+  if (!table?.rows) return [];
+  const colMap = detectCMColumns(table);
+  return table.rows.map(row => {
+    const cell = (i) => { const c=row.c?.[i]; return (!c||c.v==null)?'':String(c.f??c.v).trim(); };
+    return {
+      subject:  cell(colMap.SUBJECT),
+      term:     cell(colMap.TERM),
+      cwaDate:  cell(colMap.CWA),
+    };
+  }).filter(r => r.subject);
+}
+
+async function loadCourseMapping() {
+  if (cmLoaded) return;
+  document.getElementById('loadingGaps').querySelector('p').textContent =
+    'Fetching Course Mapping data across all 6 schools…';
+
+  const jobs = CM_SCHOOLS.flatMap((school, idx) =>
+    CM_TABS.map(tab => ({ idx, tab, id: school.id }))
+  );
+
+  const results = await Promise.allSettled(jobs.map(j => fetchCMTab(j.id, j.tab)));
+
+  results.forEach((r, i) => {
+    const {idx, tab} = jobs[i];
+    if (!cmStore[idx]) cmStore[idx] = {};
+    if (r.status === 'fulfilled') {
+      const rows = parseCMTab(r.value);
+      // Group by subject
+      const subs = {};
+      rows.forEach(row => {
+        const subj = row.subject.trim();
+        if (!subj) return;
+        if (!subs[subj]) subs[subj] = {cwaCount:0};
+        if (row.cwaDate) subs[subj].cwaCount++;
+      });
+      cmStore[idx][tab] = subs;
+    } else {
+      cmStore[idx][tab] = null;
+    }
+  });
+
+  cmLoaded = true;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ANALYSIS HELPERS
+═══════════════════════════════════════════════════════════ */
+function todayStr() {
+  return new Date().toISOString().slice(0,10);
+}
+
+function filtered(records) {
+  let r = records;
+  if (activeDate) r = r.filter(x => x.dateStr === activeDate);
+  if (activeSchool) r = r.filter(x => x.lmsIdx === parseInt(activeSchool));
+  if (activeSubject) r = r.filter(x => x.subject === activeSubject);
+  return r;
+}
+
+function buildChips() {
+  // Use most recent date with data (not necessarily today)
+  const dates = [...new Set(allRecords.map(r => r.dateStr))].sort().reverse();
+  const latestDate = dates[0] || todayStr();
+  const todayRecs = allRecords.filter(r => r.dateStr === latestDate);
+  const cwaToday  = todayRecs.filter(r => hasCWA(r.cwTag));
+  const schoolsToday = new Set(todayRecs.map(r => r.lmsIdx));
+  const missingToday = CM_SCHOOLS.length - schoolsToday.size;
+
+  // Update chip labels if data is not from today
+  if (latestDate !== todayStr()) {
+    const lbl = latestDate;
+    document.querySelector('#cUploads').closest('.chip').querySelector('.chip-lbl').textContent = `Uploads (${lbl})`;
+    document.querySelector('#cSchools').closest('.chip').querySelector('.chip-lbl').textContent = 'Schools Active';
+    document.querySelector('#cCWAToday').closest('.chip').querySelector('.chip-lbl').textContent = `CWA Events (${lbl})`;
+    document.querySelector('#cMissing').closest('.chip').querySelector('.chip-lbl').textContent = 'Missing Uploads';
+  }
+
+  const last = allRecords.length ? allRecords.reduce((a,b) => a.dateStr > b.dateStr ? a : b) : null;
+  const $ = id => document.getElementById(id);
+  $('cUploads').textContent   = todayRecs.length || '0';
+  $('cSchools').textContent   = `${schoolsToday.size}/6`;
+  $('cCWAToday').textContent  = cwaToday.length;
+  $('cMissing').textContent   = missingToday;
+  if (last) {
+    $('cLastEntry').textContent = lmsName(last.lmsIdx);
+    $('cLastTime').textContent  = last.dateObj.toLocaleString('en-IN',{dateStyle:'short',timeStyle:'short'});
+  }
+  document.getElementById('chipsStrip')?.classList?.remove('hidden');
+
+  // Populate school filter
+  const sel = document.getElementById('filterSchool');
+  while (sel.options.length > 1) sel.remove(1);
+  CM_SCHOOLS.forEach((s, i) => {
+    const opt = document.createElement('option');
+    opt.value = i; opt.textContent = s.name;
+    sel.appendChild(opt);
+  });
+
+  // Populate subject filter
+  const subjects = [...new Set(allRecords.map(r => r.subject).filter(Boolean))].sort();
+  const sSel = document.getElementById('filterSubject');
+  while (sSel.options.length > 1) sSel.remove(1);
+  subjects.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s; opt.textContent = s;
+    sSel.appendChild(opt);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER — Activity Feed
+═══════════════════════════════════════════════════════════ */
+function renderFeed() {
+  const panel = document.getElementById('panel-feed');
+  const recs  = filtered(allRecords);
+
+  if (!recs.length) {
+    panel.innerHTML = `<div class="empty-state">
+      <div class="icon">📋</div>
+      <h3>No activity for the selected date / filters</h3>
+      <p>Try a different date or choose "This Week" to see recent entries.</p>
+    </div>`;
+    return;
+  }
+
+  // Group: lmsIdx → classMapped → records
+  const bySchool = {};
+  recs.forEach(r => {
+    const k = r.lmsIdx;
+    const c = r.classMapped || r.classRaw || '?';
+    if (!bySchool[k]) bySchool[k] = {};
+    if (!bySchool[k][c]) bySchool[k][c] = [];
+    bySchool[k][c].push(r);
+  });
+
+  let html = '';
+  Object.keys(bySchool).sort((a,b)=>+a-+b).forEach(lmsIdx => {
+    const classes = bySchool[lmsIdx];
+    const total   = Object.values(classes).flat().length;
+    const cwaCount= Object.values(classes).flat().filter(r=>hasCWA(r.cwTag)).length;
+
+    html += `<div class="school-group">
+      <div class="school-group-hdr">
+        <span class="school-group-name">🏫 ${lmsName(+lmsIdx)}</span>
+        <span class="school-group-meta">${total} entries · ${cwaCount > 0 ? `<span style="color:#15803d;font-weight:700">${cwaCount} CWA</span>` : '0 CWA'}</span>
+      </div>`;
+
+    Object.keys(classes).sort().forEach(cls => {
+      const entries = classes[cls].sort((a,b)=>b.dateObj-a.dateObj);
+      html += `<div class="class-group">
+        <table class="entry-table">
+          <thead><tr>
+            <th><span class="class-badge">${cls}</span></th>
+            <th>Teacher</th>
+            <th>Subject</th>
+            <th>Chapter (Classwork)</th>
+            <th>Description</th>
+            <th>Tag</th>
+            <th>Time</th>
+          </tr></thead>
+          <tbody>`;
+      entries.forEach(r => {
+        html += `<tr>
+          <td><span style="font-size:10px;color:var(--gray)">${r.dateStr}</span></td>
+          <td class="teacher-cell">${esc(r.teacher)}</td>
+          <td><span class="subj-chip">${esc(r.subject)}</span></td>
+          <td class="chapter-cell">${esc(r.cwChapter)}</td>
+          <td class="desc-cell">${esc(r.cwDesc)}</td>
+          <td style="white-space:nowrap">${tagChipsHTML(r.cwTag)}</td>
+          <td class="time-cell">${r.timeStr}</td>
+        </tr>`;
+      });
+      html += `</tbody></table></div>`;
+    });
+    html += `</div>`;
+  });
+
+  panel.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER — CWA Gap Report
+   Compares daily sheet CWA events against Course Mapping CWA Dates.
+═══════════════════════════════════════════════════════════ */
+async function renderGaps() {
+  const panel = document.getElementById('panel-gaps');
+  panel.innerHTML = `<div class="loading-state" id="loadingGaps">
+    <div class="spinner"></div><p>Loading Course Mapping data for comparison…</p></div>`;
+
+  try {
+    await loadCourseMapping();
+  } catch(e) {
+    panel.innerHTML = `<div class="notice" style="display:flex">⚠ Failed to load Course Mapping data: ${e.message}</div>`;
+    return;
+  }
+
+  // Build daily CWA events: key={lmsIdx}_{classMapped}_{normSubject} → [{chapter, date, teacher}]
+  const dailyCWA = {};
+  allRecords.filter(r => hasCWA(r.cwTag)).forEach(r => {
+    if (r.lmsIdx === null || !r.classMapped) return;
+    const key = `${r.lmsIdx}|${r.classMapped}|${normalizeSubject(r.subject)}`;
+    if (!dailyCWA[key]) dailyCWA[key] = [];
+    dailyCWA[key].push({ chapter: r.cwChapter, dateStr: r.dateStr, teacher: r.teacher, subj: r.subject, lmsIdx: r.lmsIdx, cls: r.classMapped });
+  });
+
+  // Build CM CWA counts: key={lmsIdx}_{tab}_{normSubject} → count
+  const cmCWA = {};
+  Object.entries(cmStore).forEach(([lmsIdx, tabs]) => {
+    Object.entries(tabs).forEach(([tab, subs]) => {
+      if (!subs) return;
+      Object.entries(subs).forEach(([subj, data]) => {
+        const key = `${lmsIdx}|${tab}|${normalizeSubject(subj)}`;
+        cmCWA[key] = data.cwaCount || 0;
+      });
+    });
+  });
+
+  // Find gaps
+  const gaps = [];
+  Object.entries(dailyCWA).forEach(([key, events]) => {
+    // Try direct key match first
+    let cmCount = cmCWA[key];
+
+    // If not found, try fuzzy subject matching
+    if (cmCount === undefined) {
+      const [lmsIdx, cls, normSubj] = key.split('|');
+      const prefix = `${lmsIdx}|${cls}|`;
+      const cmKey = Object.keys(cmCWA).find(k => {
+        if (!k.startsWith(prefix)) return false;
+        const cNorm = k.slice(prefix.length);
+        return cNorm === normSubj || cNorm.includes(normSubj) || normSubj.includes(cNorm);
+      });
+      cmCount = cmKey !== undefined ? cmCWA[cmKey] : 0;
+    }
+
+    const gap = events.length - (cmCount || 0);
+    if (gap > 0) {
+      gaps.push({ key, events, dailyCount: events.length, cmCount: cmCount||0, gap });
+    }
+  });
+
+  gaps.sort((a,b) => b.gap - a.gap);
+
+  // Update badge
+  const badge = document.getElementById('gapBadge');
+  badge.textContent = gaps.length;
+  badge.style.display = gaps.length > 0 ? 'inline' : 'none';
+  document.getElementById('cGaps').textContent = gaps.length;
+
+  if (!gaps.length) {
+    panel.innerHTML = `<div class="empty-state">
+      <div class="icon">✅</div>
+      <h3>No CWA gaps found</h3>
+      <p>All CWA events logged in the daily sheet appear to be recorded in the Course Mapping sheets too.</p>
+    </div>`;
+    return;
+  }
+
+  const intro = `<div style="margin-bottom:1rem">
+    <div class="sec-hdr">CWA Gap Report</div>
+    <p class="sec-sub">
+      The table below shows subjects where teachers logged a <strong>CWA</strong> tag in the Daily Classwork Sheet
+      but the same chapter count is not yet reflected as a CWA Date (column K) in the Course Mapping Sheet.
+      <br>Action: ask the teacher to open their Course Mapping sheet and fill column K for completed chapters.
+    </p>
+  </div>`;
+
+  const tableRows = gaps.map(g => {
+    const sample = g.events[0];
+    const allChapters = [...new Set(g.events.map(e => e.chapter))].join(', ');
+    const lastDate    = g.events.reduce((a,b)=>a.dateStr>b.dateStr?a:b).dateStr;
+    const teachers    = [...new Set(g.events.map(e => e.teacher))].join(', ');
+    return `<tr>
+      <td>${lmsName(sample.lmsIdx)}</td>
+      <td><span class="class-badge">${esc(sample.cls)}</span></td>
+      <td><span class="subj-chip">${esc(sample.subj)}</span></td>
+      <td class="chapter-cell">${esc(allChapters)}</td>
+      <td class="gap-count green">${g.dailyCount}</td>
+      <td class="gap-count ${g.cmCount>0?'':'red'}">${g.cmCount}</td>
+      <td class="gap-count red">${g.gap}</td>
+      <td>${lastDate}</td>
+      <td class="teacher-cell">${esc(teachers)}</td>
+      <td class="action-note">Ask teacher to update <strong>column K (CWA Date)</strong> in the Course Mapping sheet for each completed chapter.</td>
+    </tr>`;
+  }).join('');
+
+  panel.innerHTML = intro + `
+    <div class="gap-table-wrap">
+      <table class="gap-table">
+        <thead><tr>
+          <th>School</th><th>Class</th><th>Subject</th><th>Chapter(s) in Daily Sheet</th>
+          <th>CWA in Daily</th><th>CWA in Mapping</th><th>Gap ⚠</th>
+          <th>Last CWA Date</th><th>Teacher(s)</th><th>Action</th>
+        </tr></thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER — Weekly Pulse
+═══════════════════════════════════════════════════════════ */
+function renderWeekly() {
+  const panel = document.getElementById('panel-weekly');
+
+  // Build last 7 days anchored to the most recent date in loaded data
+  const days = [];
+  const dates = [...new Set(allRecords.map(r => r.dateStr))].sort().reverse();
+  const anchor = dates[0] ? new Date(dates[0]) : new Date();
+  anchor.setHours(0,0,0,0);
+  for (let i=6; i>=0; i--) {
+    const d = new Date(anchor); d.setDate(d.getDate()-i);
+    days.push({
+      date:d,
+      dateStr:d.toISOString().slice(0,10),
+      label:d.toLocaleDateString('en-IN',{weekday:'short'}),
+      dayNum:d.getDate(),
+      isToday:i===6, // last in range = most recent = "today" relative to data
+    });
+  }
+
+  // Aggregate daily records by day
+  const byDay = {};
+  days.forEach(d => {
+    const recs = allRecords.filter(r => r.dateStr === d.dateStr);
+    byDay[d.dateStr] = {
+      total: recs.length,
+      cwa:   recs.filter(r=>hasCWA(r.cwTag)).length,
+      schools: new Set(recs.map(r=>r.lmsIdx)),
+    };
+  });
+
+  // 7-day overview cards
+  const dayCards = days.map(d => {
+    const info = byDay[d.dateStr];
+    const colClass = info.total === 0 ? 'empty' : info.total >= 20 ? 'green' : 'blue';
+    return `<div class="day-card ${d.isToday?'today':''} ${info.total===0?'empty':''}">
+      <div class="day-name">${d.label}</div>
+      <div class="day-date">${d.dayNum}</div>
+      <div class="day-uploads ${colClass}">${info.total || '—'}</div>
+      <div class="day-label">entries</div>
+      ${info.cwa>0?`<div class="day-cwa">✓ ${info.cwa} CWA</div>`:''}
+    </div>`;
+  }).join('');
+
+  // Per-school breakdown
+  const schoolRows = CM_SCHOOLS.map((school, idx) => {
+    const dayCells = days.map(d => {
+      const recs = allRecords.filter(r => r.dateStr === d.dateStr && r.lmsIdx === idx);
+      const cwa  = recs.filter(r => hasCWA(r.cwTag)).length;
+      if (!recs.length) return `<td class="day-cell empty">—</td>`;
+      if (cwa > 0)      return `<td class="day-cell cwa" title="${cwa} CWA events">${recs.length} <span style="font-size:9px">✓${cwa}</span></td>`;
+      return `<td class="day-cell some">${recs.length}</td>`;
+    }).join('');
+
+    const totalThisWeek = days.reduce((sum,d) => sum + allRecords.filter(r=>r.dateStr===d.dateStr&&r.lmsIdx===idx).length, 0);
+    const totalCWA      = days.reduce((sum,d) => sum + allRecords.filter(r=>r.dateStr===d.dateStr&&r.lmsIdx===idx&&hasCWA(r.cwTag)).length, 0);
+
+    return `<div class="school-pulse">
+      <div class="sp-hdr">
+        <span class="sp-name">🏫 ${school.name}</span>
+        <span class="sp-meta">${totalThisWeek} entries this week &nbsp;·&nbsp; ${totalCWA > 0 ? `<span style="color:#15803d">${totalCWA} CWA events</span>` : '0 CWA'}</span>
+      </div>
+      <table class="sp-table">
+        <thead><tr>
+          <th>Class</th>
+          ${days.map(d=>`<th${d.isToday?' style="color:var(--red)"':''}>${d.label} ${d.dayNum}</th>`).join('')}
+        </tr></thead>
+        <tbody>${schoolClassWeekRows(idx, days)}</tbody>
+      </table>
+    </div>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div class="sec-hdr">7-Day Overview</div>
+    <div class="weekly-grid">${dayCards}</div>
+    <div class="sec-hdr" style="margin-top:1.5rem">School × Day Breakdown</div>
+    <p class="sec-sub">Numbers show upload counts. <span style="color:#15803d;font-weight:700">Green with ✓</span> = CWA events that day.</p>
+    ${schoolRows}`;
+}
+
+function schoolClassWeekRows(lmsIdx, days) {
+  // Get all classes active this week for this school
+  const classes = [...new Set(
+    allRecords
+      .filter(r => r.lmsIdx === lmsIdx && days.some(d=>d.dateStr===r.dateStr))
+      .map(r => r.classMapped || r.classRaw || '?')
+  )].sort();
+
+  if (!classes.length) {
+    return `<tr><td colspan="${days.length+1}" style="text-align:center;color:#9ca3af;font-size:11px;padding:10px">No uploads this week</td></tr>`;
+  }
+
+  return classes.map(cls => {
+    const cells = days.map(d => {
+      const recs = allRecords.filter(r=>r.dateStr===d.dateStr&&r.lmsIdx===lmsIdx&&(r.classMapped||r.classRaw)===cls);
+      const cwa = recs.filter(r=>hasCWA(r.cwTag)).length;
+      if (!recs.length) return `<td class="day-cell empty">—</td>`;
+      if (cwa>0) return `<td class="day-cell cwa">${recs.length} ✓${cwa}</td>`;
+      return `<td class="day-cell some">${recs.length}</td>`;
+    }).join('');
+    return `<tr><td>${cls}</td>${cells}</tr>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER — Upload Compliance
+═══════════════════════════════════════════════════════════ */
+function renderCompliance() {
+  const panel = document.getElementById('panel-comply');
+  // Anchor to most recent date in data, not today's calendar date
+  const dateDates = [...new Set(allRecords.map(r => r.dateStr))].sort().reverse();
+  const today = dateDates[0] || todayStr();
+  const yesterday = dateDates[1] || new Date(Date.now()-86400000).toISOString().slice(0,10);
+
+  const cards = CM_SCHOOLS.map((school, idx) => {
+    const schoolRecs = allRecords.filter(r => r.lmsIdx === idx);
+    if (!schoolRecs.length) {
+      return `<div class="comp-card never">
+        <div class="comp-school">🏫 ${school.name}</div>
+        <div class="comp-last">No uploads found in fetched data</div>
+        <div class="comp-age">Not found (last 2000 entries)</div>
+      </div>`;
+    }
+
+    // Find the actual most recent record (don't rely on array sort order)
+    const last = schoolRecs.reduce((a, b) => a.dateStr > b.dateStr ? a : b);
+    const lastDate = last.dateStr;
+    const daysDiff = Math.floor((new Date(today)-new Date(lastDate))/86400000);
+    const cls = daysDiff === 0 ? 'today' : daysDiff === 1 ? 'recent' : 'stale';
+    const ageLabel = daysDiff === 0 ? '✓ Uploaded today'
+      : daysDiff === 1 ? '⚠ Last uploaded yesterday'
+      : `⚠ ${daysDiff} days since last upload`;
+
+    const todayCount  = schoolRecs.filter(r=>r.dateStr===today).length;
+    const weekCount   = schoolRecs.filter(r=>r.dateStr>=new Date(Date.now()-7*86400000).toISOString().slice(0,10)).length;
+    const teachers    = [...new Set(schoolRecs.filter(r=>r.dateStr===lastDate).map(r=>r.teacher))];
+
+    return `<div class="comp-card ${cls}">
+      <div class="comp-school">🏫 ${school.name}</div>
+      <div class="comp-last">Last: ${lastDate} at ${last.timeStr}</div>
+      <div class="comp-age">${ageLabel}</div>
+      <div class="comp-teacher">${teachers.slice(0,3).join(', ')}</div>
+      <div class="comp-count">${todayCount > 0 ? `${todayCount} entries today` : 'No entries today'} &nbsp;·&nbsp; ${weekCount} this week</div>
+    </div>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div class="sec-hdr">Upload Compliance — School Status</div>
+    <p class="sec-sub">Shows the most recent upload from each school and how long since the last entry.</p>
+    <div class="compliance-grid">${cards}</div>
+    <div class="sec-hdr">All Uploaders This Week</div>
+    ${renderUploaderTable()}`;
+}
+
+function renderUploaderTable() {
+  // 7-day window anchored to most recent data date
+  const latestDates = [...new Set(allRecords.map(r => r.dateStr))].sort().reverse();
+  const anchor = latestDates[0] || todayStr();
+  const weekStart = new Date(new Date(anchor) - 6*86400000).toISOString().slice(0,10);
+  const weekRecs  = allRecords.filter(r => r.dateStr >= weekStart);
+
+  // Group by teacher+school+class
+  const uploaders = {};
+  weekRecs.forEach(r => {
+    const key = `${r.lmsIdx}|${r.teacher}`;
+    if (!uploaders[key]) uploaders[key] = { teacher:r.teacher, lmsIdx:r.lmsIdx, classes:new Set(), count:0, lastDate:r.dateStr };
+    uploaders[key].count++;
+    uploaders[key].classes.add(r.classMapped||r.classRaw||'?');
+    if (r.dateStr > uploaders[key].lastDate) uploaders[key].lastDate = r.dateStr;
+  });
+
+  const rows = Object.values(uploaders)
+    .sort((a,b) => b.count - a.count || a.teacher.localeCompare(b.teacher))
+    .map(u => `<tr>
+      <td>${lmsName(u.lmsIdx)}</td>
+      <td style="font-weight:600">${esc(u.teacher)}</td>
+      <td>${[...u.classes].sort().join(', ')}</td>
+      <td style="text-align:center;font-weight:700">${u.count}</td>
+      <td>${u.lastDate}</td>
+    </tr>`).join('');
+
+  return `<div class="gap-table-wrap">
+    <table class="gap-table">
+      <thead><tr><th>School</th><th>Teacher</th><th>Classes Covered</th><th>Entries This Week</th><th>Last Entry</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UI HELPERS
+═══════════════════════════════════════════════════════════ */
+function esc(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  btn.classList.add('active');
+
+  if (name === 'gaps')   renderGaps();
+  if (name === 'weekly') renderWeekly();
+  if (name === 'comply') renderCompliance();
+}
+
+function applyFilters() {
+  const dateVal    = document.getElementById('filterDate').value;
+  const schoolVal  = document.getElementById('filterSchool').value;
+  const subjectVal = document.getElementById('filterSubject').value;
+  activeDate    = dateVal   || null;
+  activeSchool  = schoolVal || '';
+  activeSubject = subjectVal|| '';
+
+  // Clear quick buttons
+  document.querySelectorAll('.filt-btn').forEach(b=>b.classList.remove('active'));
+  if (dateVal === todayStr()) document.getElementById('qToday')?.classList.add('active');
+
+  renderFeed();
+}
+
+function setQuickDate(which) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  let val;
+  if (which === 'today') {
+    val = todayStr();
+    document.querySelectorAll('.filt-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('qToday').classList.add('active');
+  } else if (which === 'yesterday') {
+    const y = new Date(today); y.setDate(y.getDate()-1);
+    val = y.toISOString().slice(0,10);
+    document.querySelectorAll('.filt-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('qYest').classList.add('active');
+  } else {
+    val = '';
+    document.querySelectorAll('.filt-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('qWeek').classList.add('active');
+  }
+  document.getElementById('filterDate').value = val;
+  activeDate = val || null;
+  renderFeed();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════ */
+async function init() {
+  document.getElementById('lastUpdated').textContent =
+    new Date().toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'});
+
+  // Set default date filter to today
+  const today = todayStr();
+  document.getElementById('filterDate').value = today;
+  activeDate = today;
+
+  try {
+    const table = await fetchDailySheet();
+    allRecords = parseDailyTable(table);
+    // allRecords is already sorted DESC by date (from query), keep as-is
+  } catch(e) {
+    document.getElementById('panel-feed').innerHTML = `<div class="notice" style="display:flex;margin:14px 0">
+      ⚠ Could not load daily classwork sheet. Ensure the sheet is shared as "Anyone with the link → Viewer".<br>
+      Error: ${e.message}
+    </div>`;
+    return;
+  }
+
+  // Auto-detect most recent date in the loaded data and use it as the default
+  const dates = [...new Set(allRecords.map(r => r.dateStr))].sort().reverse();
+  const mostRecentDate = dates[0] || todayStr();
+  const todayData = todayStr();
+
+  // Default to most recent date that has data; show a note if data is not current
+  activeDate = mostRecentDate;
+  document.getElementById('filterDate').value = mostRecentDate;
+
+  // If the most recent data is not today, show a note in the context line
+  if (mostRecentDate !== todayData) {
+    const daysDiff = Math.round((new Date(todayData) - new Date(mostRecentDate)) / 86400000);
+    document.getElementById('hdrCtx').textContent =
+      `Most recent data: ${mostRecentDate} (${daysDiff} day${daysDiff!==1?'s':''} ago) · ${allRecords.length} entries loaded`;
+  }
+
+  // Clear the "Today" quick button active state since we defaulted to data's most recent date
+  document.querySelectorAll('.filt-btn').forEach(b => b.classList.remove('active'));
+  if (mostRecentDate === todayData) document.getElementById('qToday')?.classList.add('active');
+
+  buildChips();
+  renderFeed();
+}
+
+async function reloadAll() {
+  cmLoaded = false; cmStore = {};
+  allRecords = [];
+  init();
+}
+
+init();
+</script>
+</body>
+</html>
