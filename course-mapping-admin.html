@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMCS — Course Mapping Admin</title>
+<style>
+:root{--red:#CE0000;--red-h:#a50000;--red-lt:rgba(206,0,0,.07);--dark:#1a1a1a;--gray:#555;--lgray:#f5f5f5;--border:#ddd;--white:#fff}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(--dark);min-height:100vh;line-height:1.6;font-size:13px}
+
+/* TOPBAR */
+.topbar{background:var(--red);color:#fff;padding:0 2rem;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--red-h)}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-logo{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:4px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:#fff;flex-shrink:0}
+.topbar-title{font-size:14px;font-weight:700;letter-spacing:.3px}
+.topbar-sub{font-size:9.5px;opacity:.75;margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.btn-back{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.9);padding:5px 12px;border-radius:4px;font-size:11px;font-weight:600;text-decoration:none;transition:background .15s}
+.btn-back:hover{background:rgba(255,255,255,.22)}
+.btn-save{display:inline-flex;align-items:center;gap:6px;background:#fff;border:none;color:var(--red);padding:6px 16px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.2px}
+.btn-save:hover{background:#f3f4f6}
+.btn-save:disabled{opacity:.5;cursor:not-allowed}
+.unsaved-dot{width:7px;height:7px;background:#fbbf24;border-radius:50%;display:none}
+.unsaved-dot.show{display:inline-block}
+
+/* CHANGE INDICATOR */
+.change-bar{background:#fffbeb;border-bottom:1px solid #fde68a;padding:7px 2rem;font-size:11px;color:#92400e;display:none;align-items:center;gap:10px}
+.change-bar.show{display:flex}
+.change-bar strong{font-weight:700}
+
+/* LAYOUT */
+.container{display:flex;min-height:calc(100vh - 56px)}
+
+/* SIDEBAR */
+.sidebar{width:240px;min-width:240px;background:var(--lgray);border-right:1px solid var(--border);padding:1.5rem 0;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto}
+.sidebar .section-label{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--gray);padding:.25rem 1.25rem .5rem;margin-top:1rem;font-weight:600}
+.sidebar ul{list-style:none}
+.sidebar ul li a{display:block;padding:.42rem 1.25rem;font-size:.875rem;color:var(--dark);text-decoration:none;border-left:3px solid transparent;transition:all .13s}
+.sidebar ul li a:hover,.sidebar ul li a.active{background:var(--red-lt);border-left-color:var(--red);color:var(--red)}
+.sidebar-note{padding:.75rem 1.25rem;font-size:.78rem;color:var(--gray);line-height:1.55;background:rgba(206,0,0,.04);margin:.5rem .75rem;border-radius:4px;border:1px solid rgba(206,0,0,.12)}
+
+/* MAIN */
+main{flex:1;padding:2.5rem 3rem;max-width:1000px}
+h2{font-size:1.35rem;color:var(--red);margin:2rem 0 .5rem;border-bottom:2px solid var(--red);padding-bottom:.3rem}
+h2:first-child{margin-top:0}
+.section-desc{font-size:.875rem;color:var(--gray);margin-bottom:1.25rem;line-height:1.6}
+
+/* CALLOUT */
+.callout{border-radius:4px;padding:.85rem 1.1rem;margin:1rem 0;font-size:.875rem;line-height:1.6;border-left:4px solid}
+.callout-amber{border-color:#f59e0b;background:#fffbeb;color:#92400e}
+.callout-blue{border-color:#3b82f6;background:#eff6ff;color:#1e40af}
+.callout-red{border-color:var(--red);background:#fff8f8;color:var(--red-h)}
+.callout strong{font-weight:700;display:block;margin-bottom:3px}
+
+/* TABLES */
+table{width:100%;border-collapse:collapse;margin:.75rem 0 1.5rem;font-size:.875rem}
+th{background:var(--red);color:#fff;padding:.6rem .85rem;text-align:left;font-weight:600;font-size:.78rem;letter-spacing:.3px;white-space:nowrap}
+td{padding:.55rem .85rem;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:nth-child(even) td{background:var(--lgray)}
+tr:hover td{background:rgba(206,0,0,.03)}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:6px;margin-bottom:1.5rem}
+.tbl-wrap table{margin:0}
+
+/* FORM ELEMENTS */
+input[type=text],input[type=number],input[type=url]{background:var(--white);border:1.5px solid var(--border);border-radius:4px;padding:5px 8px;font-size:.875rem;font-family:inherit;color:var(--dark);outline:none;transition:border-color .13s;width:100%}
+input[type=text]:focus,input[type=number]:focus,input[type=url]:focus{border-color:var(--red)}
+input[type=number]{width:70px;text-align:center}
+input[type=checkbox]{width:15px;height:15px;accent-color:var(--red);cursor:pointer}
+input[type=text].mono{font-family:'Courier New',monospace;font-size:.8rem;color:#555}
+.field-group{margin-bottom:1.25rem}
+.field-label{font-size:.78rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.4px;margin-bottom:.35rem;display:block}
+.field-row{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.field-note{font-size:.78rem;color:#9ca3af;margin-top:.25rem}
+
+/* SCHOOL CARDS */
+.school-row td:first-child{font-weight:700;color:var(--dark);width:32px;text-align:center}
+.school-name-cell{min-width:100px}
+.school-id-cell{min-width:280px}
+.open-link{display:inline-flex;align-items:center;gap:4px;color:var(--red);text-decoration:none;font-size:.8rem;font-weight:600;white-space:nowrap}
+.open-link:hover{text-decoration:underline}
+.enabled-cell{text-align:center}
+
+/* T1/T2 SPLIT BAR */
+.split-bar{display:flex;height:18px;border-radius:3px;overflow:hidden;min-width:100px;border:1px solid var(--border)}
+.split-t1{background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;transition:width .2s;white-space:nowrap;overflow:hidden}
+.split-t2{background:#1d4ed8;color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex:1;white-space:nowrap;overflow:hidden}
+
+/* THRESHOLD CARDS */
+.threshold-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem;margin-bottom:1.5rem}
+.threshold-card{background:var(--lgray);border:1px solid var(--border);border-radius:6px;padding:1.1rem 1.25rem}
+.threshold-card h4{font-size:.88rem;font-weight:700;color:var(--dark);margin-bottom:.35rem}
+.threshold-card p{font-size:.78rem;color:var(--gray);margin-bottom:.75rem;line-height:1.5}
+.threshold-input-row{display:flex;align-items:center;gap:.5rem}
+.threshold-input-row input{width:70px}
+.threshold-input-row .unit{font-size:.78rem;color:var(--gray);font-weight:600}
+.threshold-preview{margin-top:.6rem;font-size:.78rem;color:var(--gray)}
+
+/* COLOUR PREVIEW SWATCHES */
+.swatch-row{display:flex;gap:4px;margin-top:.5rem}
+.swatch{display:flex;align-items:center;gap:4px;font-size:.7rem;font-weight:600;padding:2px 7px;border-radius:3px;border:1px solid}
+.sw-green{background:#dcfce7;color:#15803d;border-color:#bbf7d0}
+.sw-amber{background:#fef3c7;color:#b45309;border-color:#fde68a}
+.sw-red{background:#fee2e2;color:#CE0000;border-color:#fecaca}
+
+/* IMPORT / EXPORT */
+.io-row{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1rem}
+textarea{width:100%;height:220px;background:var(--lgray);border:1.5px solid var(--border);border-radius:4px;padding:.65rem .85rem;font-family:'Courier New',monospace;font-size:.78rem;color:var(--dark);outline:none;resize:vertical;transition:border-color .13s}
+textarea:focus{border-color:var(--red)}
+.io-actions{display:flex;gap:.5rem;margin-top:.5rem;flex-wrap:wrap}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:4px;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .13s;border:none;font-family:inherit}
+.btn-primary{background:var(--red);color:#fff}.btn-primary:hover{background:var(--red-h)}
+.btn-outline{background:#fff;border:1.5px solid var(--border);color:var(--dark)}.btn-outline:hover{border-color:var(--red);color:var(--red)}
+.btn-danger{background:#fff;border:1.5px solid #fecaca;color:var(--red)}.btn-danger:hover{background:#fff8f8}
+.btn-sm{padding:4px 10px;font-size:.78rem}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--dark);color:#fff;padding:10px 18px;border-radius:6px;font-size:.875rem;font-weight:600;z-index:999;opacity:0;transform:translateY(10px);transition:all .2s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.success{background:#15803d}
+.toast.error{background:var(--red)}
+
+/* LAST SAVED */
+.last-saved{font-size:.78rem;color:rgba(255,255,255,.6);display:none}
+.last-saved.show{display:inline}
+
+footer{text-align:center;font-size:.78rem;color:var(--gray);padding:2rem;border-top:1px solid var(--border);margin-top:3rem}
+
+@media(max-width:768px){
+  main{padding:1.25rem 1rem}
+  .sidebar{display:none}
+  .container{display:block}
+  .io-row{grid-template-columns:1fr}
+  .threshold-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ── TOPBAR ── -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-logo">LM</div>
+    <div>
+      <div class="topbar-title">Course Mapping — Admin Panel</div>
+      <div class="topbar-sub">Configure schools, class targets, and progress thresholds · Session 2026-27</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="last-saved" id="lastSavedLabel"></span>
+    <span class="unsaved-dot" id="unsavedDot" title="Unsaved changes"></span>
+    <a href="course-mapping-progress.html" class="btn-back">← Dashboard</a>
+    <button class="btn-save" onclick="saveAll()" id="saveBtn">💾 Save All Changes</button>
+  </div>
+</div>
+
+<!-- ── CHANGE BAR ── -->
+<div class="change-bar" id="changeBar">
+  <strong>⚠ Unsaved changes</strong> — Click "Save All Changes" to apply. The dashboard will reflect updates after its next page load or Refresh.
+</div>
+
+<!-- ── LAYOUT ── -->
+<div class="container">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="section-label">Configuration</div>
+    <ul>
+      <li><a href="#schools" class="nav-link">🏫 Schools &amp; Data Sources</a></li>
+      <li><a href="#classes" class="nav-link">📚 Class Configuration</a></li>
+      <li><a href="#thresholds" class="nav-link">⚙ Progress Thresholds</a></li>
+    </ul>
+    <div class="section-label">Tools</div>
+    <ul>
+      <li><a href="#import-export" class="nav-link">📤 Import / Export</a></li>
+      <li><a href="#reset" class="nav-link">🔄 Reset to Defaults</a></li>
+    </ul>
+    <div class="sidebar-note">
+      Changes are saved to browser storage and apply to the dashboard on next load. They persist across sessions on this device.
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main>
+
+    <!-- ── SCHOOLS ── -->
+    <section id="schools">
+      <h2>Schools &amp; Data Sources</h2>
+      <p class="section-desc">
+        Set the display name and Google Sheet for each school.
+        The <strong>Sheet ID</strong> is the long alphanumeric string from the Google Sheets URL:
+        <code style="background:#f5f5f5;padding:1px 5px;border-radius:3px;font-size:.8rem">docs.google.com/spreadsheets/d/<strong>SHEET_ID</strong>/edit</code>
+      </p>
+      <div class="callout callout-amber">
+        <strong>Before changing a Sheet ID</strong>
+        Ensure the new sheet is shared as "Anyone with the link → Viewer" and follows the same column layout (Subject in col B, Term in col F, Start Date in col H, CWA Date in col K). The dashboard auto-detects column positions from headers.
+      </div>
+      <div class="tbl-wrap">
+        <table id="schoolsTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>School Display Name</th>
+              <th>Google Sheet ID</th>
+              <th>Open Sheet</th>
+              <th>Enabled</th>
+            </tr>
+          </thead>
+          <tbody id="schoolsTbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── CLASSES ── -->
+    <section id="classes">
+      <h2>Class Configuration</h2>
+      <p class="section-desc">
+        Configure the expected T1/T2 chapter distribution target and whether CWA tracking applies for each class.
+        The <strong>Sheet Tab Name</strong> must exactly match the tab name in the Google Sheet (case-sensitive, spaces matter).
+        T2 target is automatically set to <code>100 − T1</code>.
+      </p>
+      <div class="callout callout-blue">
+        <strong>Distribution targets explained</strong>
+        A T1 target of 60% means 60% of chapters should be assigned to Term 1 in the course mapping sheet (column F). The dashboard flags any subject where the actual split falls outside ±Tolerance of this target.
+      </div>
+      <div class="tbl-wrap">
+        <table id="classesTable">
+          <thead>
+            <tr>
+              <th style="width:40px">#</th>
+              <th>Class</th>
+              <th>Sheet Tab Name</th>
+              <th style="width:90px">T1 Target %</th>
+              <th style="width:90px">T2 Target %</th>
+              <th>CWA Applicable</th>
+              <th>Split Preview</th>
+            </tr>
+          </thead>
+          <tbody id="classesTbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── THRESHOLDS ── -->
+    <section id="thresholds">
+      <h2>Progress Thresholds</h2>
+      <p class="section-desc">
+        These thresholds control colour coding throughout the dashboard — school card progress bars, donut rings, subject-level detail, and the By Subject matrix.
+      </p>
+
+      <div class="threshold-grid" id="thresholdGrid"></div>
+
+      <h3 style="font-size:1rem;color:var(--dark);margin:1.25rem 0 .5rem;font-weight:700">Colour Preview</h3>
+      <p style="font-size:.85rem;color:var(--gray);margin-bottom:.75rem">With the current threshold settings, CWA completion percentages will be coloured as follows:</p>
+      <div class="swatch-row" id="swatchRow"></div>
+    </section>
+
+    <!-- ── IMPORT / EXPORT ── -->
+    <section id="import-export">
+      <h2>Import / Export</h2>
+      <p class="section-desc">
+        Export the current configuration as JSON to back it up or share it across devices. Import a previously exported config to restore settings.
+      </p>
+      <div class="io-row">
+        <div>
+          <div class="field-label">Export — Current Configuration</div>
+          <textarea id="exportArea" readonly placeholder="Click Export to generate JSON…"></textarea>
+          <div class="io-actions">
+            <button class="btn btn-primary btn-sm" onclick="doExport()">Export JSON</button>
+            <button class="btn btn-outline btn-sm" onclick="copyExport()">Copy to Clipboard</button>
+          </div>
+        </div>
+        <div>
+          <div class="field-label">Import — Paste Configuration JSON</div>
+          <textarea id="importArea" placeholder="Paste a previously exported config JSON here, then click Import…"></textarea>
+          <div class="io-actions">
+            <button class="btn btn-primary btn-sm" onclick="doImport()">Import &amp; Apply</button>
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('importArea').value=''">Clear</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── RESET ── -->
+    <section id="reset">
+      <h2>Reset to Defaults</h2>
+      <p class="section-desc">
+        Restore all configuration to the original hardcoded defaults. This cannot be undone — export first if you want to keep your current settings.
+      </p>
+      <button class="btn btn-danger" onclick="confirmReset()">🔄 Reset All Settings to Default</button>
+    </section>
+
+    <footer>LMCS Course Mapping Progress &mdash; Admin Panel &mdash; Session 2026-27 &mdash; Internal Use Only</footer>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ════════════════════════════════════════════════════
+   DEFAULT CONFIGURATION — matches course-mapping-progress.html hardcoded values
+════════════════════════════════════════════════════ */
+const CONFIG_KEY = 'lmcs_cmp_config';
+
+const DEFAULT_CONFIG = {
+  version: 1,
+  schools: [
+    { name:'LMS 1', id:'1BorpCdePG7O6iZiwgGwNpWZBl7I1IGAT-OAh0fw2yMs', enabled:true },
+    { name:'LMS 2', id:'1ejXKsnK3a2kNGEboTs-yQ2d3Tpk3xG5JRtm9DAmiYXs', enabled:true },
+    { name:'LMS 3', id:'1MYTOPH_zFIK8xnQk3SsKIgsX5eT5mZgHaJpMgyoJhL8', enabled:true },
+    { name:'LMS 4', id:'1nwPLQprQoQJ35xKDWSi2Y4YDzbvUPZ688u5QwOYmSxU', enabled:true },
+    { name:'LMS 5', id:'172YKw1cMMcG5UZ0jjI8RzO2tGxnVWG3QVCEsDY6CZHg', enabled:true },
+    { name:'LMS 6', id:'1PkZYbeVCdKeqCbbX2eXAwk7c8w7NAHUOSQKmO6nDZtE', enabled:true },
+  ],
+  classes: [
+    { tab:'M-I',     t1Target:60, cwaApplicable:false },
+    { tab:'M-II',    t1Target:60, cwaApplicable:false },
+    { tab:'M-III',   t1Target:60, cwaApplicable:false },
+    { tab:'Class 1', t1Target:60, cwaApplicable:true  },
+    { tab:'Class 2', t1Target:60, cwaApplicable:true  },
+    { tab:'Class 3', t1Target:60, cwaApplicable:true  },
+    { tab:'Class 4', t1Target:60, cwaApplicable:true  },
+    { tab:'Class 5', t1Target:60, cwaApplicable:true  },
+    { tab:'Class 6', t1Target:60, cwaApplicable:true  },
+    { tab:'Class 7', t1Target:60, cwaApplicable:true  },
+    { tab:'Class 8', t1Target:60, cwaApplicable:true  },
+    { tab:'Class 9', t1Target:60, cwaApplicable:true  },
+    { tab:'Class 10',t1Target:50, cwaApplicable:true  },
+    { tab:'Class 11',t1Target:60, cwaApplicable:true  },
+    { tab:'Class 12',t1Target:50, cwaApplicable:true  },
+  ],
+  thresholds: {
+    green: 80,       // CWA% ≥ this → green
+    amber: 50,       // CWA% ≥ this → amber (else red)
+    tolerance: 5,    // T1/T2 distribution ±% tolerance
+    graceDays: 0,    // days after planned completion before flagging overdue
+  },
+};
+
+/* ════════════════════════════════════════════════════
+   LOAD / SAVE
+════════════════════════════════════════════════════ */
+function loadConfig() {
+  try {
+    const saved = localStorage.getItem(CONFIG_KEY);
+    if (saved) {
+      const p = JSON.parse(saved);
+      return {
+        ...DEFAULT_CONFIG, ...p,
+        schools: p.schools || DEFAULT_CONFIG.schools,
+        classes: p.classes || DEFAULT_CONFIG.classes,
+        thresholds: { ...DEFAULT_CONFIG.thresholds, ...(p.thresholds||{}) },
+      };
+    }
+  } catch(e) {}
+  return JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+}
+
+let cfg = loadConfig();
+let dirty = false;
+
+function markDirty() {
+  dirty = true;
+  document.getElementById('unsavedDot').classList.add('show');
+  document.getElementById('changeBar').classList.add('show');
+}
+
+function markClean() {
+  dirty = false;
+  document.getElementById('unsavedDot').classList.remove('show');
+  document.getElementById('changeBar').classList.remove('show');
+  const ts = new Date().toLocaleString('en-IN',{dateStyle:'short',timeStyle:'short'});
+  const lbl = document.getElementById('lastSavedLabel');
+  lbl.textContent = `Saved ${ts}`;
+  lbl.classList.add('show');
+}
+
+function collectConfig() {
+  const schools = [...document.querySelectorAll('.school-row')].map(row => ({
+    name:    row.querySelector('.inp-name').value.trim(),
+    id:      row.querySelector('.inp-id').value.trim(),
+    enabled: row.querySelector('.inp-enabled').checked,
+  }));
+
+  const classes = [...document.querySelectorAll('.class-row')].map(row => {
+    const t1 = parseInt(row.querySelector('.inp-t1').value) || 60;
+    return {
+      tab:           row.querySelector('.inp-tab').value.trim(),
+      t1Target:      Math.min(100, Math.max(0, t1)),
+      cwaApplicable: row.querySelector('.inp-cwa').checked,
+    };
+  });
+
+  const thresholds = {
+    green:     parseInt(document.getElementById('inp-green').value)     || 80,
+    amber:     parseInt(document.getElementById('inp-amber').value)     || 50,
+    tolerance: parseInt(document.getElementById('inp-tolerance').value) || 5,
+    graceDays: parseInt(document.getElementById('inp-grace').value)     || 0,
+  };
+
+  return { version:1, schools, classes, thresholds };
+}
+
+function validate(config) {
+  const errs = [];
+  config.schools.forEach((s, i) => {
+    if (!s.name) errs.push(`School ${i+1}: name is empty`);
+    if (!s.id)   errs.push(`School ${i+1} (${s.name||'?'}): Sheet ID is empty`);
+  });
+  config.classes.forEach((c, i) => {
+    if (!c.tab) errs.push(`Row ${i+1}: Sheet Tab Name is empty`);
+    if (c.t1Target < 0 || c.t1Target > 100) errs.push(`${c.tab}: T1 target must be 0–100`);
+  });
+  const t = config.thresholds;
+  if (t.green < t.amber) errs.push(`Green threshold (${t.green}) must be ≥ Amber threshold (${t.amber})`);
+  if (t.tolerance < 0 || t.tolerance > 25) errs.push('Tolerance must be 0–25%');
+  if (t.graceDays < 0) errs.push('Grace period cannot be negative');
+  return errs;
+}
+
+function saveAll() {
+  const config = collectConfig();
+  const errs = validate(config);
+  if (errs.length) { showToast('Fix errors:\n• ' + errs.join('\n• '), 'error'); return; }
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+  cfg = config;
+  markClean();
+  showToast('✓ Configuration saved — refresh the dashboard to apply changes', 'success');
+}
+
+function confirmReset() {
+  if (!confirm('Reset all Course Mapping settings to defaults?\n\nThis will remove your custom school names, sheet IDs, class targets, and thresholds. This cannot be undone.')) return;
+  localStorage.removeItem(CONFIG_KEY);
+  cfg = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+  buildForms();
+  markClean();
+  showToast('✓ Reset to defaults', 'success');
+}
+
+/* ════════════════════════════════════════════════════
+   RENDER — Schools table
+════════════════════════════════════════════════════ */
+function buildSchools() {
+  const tbody = document.getElementById('schoolsTbody');
+  tbody.innerHTML = cfg.schools.map((s, i) => {
+    const sheetUrl = s.id ? `https://docs.google.com/spreadsheets/d/${s.id}/edit` : '';
+    return `<tr class="school-row">
+      <td style="text-align:center;font-weight:700;color:var(--gray)">${i+1}</td>
+      <td class="school-name-cell">
+        <input class="inp-name" type="text" value="${esc(s.name)}" placeholder="e.g. LMS 1" oninput="markDirty()">
+      </td>
+      <td class="school-id-cell">
+        <input class="inp-id mono" type="text" value="${esc(s.id)}" placeholder="Google Sheet ID"
+          oninput="updateSheetLink(this,${i});markDirty()">
+      </td>
+      <td>
+        <a class="open-link" id="school-link-${i}" href="${sheetUrl}" target="_blank" rel="noopener"
+          style="${!s.id?'display:none':''}">
+          ↗ Open
+        </a>
+      </td>
+      <td class="enabled-cell">
+        <input class="inp-enabled" type="checkbox" ${s.enabled!==false?'checked':''} onchange="markDirty()">
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function updateSheetLink(input, idx) {
+  const id = input.value.trim();
+  const link = document.getElementById(`school-link-${idx}`);
+  if (link) {
+    link.href = id ? `https://docs.google.com/spreadsheets/d/${id}/edit` : '#';
+    link.style.display = id ? '' : 'none';
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   RENDER — Classes table
+════════════════════════════════════════════════════ */
+function buildClasses() {
+  const tbody = document.getElementById('classesTbody');
+  tbody.innerHTML = cfg.classes.map((c, i) => {
+    const t2 = 100 - c.t1Target;
+    return `<tr class="class-row">
+      <td style="text-align:center;color:var(--gray);font-weight:700">${i+1}</td>
+      <td>
+        <span style="display:inline-block;background:#fee2e2;color:var(--red);border:1px solid #fecaca;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700">${esc(c.tab)}</span>
+      </td>
+      <td>
+        <input class="inp-tab mono" type="text" value="${esc(c.tab)}" placeholder="e.g. Class 7"
+          style="width:110px" oninput="markDirty()">
+      </td>
+      <td style="text-align:center">
+        <input class="inp-t1" type="number" min="0" max="100" value="${c.t1Target}"
+          oninput="updateClassRow(${i},this);markDirty()">
+      </td>
+      <td style="text-align:center">
+        <span class="t2-display-${i}" style="font-weight:700;color:#1d4ed8">${t2}%</span>
+      </td>
+      <td style="text-align:center">
+        <input class="inp-cwa" type="checkbox" ${c.cwaApplicable?'checked':''} onchange="markDirty()">
+        <span style="font-size:.75rem;color:var(--gray);margin-left:4px">${c.cwaApplicable?'Yes':'No (Milestone)'}</span>
+      </td>
+      <td>
+        <div class="split-bar" id="splitbar-${i}">
+          <div class="split-t1" style="width:${c.t1Target}%">${c.t1Target > 15 ? 'T1 '+c.t1Target+'%' : ''}</div>
+          <div class="split-t2">${t2 > 15 ? 'T2 '+t2+'%' : ''}</div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Update CWA label live
+  document.querySelectorAll('.inp-cwa').forEach((cb, i) => {
+    cb.addEventListener('change', function() {
+      const span = this.parentElement.querySelector('span');
+      if (span) span.textContent = this.checked ? 'Yes' : 'No (Milestone)';
+    });
+  });
+}
+
+function updateClassRow(idx, input) {
+  const t1 = Math.min(100, Math.max(0, parseInt(input.value)||0));
+  const t2 = 100 - t1;
+  const t2Display = document.querySelector(`.t2-display-${idx}`);
+  const splitBar  = document.getElementById(`splitbar-${idx}`);
+  if (t2Display) t2Display.textContent = t2 + '%';
+  if (splitBar) {
+    splitBar.querySelector('.split-t1').style.width = t1 + '%';
+    splitBar.querySelector('.split-t1').textContent = t1 > 15 ? 'T1 '+t1+'%' : '';
+    splitBar.querySelector('.split-t2').textContent = t2 > 15 ? 'T2 '+t2+'%' : '';
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   RENDER — Thresholds
+════════════════════════════════════════════════════ */
+function buildThresholds() {
+  const t = cfg.thresholds;
+  const cards = [
+    {
+      id: 'inp-green',
+      icon: '🟢',
+      title: 'Green Threshold',
+      desc: 'CWA completion % at or above this value is shown in green — indicates the class is on track.',
+      unit: '%', min: 0, max: 100, val: t.green,
+      note: `Currently: CWA ≥ ${t.green}% → green`
+    },
+    {
+      id: 'inp-amber',
+      icon: '🟡',
+      title: 'Amber Threshold',
+      desc: 'CWA completion % at or above this (but below green) is shown in amber — needs attention.',
+      unit: '%', min: 0, max: 100, val: t.amber,
+      note: `Currently: CWA ≥ ${t.amber}% → amber; < ${t.amber}% → red`
+    },
+    {
+      id: 'inp-tolerance',
+      icon: '⚖️',
+      title: 'Distribution Tolerance',
+      desc: 'Acceptable deviation from the T1 target %. A subject within ±tolerance is not flagged as a Distribution Issue.',
+      unit: '%', min: 0, max: 25, val: t.tolerance,
+      note: `Currently: target ±${t.tolerance}% is acceptable`
+    },
+    {
+      id: 'inp-grace',
+      icon: '⏱️',
+      title: 'Overdue Grace Period',
+      desc: 'How many extra days after the planned completion date before a chapter is flagged as overdue.',
+      unit: 'days', min: 0, max: 30, val: t.graceDays,
+      note: `Currently: chapters flagged overdue ${t.graceDays===0?'immediately after deadline':'after '+t.graceDays+' extra days'}`
+    },
+  ];
+
+  document.getElementById('thresholdGrid').innerHTML = cards.map(c => `
+    <div class="threshold-card">
+      <h4>${c.icon} ${c.title}</h4>
+      <p>${c.desc}</p>
+      <div class="threshold-input-row">
+        <input type="number" id="${c.id}" min="${c.min}" max="${c.max}" value="${c.val}"
+          oninput="updateSwatches();markDirty()">
+        <span class="unit">${c.unit}</span>
+      </div>
+      <div class="threshold-preview" id="${c.id}-note">${c.note}</div>
+    </div>
+  `).join('');
+
+  updateSwatches();
+}
+
+function updateSwatches() {
+  const green = parseInt(document.getElementById('inp-green')?.value)||80;
+  const amber = parseInt(document.getElementById('inp-amber')?.value)||50;
+  const tol   = parseInt(document.getElementById('inp-tolerance')?.value)||5;
+  const grace = parseInt(document.getElementById('inp-grace')?.value)||0;
+
+  document.getElementById('inp-green-note')?.setAttribute('style','');
+  const gNote = document.getElementById('inp-green-note');
+  if (gNote) gNote.textContent = `CWA ≥ ${green}% → green`;
+  const aNote = document.getElementById('inp-amber-note');
+  if (aNote) aNote.textContent = `CWA ${amber}–${green-1}% → amber; < ${amber}% → red`;
+  const tNote = document.getElementById('inp-tolerance-note');
+  if (tNote) tNote.textContent = `T1 target ±${tol}% is acceptable`;
+  const grNote = document.getElementById('inp-grace-note');
+  if (grNote) grNote.textContent = grace===0 ? 'Flagged overdue immediately after deadline' : `Flagged overdue after ${grace} extra days`;
+
+  document.getElementById('swatchRow').innerHTML = `
+    <div class="swatch sw-green">🟢 ≥ ${green}% Complete</div>
+    <div class="swatch sw-amber">🟡 ${amber}–${green-1}% Attention</div>
+    <div class="swatch sw-red">🔴 &lt; ${amber}% Critical</div>
+  `;
+}
+
+/* ════════════════════════════════════════════════════
+   IMPORT / EXPORT
+════════════════════════════════════════════════════ */
+function doExport() {
+  const config = collectConfig();
+  document.getElementById('exportArea').value = JSON.stringify(config, null, 2);
+  showToast('Config exported — copy and save the JSON', 'success');
+}
+
+function copyExport() {
+  const area = document.getElementById('exportArea');
+  if (!area.value) { doExport(); }
+  navigator.clipboard.writeText(area.value).then(() => {
+    showToast('✓ Copied to clipboard', 'success');
+  }).catch(() => {
+    area.select();
+    showToast('Select all and copy manually', 'error');
+  });
+}
+
+function doImport() {
+  const text = document.getElementById('importArea').value.trim();
+  if (!text) { showToast('Paste a config JSON first', 'error'); return; }
+  try {
+    const imported = JSON.parse(text);
+    if (!imported.schools || !imported.classes) {
+      showToast('Invalid config — missing schools or classes', 'error'); return;
+    }
+    cfg = {
+      ...DEFAULT_CONFIG, ...imported,
+      schools: imported.schools || DEFAULT_CONFIG.schools,
+      classes: imported.classes || DEFAULT_CONFIG.classes,
+      thresholds: { ...DEFAULT_CONFIG.thresholds, ...(imported.thresholds||{}) },
+    };
+    buildForms();
+    markDirty();
+    showToast('✓ Config imported — review and click Save All Changes', 'success');
+  } catch(e) {
+    showToast('Invalid JSON: ' + e.message, 'error');
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   HELPERS
+════════════════════════════════════════════════════ */
+function esc(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let toastTimer;
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + type;
+  setTimeout(()=>t.classList.add('show'), 10);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 4000);
+}
+
+/* ════════════════════════════════════════════════════
+   SIDEBAR ACTIVE HIGHLIGHTING
+════════════════════════════════════════════════════ */
+function initNav() {
+  const links = document.querySelectorAll('.nav-link');
+  const sections = document.querySelectorAll('section[id]');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const match = document.querySelector(`.nav-link[href="#${e.target.id}"]`);
+        if (match) match.classList.add('active');
+      }
+    });
+  }, {rootMargin:'-20% 0px -70% 0px'});
+  sections.forEach(s => observer.observe(s));
+}
+
+/* ════════════════════════════════════════════════════
+   WARN ON UNLOAD IF DIRTY
+════════════════════════════════════════════════════ */
+window.addEventListener('beforeunload', e => {
+  if (dirty) { e.preventDefault(); e.returnValue = ''; }
+});
+
+/* ════════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════════ */
+function buildForms() {
+  buildSchools();
+  buildClasses();
+  buildThresholds();
+}
+
+buildForms();
+initNav();
+
+// Show last-saved info if config was previously saved
+if (localStorage.getItem(CONFIG_KEY)) {
+  document.getElementById('lastSavedLabel').textContent = 'Config loaded from browser storage';
+  document.getElementById('lastSavedLabel').classList.add('show');
+}
+</script>
+</body>
+</html>

@@ -296,6 +296,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
   <div class="hdr-right">
     <span class="hdr-ts" id="lastUpdated"></span>
     <a href="guide.html" class="hdr-btn">📖 Guide</a>
+    <a href="course-mapping-admin.html" class="hdr-btn">⚙ Admin</a>
     <a href="index.html" class="hdr-btn">← Back</a>
     <button class="hdr-btn" onclick="reload()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
@@ -365,24 +366,72 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
 
 <script>
 /* ═══════════════════════════════════════════════════════════
-   CONFIG
+   CONFIG — loaded from localStorage (set via course-mapping-admin.html)
+   Falls back to hardcoded defaults if no admin config is saved.
 ═══════════════════════════════════════════════════════════ */
-const SCHOOLS = [
-  {name:'LMS 1', id:'1BorpCdePG7O6iZiwgGwNpWZBl7I1IGAT-OAh0fw2yMs'},
-  {name:'LMS 2', id:'1ejXKsnK3a2kNGEboTs-yQ2d3Tpk3xG5JRtm9DAmiYXs'},
-  {name:'LMS 3', id:'1MYTOPH_zFIK8xnQk3SsKIgsX5eT5mZgHaJpMgyoJhL8'},
-  {name:'LMS 4', id:'1nwPLQprQoQJ35xKDWSi2Y4YDzbvUPZ688u5QwOYmSxU'},
-  {name:'LMS 5', id:'172YKw1cMMcG5UZ0jjI8RzO2tGxnVWG3QVCEsDY6CZHg'},
-  {name:'LMS 6', id:'1PkZYbeVCdKeqCbbX2eXAwk7c8w7NAHUOSQKmO6nDZtE'},
-];
-const TABS = [
-  'M-I','M-II','M-III',
-  'Class 1','Class 2','Class 3','Class 4','Class 5','Class 6',
-  'Class 7','Class 8','Class 9','Class 10','Class 11','Class 12'
-];
-const MILESTONE_TABS = new Set(['M-I','M-II','M-III']);
-const TARGET = (tab) => (['Class 10','Class 12'].includes(tab)) ? {t1:0.5,t2:0.5} : {t1:0.6,t2:0.4};
-const TOLERANCE = 0.05;
+const CONFIG_KEY = 'lmcs_cmp_config';
+
+const DEFAULT_CONFIG = {
+  version: 1,
+  schools: [
+    { name:'LMS 1', id:'1BorpCdePG7O6iZiwgGwNpWZBl7I1IGAT-OAh0fw2yMs', enabled:true },
+    { name:'LMS 2', id:'1ejXKsnK3a2kNGEboTs-yQ2d3Tpk3xG5JRtm9DAmiYXs', enabled:true },
+    { name:'LMS 3', id:'1MYTOPH_zFIK8xnQk3SsKIgsX5eT5mZgHaJpMgyoJhL8', enabled:true },
+    { name:'LMS 4', id:'1nwPLQprQoQJ35xKDWSi2Y4YDzbvUPZ688u5QwOYmSxU', enabled:true },
+    { name:'LMS 5', id:'172YKw1cMMcG5UZ0jjI8RzO2tGxnVWG3QVCEsDY6CZHg', enabled:true },
+    { name:'LMS 6', id:'1PkZYbeVCdKeqCbbX2eXAwk7c8w7NAHUOSQKmO6nDZtE', enabled:true },
+  ],
+  classes: [
+    { tab:'M-I',     t1Target:60, cwaApplicable:false },
+    { tab:'M-II',    t1Target:60, cwaApplicable:false },
+    { tab:'M-III',   t1Target:60, cwaApplicable:false },
+    { tab:'Class 1', t1Target:60, cwaApplicable:true  },
+    { tab:'Class 2', t1Target:60, cwaApplicable:true  },
+    { tab:'Class 3', t1Target:60, cwaApplicable:true  },
+    { tab:'Class 4', t1Target:60, cwaApplicable:true  },
+    { tab:'Class 5', t1Target:60, cwaApplicable:true  },
+    { tab:'Class 6', t1Target:60, cwaApplicable:true  },
+    { tab:'Class 7', t1Target:60, cwaApplicable:true  },
+    { tab:'Class 8', t1Target:60, cwaApplicable:true  },
+    { tab:'Class 9', t1Target:60, cwaApplicable:true  },
+    { tab:'Class 10',t1Target:50, cwaApplicable:true  },
+    { tab:'Class 11',t1Target:60, cwaApplicable:true  },
+    { tab:'Class 12',t1Target:50, cwaApplicable:true  },
+  ],
+  thresholds: { green:80, amber:50, tolerance:5, graceDays:0 },
+};
+
+function loadConfig() {
+  try {
+    const saved = localStorage.getItem(CONFIG_KEY);
+    if (saved) {
+      const p = JSON.parse(saved);
+      return {
+        ...DEFAULT_CONFIG, ...p,
+        schools: p.schools || DEFAULT_CONFIG.schools,
+        classes: p.classes || DEFAULT_CONFIG.classes,
+        thresholds: { ...DEFAULT_CONFIG.thresholds, ...(p.thresholds||{}) },
+      };
+    }
+  } catch(e) { console.warn('Config load error:', e); }
+  return JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+}
+
+const CFG = loadConfig();
+
+// Derive working constants from config
+const SCHOOLS       = CFG.schools;
+const TABS          = CFG.classes.map(c => c.tab);
+const MILESTONE_TABS= new Set(CFG.classes.filter(c => !c.cwaApplicable).map(c => c.tab));
+const TARGET        = (tab) => {
+  const cls = CFG.classes.find(c => c.tab === tab);
+  const t1  = cls ? cls.t1Target / 100 : 0.6;
+  return { t1, t2: 1 - t1 };
+};
+const TOLERANCE     = (CFG.thresholds.tolerance || 5) / 100;
+const GRACE_MS      = (CFG.thresholds.graceDays || 0) * 86400000;
+const GREEN_THRESH  = CFG.thresholds.green || 80;
+const AMBER_THRESH  = CFG.thresholds.amber || 50;
 
 /* ═══════════════════════════════════════════════════════════
    SUBJECT REGISTRY — collects all unique subjects as data loads
@@ -495,7 +544,7 @@ function processRows(rows, colMap, tabName) {
       b.cwa++;
     } else if (start && days > 0) {
       const sd = parseDate(start);
-      if (sd && (today - sd) > days * 86400000) b.overdue++;
+      if (sd && (today - sd) > (days * 86400000 + GRACE_MS)) b.overdue++;
     }
   }
 
@@ -605,11 +654,11 @@ function generateRemarks(tabName, subjects, subjOrder) {
 ═══════════════════════════════════════════════════════════ */
 function pctColor(pct) {
   if (pct===null||pct===undefined) return '#9ca3af';
-  return pct>=80?'#15803d':pct>=50?'#d97706':'#CE0000';
+  return pct>=GREEN_THRESH?'#15803d':pct>=AMBER_THRESH?'#d97706':'#CE0000';
 }
 function barColor(pct) {
   if (pct===null||pct===undefined) return '#e5e7eb';
-  return pct>=80?'#22c55e':pct>=50?'#f59e0b':'#CE0000';
+  return pct>=GREEN_THRESH?'#22c55e':pct>=AMBER_THRESH?'#f59e0b':'#CE0000';
 }
 const fmt  = v => v===null||v===undefined ? '—' : Math.round(v)+'%';
 const fmtD = v => v===null||v===undefined ? '—' : Math.round(v*100)+'%';
@@ -1455,6 +1504,26 @@ function updateStats() {
 ═══════════════════════════════════════════════════════════ */
 async function loadSchool(idx) {
   const s = SCHOOLS[idx];
+
+  // If school is disabled in admin config, show as disabled card
+  if (s.enabled === false) {
+    store[idx] = {};
+    loadedCount++;
+    updateStats();
+    if (currentRoute.view === 'schools') {
+      const el = document.getElementById(`card-${idx}`);
+      if (el) el.outerHTML = `<div class="scard" id="card-${idx}" style="opacity:.45;pointer-events:none">
+        <div class="scard-top"><div class="scard-meta">
+          <div class="scard-name">${s.name}</div>
+          <div class="scard-sub" style="color:#CE0000;font-weight:600">Disabled — enable in Admin Panel</div>
+        </div></div>
+        <div class="scard-bot"><span class="scard-bot-txt">School disabled via admin config</span>
+          <a href="course-mapping-admin.html" style="font-size:10px;color:var(--red);font-weight:700">⚙ Admin →</a>
+        </div></div>`;
+    }
+    if (currentRoute.view === 'subjects') renderSubjectView(currentRoute.subject);
+    return;
+  }
   const results = await Promise.allSettled(TABS.map(t => fetchTab(s.id, t)));
   store[idx] = {};
   let aggTotal=0,aggUnassigned=0,aggT1={total:0,sched:0,cwa:0,overdue:0},aggT2={total:0,sched:0,cwa:0,overdue:0};
