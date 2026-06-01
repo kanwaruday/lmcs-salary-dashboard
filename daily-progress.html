@@ -422,11 +422,41 @@ let activeSchool = '';
 let activeSubject= '';
 
 /* ═══════════════════════════════════════════════════════════
+   DATE PARSING
+   The sheet stores dates as TEXT in MM/DD/YYYY H:MM:SS AM/PM format.
+   "ORDER BY B DESC" gives a lexicographic sort on this text (9/… > 6/…),
+   which makes September 2025 fill the LIMIT before June 2026 is reached.
+   Fix: filter by current year in the WHERE clause, fetch ALL matching rows,
+   then sort client-side by actual parsed Date objects.
+═══════════════════════════════════════════════════════════ */
+function parseDateStr(str) {
+  if (!str) return null;
+  // Explicit parser for "M/D/YYYY H:MM:SS AM/PM" (Google Sheets export format)
+  const m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)$/i);
+  if (m) {
+    let [, mo, da, yr, hr, mi, se, ap] = m;
+    mo=+mo; da=+da; yr=+yr; hr=+hr; mi=+mi; se=+se;
+    if (ap.toUpperCase() === 'PM' && hr !== 12) hr += 12;
+    if (ap.toUpperCase() === 'AM' && hr === 12) hr = 0;
+    return new Date(yr, mo - 1, da, hr, mi, se);
+  }
+  // Fallback
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/* ═══════════════════════════════════════════════════════════
    FETCH — DAILY SHEET
+   Queries for current academic year only (avoids the sort ambiguity),
+   then sorts results client-side by actual Date objects.
 ═══════════════════════════════════════════════════════════ */
 async function fetchDailySheet() {
-  // Fetch the 2000 most recent rows (avoids 10MB+ full-sheet fetch)
-  const query = encodeURIComponent('SELECT * ORDER BY B DESC LIMIT 2000');
+  const year = new Date().getFullYear();
+  // Filter for entries containing the current year in the date column (text match).
+  // LIMIT 20000 safely covers ~78 days at 256 entries/day = one full term.
+  // We do NOT use ORDER BY here because the date is stored as text and
+  // lexicographic sorting ("9/…" > "6/…") would return wrong rows.
+  const query = encodeURIComponent(`SELECT * WHERE B CONTAINS '/${year}' LIMIT 20000`);
   const url = `https://docs.google.com/spreadsheets/d/${DAILY_SHEET_ID}/gviz/tq?tqx=out:json&tq=${query}`;
   const res  = await fetch(url, {cache:'no-cache'});
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -453,17 +483,17 @@ function parseDailyTable(table) {
     const lmsIdx  = dailySchoolToLMS(school);
     if (lmsIdx === null) continue; // skip demo/unknown schools
 
-    // Parse date
-    const dateObj = new Date(dateRaw);
-    if (isNaN(dateObj.getTime())) continue;
+    // Use explicit parser for M/D/YYYY H:MM:SS AM/PM format
+    const dateObj = parseDateStr(dateRaw);
+    if (!dateObj) continue;
 
-    const classStr   = cell(3);
-    const section    = cell(4);
+    const classStr    = cell(3);
+    const section     = cell(4);
     const classMapped = mapDailyClass(classStr, section);
 
     rows.push({
       school, lmsIdx, dateObj,
-      dateStr: dateObj.toISOString().slice(0,10), // YYYY-MM-DD
+      dateStr: `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`,
       timeStr: dateObj.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}),
       teacher:    cell(2),
       classRaw:   classStr,
@@ -480,6 +510,8 @@ function parseDailyTable(table) {
       hwTag:      cell(13),
     });
   }
+  // Sort most recent first (correct chronological order regardless of sheet row order)
+  rows.sort((a, b) => b.dateObj - a.dateObj);
   return rows;
 }
 
