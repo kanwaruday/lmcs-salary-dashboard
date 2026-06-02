@@ -316,6 +316,15 @@ function loadCfg() {
 }
 const savedCfg = loadCfg();
 const CM_SCHOOLS = (savedCfg?.schools) || DEFAULT_SCHOOLS;
+
+// Subjects where CWA is never applicable (set in Admin Panel → CWA-Exempt Subjects)
+const CWA_EXEMPT_SUBJECTS = (savedCfg?.cwaExemptSubjects || ['General Knowledge', 'Computer'])
+  .map(s => s.toLowerCase());
+
+function isSubjectCwaExempt(subject) {
+  const sl = String(subject||'').toLowerCase();
+  return CWA_EXEMPT_SUBJECTS.some(e => sl === e || sl.includes(e) || e.includes(sl));
+}
 const CM_CLASSES = (savedCfg?.classes) || [
   {tab:'M-I',cwaApplicable:false},{tab:'M-II',cwaApplicable:false},{tab:'M-III',cwaApplicable:false},
   {tab:'Class 1',cwaApplicable:true},{tab:'Class 2',cwaApplicable:true},{tab:'Class 3',cwaApplicable:true},
@@ -358,7 +367,8 @@ function mapDailyClass(classStr, sectionStr) {
 function splitTags(tagStr) {
   return String(tagStr||'').split(',').map(t => t.trim()).filter(Boolean);
 }
-function hasCWA(tagStr) {
+function hasCWA(tagStr, subject) {
+  if (subject !== undefined && isSubjectCwaExempt(subject)) return false;
   return splitTags(tagStr).some(t => t.toUpperCase() === 'CWA');
 }
 function hasOTT(tagStr) {
@@ -623,7 +633,7 @@ function buildChips() {
   const dates = [...new Set(allRecords.map(r => r.dateStr))].sort().reverse();
   const latestDate = dates[0] || todayStr();
   const todayRecs = allRecords.filter(r => r.dateStr === latestDate);
-  const cwaToday  = todayRecs.filter(r => hasCWA(r.cwTag));
+  const cwaToday  = todayRecs.filter(r => hasCWA(r.cwTag, r.subject));
   const schoolsToday = new Set(todayRecs.map(r => r.lmsIdx));
   const missingToday = CM_SCHOOLS.length - schoolsToday.size;
 
@@ -698,7 +708,7 @@ function renderFeed() {
   Object.keys(bySchool).sort((a,b)=>+a-+b).forEach(lmsIdx => {
     const classes = bySchool[lmsIdx];
     const total   = Object.values(classes).flat().length;
-    const cwaCount= Object.values(classes).flat().filter(r=>hasCWA(r.cwTag)).length;
+    const cwaCount= Object.values(classes).flat().filter(r=>hasCWA(r.cwTag, r.subject)).length;
 
     html += `<div class="school-group">
       <div class="school-group-hdr">
@@ -757,7 +767,7 @@ async function renderGaps() {
 
   // Build daily CWA events: key={lmsIdx}_{classMapped}_{normSubject} → [{chapter, date, teacher}]
   const dailyCWA = {};
-  allRecords.filter(r => hasCWA(r.cwTag)).forEach(r => {
+  allRecords.filter(r => hasCWA(r.cwTag, r.subject)).forEach(r => {
     if (r.lmsIdx === null || !r.classMapped) return;
     const key = `${r.lmsIdx}|${r.classMapped}|${normalizeSubject(r.subject)}`;
     if (!dailyCWA[key]) dailyCWA[key] = [];
@@ -886,7 +896,7 @@ function renderWeekly() {
     const recs = allRecords.filter(r => r.dateStr === d.dateStr);
     byDay[d.dateStr] = {
       total: recs.length,
-      cwa:   recs.filter(r=>hasCWA(r.cwTag)).length,
+      cwa:   recs.filter(r=>hasCWA(r.cwTag, r.subject)).length,
       schools: new Set(recs.map(r=>r.lmsIdx)),
     };
   });
@@ -908,14 +918,14 @@ function renderWeekly() {
   const schoolRows = CM_SCHOOLS.map((school, idx) => {
     const dayCells = days.map(d => {
       const recs = allRecords.filter(r => r.dateStr === d.dateStr && r.lmsIdx === idx);
-      const cwa  = recs.filter(r => hasCWA(r.cwTag)).length;
+      const cwa  = recs.filter(r => hasCWA(r.cwTag, r.subject)).length;
       if (!recs.length) return `<td class="day-cell empty">—</td>`;
       if (cwa > 0)      return `<td class="day-cell cwa" title="${cwa} CWA events">${recs.length} <span style="font-size:9px">✓${cwa}</span></td>`;
       return `<td class="day-cell some">${recs.length}</td>`;
     }).join('');
 
     const totalThisWeek = days.reduce((sum,d) => sum + allRecords.filter(r=>r.dateStr===d.dateStr&&r.lmsIdx===idx).length, 0);
-    const totalCWA      = days.reduce((sum,d) => sum + allRecords.filter(r=>r.dateStr===d.dateStr&&r.lmsIdx===idx&&hasCWA(r.cwTag)).length, 0);
+    const totalCWA      = days.reduce((sum,d) => sum + allRecords.filter(r=>r.dateStr===d.dateStr&&r.lmsIdx===idx&&hasCWA(r.cwTag, r.subject)).length, 0);
 
     return `<div class="school-pulse">
       <div class="sp-hdr">
@@ -955,7 +965,7 @@ function schoolClassWeekRows(lmsIdx, days) {
   return classes.map(cls => {
     const cells = days.map(d => {
       const recs = allRecords.filter(r=>r.dateStr===d.dateStr&&r.lmsIdx===lmsIdx&&(r.classMapped||r.classRaw)===cls);
-      const cwa = recs.filter(r=>hasCWA(r.cwTag)).length;
+      const cwa = recs.filter(r=>hasCWA(r.cwTag, r.subject)).length;
       if (!recs.length) return `<td class="day-cell empty">—</td>`;
       if (cwa>0) return `<td class="day-cell cwa">${recs.length} ✓${cwa}</td>`;
       return `<td class="day-cell some">${recs.length}</td>`;

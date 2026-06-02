@@ -96,6 +96,14 @@ input[type=text].mono{font-family:'Courier New',monospace;font-size:.8rem;color:
 .threshold-input-row .unit{font-size:.78rem;color:var(--gray);font-weight:600}
 .threshold-preview{margin-top:.6rem;font-size:.78rem;color:var(--gray)}
 
+/* CWA EXEMPT SUBJECTS */
+.exempt-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem;min-height:36px;padding:8px 10px;border:1.5px solid var(--border);border-radius:4px;background:var(--lgray)}
+.exempt-chip{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1.5px solid var(--border);border-radius:20px;padding:3px 10px;font-size:.8rem;font-weight:600;color:var(--dark)}
+.exempt-chip-x{background:none;border:none;cursor:pointer;font-size:14px;color:#9ca3af;line-height:1;padding:0;transition:color .12s}
+.exempt-chip-x:hover{color:var(--red)}
+.exempt-add-row{display:flex;gap:6px;align-items:center;margin-top:.5rem}
+.exempt-add-row input{max-width:220px}
+
 /* COLOUR PREVIEW SWATCHES */
 .swatch-row{display:flex;gap:4px;margin-top:.5rem}
 .swatch{display:flex;align-items:center;gap:4px;font-size:.7rem;font-weight:600;padding:2px 7px;border-radius:3px;border:1px solid}
@@ -171,6 +179,7 @@ footer{text-align:center;font-size:.78rem;color:var(--gray);padding:2rem;border-
       <li><a href="#schools" class="nav-link">🏫 Schools &amp; Data Sources</a></li>
       <li><a href="#classes" class="nav-link">📚 Class Configuration</a></li>
       <li><a href="#thresholds" class="nav-link">⚙ Progress Thresholds</a></li>
+      <li><a href="#cwa-subjects" class="nav-link">🚫 CWA-Exempt Subjects</a></li>
     </ul>
     <div class="section-label">Tools</div>
     <ul>
@@ -257,6 +266,28 @@ footer{text-align:center;font-size:.78rem;color:var(--gray);padding:2rem;border-
       <div class="swatch-row" id="swatchRow"></div>
     </section>
 
+    <!-- ── CWA-EXEMPT SUBJECTS ── -->
+    <section id="cwa-subjects">
+      <h2>CWA-Exempt Subjects</h2>
+      <p class="section-desc">
+        Subjects listed here are <strong>never counted for CWA tracking</strong>, regardless of which class or school they appear in.
+        Use this for subjects like <em>General Knowledge</em> and <em>Computer</em> that do not have formal CWA assessments.
+        Matching is case-insensitive.
+      </p>
+      <div class="callout callout-blue">
+        <strong>Where this applies</strong>
+        The Daily Progress tracker will not count CWA tags for these subjects. The Course Mapping dashboard will skip CWA completion calculations for them too.
+      </div>
+      <div class="field-label">Exempt subjects (click × to remove)</div>
+      <div class="exempt-list" id="exemptList"></div>
+      <div class="exempt-add-row">
+        <input type="text" id="exemptInput" placeholder="Subject name, e.g. General Knowledge"
+          onkeydown="if(event.key==='Enter'){addExemptSubject();event.preventDefault()}">
+        <button class="btn btn-outline btn-sm" onclick="addExemptSubject()">+ Add</button>
+      </div>
+      <p class="field-note" style="margin-top:.5rem">Press Enter or click Add. Changes take effect after saving.</p>
+    </section>
+
     <!-- ── IMPORT / EXPORT ── -->
     <section id="import-export">
       <h2>Import / Export</h2>
@@ -337,6 +368,7 @@ const DEFAULT_CONFIG = {
     tolerance: 5,    // T1/T2 distribution ±% tolerance
     graceDays: 0,    // days after planned completion before flagging overdue
   },
+  cwaExemptSubjects: ['General Knowledge', 'Computer'],
 };
 
 /* ════════════════════════════════════════════════════
@@ -352,6 +384,7 @@ function loadConfig() {
         schools: p.schools || DEFAULT_CONFIG.schools,
         classes: p.classes || DEFAULT_CONFIG.classes,
         thresholds: { ...DEFAULT_CONFIG.thresholds, ...(p.thresholds||{}) },
+        cwaExemptSubjects: p.cwaExemptSubjects || DEFAULT_CONFIG.cwaExemptSubjects,
       };
     }
   } catch(e) {}
@@ -400,7 +433,9 @@ function collectConfig() {
     graceDays: parseInt(document.getElementById('inp-grace').value)     || 0,
   };
 
-  return { version:1, schools, classes, thresholds };
+  const cwaExemptSubjects = [...document.querySelectorAll('.exempt-chip')].map(c => c.dataset.subject);
+
+  return { version:1, schools, classes, thresholds, cwaExemptSubjects };
 }
 
 function validate(config) {
@@ -615,6 +650,49 @@ function updateSwatches() {
 }
 
 /* ════════════════════════════════════════════════════
+   RENDER — CWA-Exempt Subjects
+════════════════════════════════════════════════════ */
+function buildCwaSubjects() {
+  renderExemptChips(cfg.cwaExemptSubjects || []);
+}
+
+function renderExemptChips(subjects) {
+  const list = document.getElementById('exemptList');
+  list.innerHTML = subjects.map(s => `
+    <span class="exempt-chip" data-subject="${esc(s)}">
+      ${esc(s)}
+      <button class="exempt-chip-x" onclick="removeExemptSubject('${esc(s)}')" title="Remove">&times;</button>
+    </span>`).join('');
+  if (!subjects.length) {
+    list.innerHTML = '<span style="font-size:.78rem;color:#9ca3af;align-self:center">No exempt subjects — all subjects are CWA-applicable</span>';
+  }
+}
+
+function addExemptSubject() {
+  const input = document.getElementById('exemptInput');
+  const val = input.value.trim();
+  if (!val) return;
+  const existing = [...document.querySelectorAll('.exempt-chip')].map(c => c.dataset.subject.toLowerCase());
+  if (existing.includes(val.toLowerCase())) {
+    showToast('Subject already in list', 'error'); return;
+  }
+  const subjects = [...document.querySelectorAll('.exempt-chip')].map(c => c.dataset.subject);
+  subjects.push(val);
+  renderExemptChips(subjects);
+  input.value = '';
+  input.focus();
+  markDirty();
+}
+
+function removeExemptSubject(name) {
+  const subjects = [...document.querySelectorAll('.exempt-chip')]
+    .map(c => c.dataset.subject)
+    .filter(s => s !== name);
+  renderExemptChips(subjects);
+  markDirty();
+}
+
+/* ════════════════════════════════════════════════════
    IMPORT / EXPORT
 ════════════════════════════════════════════════════ */
 function doExport() {
@@ -704,6 +782,7 @@ function buildForms() {
   buildSchools();
   buildClasses();
   buildThresholds();
+  buildCwaSubjects();
 }
 
 buildForms();
