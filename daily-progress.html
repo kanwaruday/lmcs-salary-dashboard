@@ -678,23 +678,86 @@ function parseCMTab(table) {
   return chapters;
 }
 
-async function loadCourseMapping() {
-  if (cmLoaded) return;
+const CM_CACHE_KEY = 'lmcs_cm_store_v2';
+const CM_CACHE_TTL = 2 * 60 * 60 * 1000; // 2 hours in ms
+
+function saveCMCache() {
+  try {
+    // Serialise Date objects to ISO strings so JSON.stringify handles them
+    const serialised = {};
+    Object.entries(cmStore).forEach(([li, tabs]) => {
+      serialised[li] = {};
+      Object.entries(tabs).forEach(([tab, chapters]) => {
+        if (!Array.isArray(chapters)) { serialised[li][tab] = chapters; return; }
+        serialised[li][tab] = chapters.map(ch => ({
+          ...ch,
+          startDate: ch.startDate?.toISOString() || null,
+          cwaDate:   ch.cwaDate?.toISOString()   || null,
+        }));
+      });
+    });
+    localStorage.setItem(CM_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: serialised }));
+  } catch(e) { /* quota exceeded — ignore */ }
+}
+
+function loadCMCache() {
+  try {
+    const raw = localStorage.getItem(CM_CACHE_KEY);
+    if (!raw) return false;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > CM_CACHE_TTL) return false; // stale
+    // Rehydrate Date objects
+    Object.entries(data).forEach(([li, tabs]) => {
+      cmStore[+li] = {};
+      Object.entries(tabs).forEach(([tab, chapters]) => {
+        if (!Array.isArray(chapters)) { cmStore[+li][tab] = chapters; return; }
+        cmStore[+li][tab] = chapters.map(ch => ({
+          ...ch,
+          startDate: ch.startDate ? new Date(ch.startDate) : null,
+          cwaDate:   ch.cwaDate   ? new Date(ch.cwaDate)   : null,
+        }));
+      });
+    });
+    return true;
+  } catch(e) { return false; }
+}
+
+async function loadCourseMapping(forceRefresh = false) {
+  if (cmLoaded && !forceRefresh) return;
+
+  // Try cache first (unless forced)
+  if (!forceRefresh && loadCMCache()) {
+    cmLoaded = true;
+    document.getElementById('loadingGaps').querySelector('p').textContent =
+      'Loaded from cache — rendering…';
+    return;
+  }
+
   document.getElementById('loadingGaps').querySelector('p').textContent =
-    'Fetching Course Mapping data across all 6 schools…';
+    'Fetching Course Mapping data…';
+
+  // Only fetch CWA-applicable tabs (skip M-I, M-II, M-III — no CWA)
+  const cwaTabs = CM_CLASSES.filter(c => c.cwaApplicable).map(c => c.tab);
 
   const jobs = CM_SCHOOLS.flatMap((school, idx) =>
-    CM_TABS.map(tab => ({ idx, tab, id: school.id }))
+    cwaTabs.map(tab => ({ idx, tab, id: school.id }))
   );
 
-  const results = await Promise.allSettled(jobs.map(j => fetchCMTab(j.id, j.tab)));
+  const total = jobs.length;
+  let done = 0;
+  const loadingP = document.getElementById('loadingGaps')?.querySelector('p');
+
+  const results = await Promise.allSettled(jobs.map(j =>
+    fetchCMTab(j.id, j.tab).then(r => { done++; if(loadingP) loadingP.textContent = `Loading… ${done}/${total}`; return r; })
+  ));
 
   results.forEach((r, i) => {
     const { idx, tab } = jobs[i];
     if (!cmStore[idx]) cmStore[idx] = {};
-    // cmStore[idx][tab] = array of chapter objects (or null on error)
     cmStore[idx][tab] = r.status === 'fulfilled' ? parseCMTab(r.value) : null;
   });
+
+  saveCMCache();
 
   cmLoaded = true;
 }
@@ -1159,6 +1222,7 @@ function renderGapPanel() {
     </label>
     ${(gapFiltType||gapFiltSchool||gapFiltClass||gapFiltSubject)?
       `<button class="filt-btn" onclick="gapFiltType='';gapFiltSchool='';gapFiltClass='';gapFiltSubject='';renderGapPanel()">✕ Clear</button>`:''}
+    <button class="filt-btn" style="margin-left:auto" onclick="refreshCM()" title="Re-fetch Course Mapping from Google Sheets">↺ Refresh CM</button>
   </div>
 
   <!-- Summary chips -->
@@ -1692,9 +1756,20 @@ async function init() {
 }
 
 async function reloadAll() {
+  localStorage.removeItem(CM_CACHE_KEY);
   cmLoaded = false; cmStore = {};
   allRecords = [];
   init();
+}
+
+async function refreshCM() {
+  // Force re-fetch CM data from Google Sheets and re-render gap report
+  localStorage.removeItem(CM_CACHE_KEY);
+  cmLoaded = false; cmStore = {};
+  gapData = [];
+  const panel = document.getElementById('panel-gaps');
+  panel.innerHTML = `<div class="loading-state" id="loadingGaps"><div class="spinner"></div><p>Re-fetching Course Mapping…</p></div>`;
+  await renderGaps();
 }
 
 init();
