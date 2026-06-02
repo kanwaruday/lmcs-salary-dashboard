@@ -209,12 +209,6 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
             <option value="No">No</option>
           </select>
         </div>
-
-        <!-- INCENTIVE — only visible for existing employees -->
-        <div class="fg" id="incentive-row" style="display:none">
-          <label class="fl fd2" title="Additional one-time or monthly allowance — travel, arrears, loan repayment, adjustment, etc. Added directly to CTI and Net Pay."><div class="fd"></div>Incentive / Allowance (₹)</label>
-          <input type="number" id="inp-incentive" value="0" min="0" step="100" oninput="compute()" placeholder="0">
-        </div>
         <div class="fg">
           <label class="fl fm"><div class="fd"></div>School</label>
           <select id="inp-school" class="must" onchange="onSchoolChange()">
@@ -378,7 +372,6 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
               <div class="edr"><span class="ek">PF Employer</span><span class="ev" id="d-pf-emp">&mdash;</span></div>
               <div class="edr"><span class="ek">ESI Employer</span><span class="ev" id="d-esi-emp">&mdash;</span></div>
               <div class="edr"><span class="ek">Tuition Fee (Added)</span><span class="ev tui" id="d-tui-add">&mdash;</span></div>
-              <div class="edr" id="d-incentive-row" style="display:none"><span class="ek">Incentive / Allowance</span><span class="ev" id="d-incentive" style="color:#059669">&mdash;</span></div>
               <div class="edr total"><span class="ek" style="font-weight:700">Net Bank Y1</span><span class="ev" id="d-nbt" style="color:#1e40af;font-size:13px">&mdash;</span></div>
               <div class="edr"><span class="ek">Net Bank Y2</span><span class="ev" id="d-nbt2">&mdash;</span></div>
               <div class="edr"><span class="ek">Net Bank Y3</span><span class="ev" id="d-nbt3">&mdash;</span></div>
@@ -439,7 +432,7 @@ function getKidFeeVal(school, cls){
   return (tf&&tf[cls])||0;
 }
 
-function calcSalary(desig, school, lmsExp, otherExp, wh, tui, empType, esiApplicable, incentive=0){
+function calcSalary(desig, school, lmsExp, otherExp, wh, tui, empType, esiApplicable){
   const bd=D.base[desig+school];
   if(!bd||!bd.pre_basic||!bd.gp||!bd.ideal_hours) return null;
   const workH=wh||bd.ideal_hours;
@@ -462,25 +455,22 @@ function calcSalary(desig, school, lmsExp, otherExp, wh, tui, empType, esiApplic
   const esiEe = esiAllowed ? fl(ns*0.0075) : 0;
   const totEsi = esiE + esiEe;
   const tuiFee=tui||0;
-  // CTI = stable recurring cost to institution (no incentive — that's a one-off variable payment)
   const cti=ns+epfE+pfE+esiE+tuiFee;
   // RRF not applicable for existing employees
   const rrf1=empType==='existing'?0:Math.ceil(cti*0.12);
   const rrf2=empType==='existing'?0:Math.ceil(cti*0.09);
   const rrf3=empType==='existing'?0:Math.ceil(cti*0.06);
-  // Net Bank: incentive is one-off/variable — added to take-home but not to standing CTI
-  const baseNet=cti-rrf1-totEpf-totEsi-tuiFee;
-  return{inc,nb,da,ada,ns,epfE,pfE,esiE,totEpf,totEsi,cti,rrf1,rrf2,rrf3,tuiFee,incentive,
-    y1:baseNet+incentive,
-    y2:baseNet+incentive,
-    y3:baseNet+incentive};
+  // Net Bank transfer: tuition added to CTI then subtracted back — net neutral on take-home
+  return{inc,nb,da,ada,ns,epfE,pfE,esiE,totEpf,totEsi,cti,rrf1,rrf2,rrf3,tuiFee,
+    y1:cti-rrf1-totEpf-totEsi-tuiFee,
+    y2:cti-rrf2-totEpf-totEsi-tuiFee,
+    y3:cti-rrf3-totEpf-totEsi-tuiFee};
 }
 
 function setEmpType(type){
   const btnNew = document.getElementById('btn-new');
   const btnEx  = document.getElementById('btn-existing');
-  const esiRow       = document.getElementById('esi-override-row');
-  const incentiveRow = document.getElementById('incentive-row');
+  const esiRow = document.getElementById('esi-override-row');
   const lmsEl  = document.getElementById('inp-lms-exp');
   const othEl  = document.getElementById('inp-other-exp');
 
@@ -490,10 +480,8 @@ function setEmpType(type){
     btnNew.style.color='#93c5fd';
     btnEx.style.background='#f8fafc';
     btnEx.style.color='#9ca3af';
-    // Hide existing-only fields
+    // Hide ESI override — locked to auto for new hires
     esiRow.style.display='none';
-    incentiveRow.style.display='none';
-    document.getElementById('inp-incentive').value=0;
     // Show experience fields (relevant for new hires)
     lmsEl.closest('.fg').style.display='flex';
     othEl.closest('.fg').style.display='flex';
@@ -503,9 +491,8 @@ function setEmpType(type){
     btnEx.style.color='#6ee7b7';
     btnNew.style.background='#f8fafc';
     btnNew.style.color='#9ca3af';
-    // Show existing-employee-only fields
+    // Show ESI override toggle
     esiRow.style.display='flex';
-    incentiveRow.style.display='flex';
     // Experience fields still relevant (increments = experience only)
     lmsEl.closest('.fg').style.display='flex';
     othEl.closest('.fg').style.display='flex';
@@ -602,8 +589,7 @@ function compute(){
 
   const empType = document.getElementById('btn-new').style.background.includes('1e3a5f') ? 'new' : 'existing';
   const esiApplicable = document.getElementById('inp-esi') ? document.getElementById('inp-esi').value : 'Yes';
-  const incentive = empType==='existing' ? (parseFloat(document.getElementById('inp-incentive').value)||0) : 0;
-  const r=calcSalary(desig,school,apLms,apOther,wh,totalTui,empType,esiApplicable,incentive);
+  const r=calcSalary(desig,school,apLms,apOther,wh,totalTui,empType,esiApplicable);
   renderJRD(D.norms[desig+school],bd);
 
   const isNew = document.getElementById('btn-new').style.background.includes('1e3a5f');
@@ -629,15 +615,6 @@ function compute(){
   set('s-y1',fmt(r.y1));set('s-y2',fmt(r.y2));set('s-y3',fmt(r.y3));
   set('d-basic',fmt(r.nb));set('d-da',fmt(r.da));set('d-ada',fmt(r.ada));
   set('d-epf-emp',fmt(r.epfE));set('d-pf-emp',fmt(r.pfE));set('d-esi-emp',fmt(r.esiE));
-  // Incentive line — only show for existing employee when non-zero
-  const incRow=document.getElementById('d-incentive-row');
-  if(empType==='existing'&&r.incentive>0){
-    set('d-incentive',fmt(r.incentive));
-    incRow.style.display='flex';
-  } else {
-    incRow.style.display='none';
-    set('d-incentive','—');
-  }
   // Tuition fee (added & deducted) = sum of kid1 + kid2 fees
   if(totalTui>0){
     set('d-tui-add','₹'+totalTui.toLocaleString('en-IN'));
@@ -656,8 +633,7 @@ function compute(){
 function clearSalary(){
   ['s-net-basic','s-net-salary','s-govt-sav','s-rrf','s-total-ded','s-cti','s-y1','s-y2','s-y3',
    'd-basic','d-da','d-ada','d-epf-emp','d-pf-emp','d-esi-emp','d-tui-add','d-tui-ded',
-   'd-nbt','d-nbt2','d-nbt3','d-epf-epfo','d-esi-esic','d-rrf-ded','d-incentive'].forEach(id=>set(id,'—'));
-  document.getElementById('d-incentive-row').style.display='none';
+   'd-nbt','d-nbt2','d-nbt3','d-epf-epfo','d-esi-esic','d-rrf-ded'].forEach(id=>set(id,'—'));
 }
 
 function clearJRD(){
@@ -696,9 +672,8 @@ function renderTuition(school){
     :`<div class="ti na"><div class="tc">${cls[i]}</div><div class="tf">—</div></div>`;}).join('');
 }
 
-// Init — default to LMS 6 (EPF=No per policy), existing employee mode
+// Init — default to LMS 6 (EPF=No per policy)
 window.addEventListener('DOMContentLoaded',()=>{
-  setEmpType('existing');
   document.getElementById('inp-school').value='LMS 6';
   onSchoolChange();
   document.getElementById('inp-designation').value='PRT';
