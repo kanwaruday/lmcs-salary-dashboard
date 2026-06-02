@@ -899,6 +899,30 @@ async function renderGaps() {
     Object.values(byS).forEach(arr => arr.sort((a,b)=>a.dateObj-b.dateObj))
   ));
 
+  // ── Teacher lookup from ALL records (not just CWA) ──────
+  // Used to fill teacher names for overdue entries where no CWA event exists yet.
+  // Key: lmsIdx|classMapped|normSubject → most recent teacher(s)
+  const teacherIndex = {};
+  allRecords.forEach(r => {
+    if (r.lmsIdx === null || !r.classMapped || !r.teacher) return;
+    const key = `${r.lmsIdx}|${r.classMapped}|${normalizeSubject(r.subject)}`;
+    if (!teacherIndex[key]) teacherIndex[key] = { teachers: new Set(), lastDate: '' };
+    teacherIndex[key].teachers.add(r.teacher);
+    if (r.dateStr > teacherIndex[key].lastDate) teacherIndex[key].lastDate = r.dateStr;
+  });
+
+  function lookupTeachers(lmsIdx, cls, subjRaw) {
+    const ns = normalizeSubject(subjRaw);
+    const key = `${lmsIdx}|${cls}|${ns}`;
+    if (teacherIndex[key]) return [...teacherIndex[key].teachers].join(', ');
+    // fuzzy subject fallback
+    const fKey = Object.keys(teacherIndex).find(k => {
+      const [li, cl, ks] = k.split('|');
+      return +li === lmsIdx && cl === cls && (ks === ns || ks.includes(ns) || ns.includes(ks));
+    });
+    return fKey ? [...teacherIndex[fKey].teachers].join(', ') : '—';
+  }
+
   // Helper: find daily CWA array for a school+class+subject (fuzzy subject match)
   function getDailyArr(lmsIdx, cls, subjRaw) {
     const byS = dailyCWA[lmsIdx]?.[cls];
@@ -969,7 +993,7 @@ async function renderGaps() {
               chapterName: ch.chapterName,
               plannedDate: ch.cwaDate,
               actualDate: null,
-              teacher: null,
+              teacher: lookupTeachers(lmsIdx, tab, ch.subject),
             });
           }
         });
