@@ -131,7 +131,7 @@ function parseCW(table, ayStart) {
     if (lmsIdx === null) continue;
     const m = cell(1).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):\d{2}\s*(AM|PM)$/i);
     if (!m) continue;
-    let [,mo,da,yr,hr,mi,,ap]=m; mo=+mo;da=+da;yr=+yr;hr=+hr;mi=+mi;
+    let [,mo,da,yr,hr,mi,ap]=m; mo=+mo;da=+da;yr=+yr;hr=+hr;mi=+mi;
     if (ap.toUpperCase()==='PM'&&hr!==12) hr+=12;
     if (ap.toUpperCase()==='AM'&&hr===12) hr=0;
     const dateObj = new Date(yr,mo-1,da,hr,mi);
