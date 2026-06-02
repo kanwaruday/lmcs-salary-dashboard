@@ -462,17 +462,18 @@ function calcSalary(desig, school, lmsExp, otherExp, wh, tui, empType, esiApplic
   const esiEe = esiAllowed ? fl(ns*0.0075) : 0;
   const totEsi = esiE + esiEe;
   const tuiFee=tui||0;
-  const cti=ns+epfE+pfE+esiE+tuiFee+incentive;
+  // CTI = stable recurring cost to institution (no incentive — that's a one-off variable payment)
+  const cti=ns+epfE+pfE+esiE+tuiFee;
   // RRF not applicable for existing employees
   const rrf1=empType==='existing'?0:Math.ceil(cti*0.12);
   const rrf2=empType==='existing'?0:Math.ceil(cti*0.09);
   const rrf3=empType==='existing'?0:Math.ceil(cti*0.06);
-  // Net Bank transfer: tuition added to CTI then subtracted back — net neutral on take-home
-  // Incentive flows through to net pay directly (it's already in CTI)
+  // Net Bank: incentive is one-off/variable — added to take-home but not to standing CTI
+  const baseNet=cti-rrf1-totEpf-totEsi-tuiFee;
   return{inc,nb,da,ada,ns,epfE,pfE,esiE,totEpf,totEsi,cti,rrf1,rrf2,rrf3,tuiFee,incentive,
-    y1:cti-rrf1-totEpf-totEsi-tuiFee,
-    y2:cti-rrf2-totEpf-totEsi-tuiFee,
-    y3:cti-rrf3-totEpf-totEsi-tuiFee};
+    y1:baseNet+incentive,
+    y2:baseNet+incentive,
+    y3:baseNet+incentive};
 }
 
 function setEmpType(type){
