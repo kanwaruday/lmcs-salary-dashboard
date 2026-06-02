@@ -185,30 +185,6 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <label class="fl fm"><div class="fd"></div>Name of Employee</label>
           <input type="text" id="inp-name" placeholder="Enter full name..." style="font-size:11px;padding:3px 7px;border-radius:4px;border:1.5px solid #f59e0b;background:#f8fafc;width:100%;outline:none;font-family:'Inter',sans-serif;" onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 2px rgba(59,130,246,.1)'" onblur="this.style.borderColor='#f59e0b';this.style.boxShadow='none'">
         </div>
-
-        <!-- EMPLOYEE TYPE TOGGLE -->
-        <div class="fg" style="margin-bottom:5px">
-          <label class="fl fm"><div class="fd"></div>Employee Type</label>
-          <div id="emp-type-toggle" style="display:grid;grid-template-columns:1fr 1fr;border-radius:5px;overflow:hidden;border:1.5px solid #f59e0b">
-            <button id="btn-new" onclick="setEmpType('new')"
-              style="padding:5px 4px;border:none;cursor:pointer;font-family:'Poppins',sans-serif;font-size:10px;font-weight:700;letter-spacing:.3px;transition:all .15s;background:#1e3a5f;color:#93c5fd">
-              ✦ New Hire
-            </button>
-            <button id="btn-existing" onclick="setEmpType('existing')"
-              style="padding:5px 4px;border:none;cursor:pointer;font-family:'Poppins',sans-serif;font-size:10px;font-weight:700;letter-spacing:.3px;transition:all .15s;background:#f8fafc;color:#9ca3af;border-left:1px solid #d1d5db">
-              ✦ Existing
-            </button>
-          </div>
-        </div>
-
-        <!-- ESI OVERRIDE — only visible for existing employees -->
-        <div class="fg" id="esi-override-row" style="display:none">
-          <label class="fl fd2"><div class="fd"></div>ESI Applicable</label>
-          <select id="inp-esi" onchange="compute()">
-            <option value="Yes">Yes</option>
-            <option value="No">No</option>
-          </select>
-        </div>
         <div class="fg">
           <label class="fl fm"><div class="fd"></div>School</label>
           <select id="inp-school" class="must" onchange="onSchoolChange()">
@@ -432,15 +408,11 @@ function getKidFeeVal(school, cls){
   return (tf&&tf[cls])||0;
 }
 
-function calcSalary(desig, school, lmsExp, otherExp, wh, tui, empType, esiApplicable){
+function calcSalary(desig, school, lmsExp, otherExp, wh, tui){
   const bd=D.base[desig+school];
   if(!bd||!bd.pre_basic||!bd.gp||!bd.ideal_hours) return null;
   const workH=wh||bd.ideal_hours;
-  // New hire: base 3 increments + experience
-  // Existing employee: no base 3, increments = LMS exp + other/2 only
-  const inc = empType==='existing'
-    ? fl(lmsExp + otherExp/2)
-    : fl(3 + lmsExp + otherExp/2);
+  const inc=fl(3+lmsExp+otherExp/2);
   const nb=fl((bd.pre_basic+bd.gp)*Math.pow(1.03,inc)*(workH/bd.ideal_hours));
   const da=fl((DA_R[school]||0.05)*nb);
   const ada=fl((ADA_R[school]||0.35)*nb);
@@ -449,55 +421,17 @@ function calcSalary(desig, school, lmsExp, otherExp, wh, tui, empType, esiApplic
   const epfE=sw*fl(ns>15000?1250:ns*0.0833);
   const pfE =sw*fl(ns>15000?550 :ns*0.0367);
   const totEpf=(epfE+pfE)*2;
-  // ESI: salary threshold check + manual override for existing employees
-  const esiAllowed = (esiApplicable !== 'No') && (ns < 21000);
-  const esiE  = esiAllowed ? fl(ns*0.0325) : 0;
-  const esiEe = esiAllowed ? fl(ns*0.0075) : 0;
-  const totEsi = esiE + esiEe;
+  const esiE =ns<21000?fl(ns*0.0325):0;
+  const esiEe=ns<21000?fl(ns*0.0075):0;
+  const totEsi=esiE+esiEe;
   const tuiFee=tui||0;
   const cti=ns+epfE+pfE+esiE+tuiFee;
-  // RRF not applicable for existing employees
-  const rrf1=empType==='existing'?0:Math.ceil(cti*0.12);
-  const rrf2=empType==='existing'?0:Math.ceil(cti*0.09);
-  const rrf3=empType==='existing'?0:Math.ceil(cti*0.06);
+  const rrf1=Math.ceil(cti*0.12),rrf2=Math.ceil(cti*0.09),rrf3=Math.ceil(cti*0.06);
   // Net Bank transfer: tuition added to CTI then subtracted back — net neutral on take-home
   return{inc,nb,da,ada,ns,epfE,pfE,esiE,totEpf,totEsi,cti,rrf1,rrf2,rrf3,tuiFee,
     y1:cti-rrf1-totEpf-totEsi-tuiFee,
     y2:cti-rrf2-totEpf-totEsi-tuiFee,
     y3:cti-rrf3-totEpf-totEsi-tuiFee};
-}
-
-function setEmpType(type){
-  const btnNew = document.getElementById('btn-new');
-  const btnEx  = document.getElementById('btn-existing');
-  const esiRow = document.getElementById('esi-override-row');
-  const lmsEl  = document.getElementById('inp-lms-exp');
-  const othEl  = document.getElementById('inp-other-exp');
-
-  if(type==='new'){
-    // NEW HIRE styling
-    btnNew.style.background='#1e3a5f';
-    btnNew.style.color='#93c5fd';
-    btnEx.style.background='#f8fafc';
-    btnEx.style.color='#9ca3af';
-    // Hide ESI override — locked to auto for new hires
-    esiRow.style.display='none';
-    // Show experience fields (relevant for new hires)
-    lmsEl.closest('.fg').style.display='flex';
-    othEl.closest('.fg').style.display='flex';
-  } else {
-    // EXISTING EMPLOYEE styling
-    btnEx.style.background='#065f46';
-    btnEx.style.color='#6ee7b7';
-    btnNew.style.background='#f8fafc';
-    btnNew.style.color='#9ca3af';
-    // Show ESI override toggle
-    esiRow.style.display='flex';
-    // Experience fields still relevant (increments = experience only)
-    lmsEl.closest('.fg').style.display='flex';
-    othEl.closest('.fg').style.display='flex';
-  }
-  compute();
 }
 
 function onExpInput(){
@@ -587,29 +521,22 @@ function compute(){
   if(bd&&!hoursV) document.getElementById('inp-hours').value=bd.ideal_hours;
   const wh=hoursV||(bd&&bd.ideal_hours);
 
-  const empType = document.getElementById('btn-new').style.background.includes('1e3a5f') ? 'new' : 'existing';
-  const esiApplicable = document.getElementById('inp-esi') ? document.getElementById('inp-esi').value : 'Yes';
-  const r=calcSalary(desig,school,apLms,apOther,wh,totalTui,empType,esiApplicable);
+  const r=calcSalary(desig,school,apLms,apOther,wh,totalTui);
   renderJRD(D.norms[desig+school],bd);
 
-  const isNew = document.getElementById('btn-new').style.background.includes('1e3a5f');
-  if(!isDirty){
-    const baseStr = isNew ? '3 base + ' : 'no base + ';
-    set('inc-display','Increments: '+(r?r.inc:(isNew?fl(3+apLms+apOther/2):fl(apLms+apOther/2)))+' ('+baseStr+apLms+' LMS + '+fl(apOther/2)+' other)');
-  }
+  if(!isDirty) set('inc-display','Increments: '+(r?r.inc:fl(3+apLms+apOther/2))+' ('+apLms+' LMS + '+fl(apOther/2)+' other)');
 
   if(!r){
     document.getElementById('salary-title').textContent='⚠ Data error for '+desig+' at '+school;
     clearSalary();return;
   }
 
-  const typeLabel = document.getElementById('btn-new').style.background.includes('1e3a5f') ? 'New Hire' : 'Existing Employee';
-  document.getElementById('salary-title').textContent='Salary: '+desig+' @ '+school+' · '+typeLabel;
+  document.getElementById('salary-title').textContent='Salary: '+desig+' @ '+school;
 
   set('s-net-basic',fmt(r.nb));
   set('s-net-salary',fmt(r.ns));
   set('s-govt-sav',fmt(r.totEpf));
-  set('s-rrf', r.rrf1===0 ? 'N/A (Existing)' : fmt(r.rrf1));
+  set('s-rrf',fmt(r.rrf1));
   set('s-total-ded',fmt(r.totEpf+r.totEsi+r.rrf1+r.tuiFee));
   set('s-cti',fmt(r.cti));
   set('s-y1',fmt(r.y1));set('s-y2',fmt(r.y2));set('s-y3',fmt(r.y3));
@@ -627,7 +554,7 @@ function compute(){
     document.getElementById('d-tui-ded').className='ev na';
   }
   set('d-nbt',fmt(r.y1));set('d-nbt2',fmt(r.y2));set('d-nbt3',fmt(r.y3));
-  set('d-epf-epfo',fmt(r.totEpf));set('d-esi-esic', r.totEsi===0 && document.getElementById('inp-esi').value==='No' ? 'N/A (Waived)' : fmt(r.totEsi));set('d-rrf-ded', r.rrf1===0 ? 'N/A' : fmt(r.rrf1));
+  set('d-epf-epfo',fmt(r.totEpf));set('d-esi-esic',fmt(r.totEsi));set('d-rrf-ded',fmt(r.rrf1));
 }
 
 function clearSalary(){
