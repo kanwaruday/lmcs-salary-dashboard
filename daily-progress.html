@@ -866,6 +866,7 @@ let gapFiltSchool  = '';
 let gapFiltClass   = '';
 let gapFiltSubject = '';
 let gapFiltType    = '';    // '' | overdue | late | unmapped
+let gapMinDays     = 7;     // minimum days late/overdue to show
 
 function fmtDate(d) {
   if (!d) return '—';
@@ -1047,8 +1048,35 @@ function renderGapPanel() {
     return;
   }
 
-  // ── Filter ───────────────────────────────────────────────
-  let rows = gapData;
+  // ── Apply min-days threshold to overdue/late ─────────────
+  const visibleGapData = gapData.filter(g => {
+    if (g.type === 'overdue') return g.daysOverdue >= gapMinDays;
+    if (g.type === 'late')    return g.daysLate    >= gapMinDays;
+    return true; // unmapped: always show
+  });
+
+  // ── Group overdue by school+class+subject ────────────────
+  // Instead of one row per chapter, collapse into one summary row per combo.
+  const overdueGroups = {};
+  visibleGapData.filter(g => g.type === 'overdue').forEach(g => {
+    const key = `${g.lmsIdx}|${g.cls}|${g.subject}`;
+    if (!overdueGroups[key]) overdueGroups[key] = {
+      lmsIdx: g.lmsIdx, cls: g.cls, subject: g.subject,
+      teacher: g.teacher, chapters: [], maxDaysOverdue: 0, oldestPlanned: g.plannedDate,
+    };
+    overdueGroups[key].chapters.push({ name: g.chapterName, no: g.chapterNo, planned: g.plannedDate, daysOverdue: g.daysOverdue });
+    if (g.daysOverdue > overdueGroups[key].maxDaysOverdue) overdueGroups[key].maxDaysOverdue = g.daysOverdue;
+    if (g.plannedDate < overdueGroups[key].oldestPlanned) overdueGroups[key].oldestPlanned = g.plannedDate;
+  });
+
+  // Flatten into display rows: each overdue group = 1 row; late/unmapped = 1 row each
+  let rows = [
+    ...Object.values(overdueGroups).map(g => ({ ...g, type: 'overdue', days: g.maxDaysOverdue })),
+    ...visibleGapData.filter(g => g.type === 'late').map(g => ({ ...g, days: g.daysLate })),
+    ...visibleGapData.filter(g => g.type === 'unmapped').map(g => ({ ...g, days: 0 })),
+  ];
+
+  // ── Apply dropdowns ──────────────────────────────────────
   if (gapFiltType)    rows = rows.filter(g => g.type === gapFiltType);
   if (gapFiltSchool)  rows = rows.filter(g => g.lmsIdx === parseInt(gapFiltSchool));
   if (gapFiltClass)   rows = rows.filter(g => g.cls === gapFiltClass);
@@ -1057,38 +1085,47 @@ function renderGapPanel() {
   // ── Sort ─────────────────────────────────────────────────
   rows = [...rows].sort((a,b) => {
     let v = 0;
-    if      (gapSortKey==='days')   v = (a.daysLate||a.daysOverdue||0) - (b.daysLate||b.daysOverdue||0);
-    else if (gapSortKey==='date')   v = (a.plannedDate||a.actualDate||0) - (b.plannedDate||b.actualDate||0);
+    if      (gapSortKey==='days')   v = (a.days||0) - (b.days||0);
+    else if (gapSortKey==='date')   v = (a.oldestPlanned||a.plannedDate||a.actualDate||0) - (b.oldestPlanned||b.plannedDate||b.actualDate||0);
     else if (gapSortKey==='class')  v = a.cls.localeCompare(b.cls);
     else if (gapSortKey==='school') v = a.lmsIdx - b.lmsIdx;
     return v * gapSortDir;
   });
 
-  const schoolsHit  = new Set(gapData.map(g=>g.lmsIdx));
-  const allClasses  = [...new Set(gapData.map(g=>g.cls))].sort();
-  const allSubjects = [...new Set(gapData.map(g=>g.subject))].sort();
+  const schoolsHit  = new Set(visibleGapData.map(g=>g.lmsIdx));
+  const allClasses  = [...new Set(visibleGapData.map(g=>g.cls))].sort();
+  const allSubjects = [...new Set(visibleGapData.map(g=>g.subject))].sort();
 
-  const overdueCt  = gapData.filter(g=>g.type==='overdue').length;
-  const lateCt     = gapData.filter(g=>g.type==='late').length;
-  const unmappedCt = gapData.filter(g=>g.type==='unmapped').length;
-  const maxDaysLate = Math.max(0,...gapData.filter(g=>g.type==='late').map(g=>g.daysLate));
-  const maxDaysOver = Math.max(0,...gapData.filter(g=>g.type==='overdue').map(g=>g.daysOverdue));
+  const overdueGrpCt = Object.keys(overdueGroups).length;
+  const lateCt       = visibleGapData.filter(g=>g.type==='late').length;
+  const unmappedCt   = visibleGapData.filter(g=>g.type==='unmapped').length;
+  const maxDaysLate  = Math.max(0,...visibleGapData.filter(g=>g.type==='late').map(g=>g.daysLate));
+  const maxDaysOver  = Math.max(0,...Object.values(overdueGroups).map(g=>g.maxDaysOverdue));
+  const totalOverdueChapters = visibleGapData.filter(g=>g.type==='overdue').length;
 
   let html = `
   <p class="sec-sub" style="margin-bottom:10px">
     Academic year <strong>${ayLabel}</strong> (1 Apr ${ayStartYear} – 31 Mar ${ayStartYear+1}) ·
     Cross-references the <strong>planned CWA Date</strong> in each school's Course Mapping
     against the <strong>actual CWA date</strong> logged in the Daily Classwork sheet.
-    <strong style="color:var(--red)">Overdue</strong> = planned date passed, CWA not yet taken. &nbsp;
-    <strong style="color:#c2410c">Late</strong> = CWA taken after the planned date.
+    <strong style="color:var(--red)">Overdue</strong> = planned date passed, no CWA logged yet (grouped by class/subject). &nbsp;
+    <strong style="color:#c2410c">Late</strong> = CWA taken after planned date.
   </p>
 
   <!-- Filter bar -->
   <div class="gap-filter-bar">
+    <label>Min days
+      <select onchange="gapMinDays=+this.value;renderGapPanel()">
+        <option value="1"${gapMinDays===1?' selected':''}>≥ 1 day</option>
+        <option value="7"${gapMinDays===7?' selected':''}>≥ 7 days</option>
+        <option value="14"${gapMinDays===14?' selected':''}>≥ 14 days</option>
+        <option value="30"${gapMinDays===30?' selected':''}>≥ 30 days</option>
+      </select>
+    </label>
     <label>Type
       <select onchange="gapFiltType=this.value;renderGapPanel()">
         <option value=""${!gapFiltType?' selected':''}>All types</option>
-        <option value="overdue"${gapFiltType==='overdue'?' selected':''}>🔴 Overdue (${overdueCt})</option>
+        <option value="overdue"${gapFiltType==='overdue'?' selected':''}>🔴 Overdue (${overdueGrpCt} groups)</option>
         <option value="late"${gapFiltType==='late'?' selected':''}>🟠 Late (${lateCt})</option>
         <option value="unmapped"${gapFiltType==='unmapped'?' selected':''}>⚪ Not in Mapping (${unmappedCt})</option>
       </select>
@@ -1126,10 +1163,10 @@ function renderGapPanel() {
 
   <!-- Summary chips -->
   <div class="gap-chips">
-    <div class="gap-chip${overdueCt?' alert':''}">
-      <div class="gap-chip-lbl">🔴 Overdue</div>
-      <div class="gap-chip-val" style="color:var(--red)">${overdueCt}</div>
-      <div style="font-size:.7rem;color:#9ca3af">max ${maxDaysOver}d past due</div>
+    <div class="gap-chip${overdueGrpCt?' alert':''}">
+      <div class="gap-chip-lbl">🔴 Overdue Groups</div>
+      <div class="gap-chip-val" style="color:var(--red)">${overdueGrpCt}</div>
+      <div style="font-size:.7rem;color:#9ca3af">${totalOverdueChapters} chapters · max ${maxDaysOver}d</div>
     </div>
     <div class="gap-chip${lateCt?' warn':''}">
       <div class="gap-chip-lbl">🟠 Taken Late</div>
@@ -1148,17 +1185,19 @@ function renderGapPanel() {
   </div>`;
 
   if (!rows.length) {
-    html += `<div class="empty-state"><div class="icon">🔍</div><h3>No gaps match these filters</h3><p>Try clearing filters.</p></div>`;
+    html += `<div class="empty-state"><div class="icon">🔍</div>
+      <h3>No gaps match these filters</h3>
+      <p>Try reducing the minimum days threshold or clearing filters.</p></div>`;
     panel.innerHTML = html;
     return;
   }
 
-  // ── Group by school ──────────────────────────────────────
+  // ── Group display rows by school ─────────────────────────
   const bySchool = {};
   rows.forEach(g => { if(!bySchool[g.lmsIdx]) bySchool[g.lmsIdx]=[]; bySchool[g.lmsIdx].push(g); });
 
   Object.keys(bySchool).sort((a,b)=>+a-+b).forEach(lmsIdx => {
-    const sRows   = bySchool[lmsIdx];
+    const sRows    = bySchool[lmsIdx];
     const sheetUrl = CM_SCHOOLS[+lmsIdx]?.id
       ? `https://docs.google.com/spreadsheets/d/${CM_SCHOOLS[+lmsIdx].id}/edit` : '#';
     const sOver = sRows.filter(g=>g.type==='overdue').length;
@@ -1168,7 +1207,7 @@ function renderGapPanel() {
       <div class="gap-school-hdr">
         <span class="gap-school-hdr-name">🏫 ${lmsName(+lmsIdx)}</span>
         <span class="gap-school-hdr-meta">
-          ${sOver?`<span style="color:var(--red);font-weight:700">🔴 ${sOver} overdue</span>&nbsp;·&nbsp;`:''}
+          ${sOver?`<span style="color:var(--red);font-weight:700">🔴 ${sOver} overdue group${sOver!==1?'s':''}</span>&nbsp;·&nbsp;`:''}
           ${sLate?`<span style="color:#c2410c;font-weight:700">🟠 ${sLate} late</span>&nbsp;·&nbsp;`:''}
           <a href="${sheetUrl}" target="_blank" rel="noopener"
              style="color:var(--red);font-weight:600;text-decoration:none;font-size:10px">↗ Open Course Mapping</a>
@@ -1177,39 +1216,53 @@ function renderGapPanel() {
       <div class="gap-table-wrap" style="border-radius:0 0 6px 6px;margin-bottom:0">
         <table class="gap-table">
           <thead><tr>
-            <th>Status</th><th>Class</th><th>Subject</th><th>Chapter</th>
-            <th>Planned CWA Date</th><th>Actual CWA Date</th><th>Days</th><th>Teacher</th>
+            <th>Status</th><th>Class</th><th>Subject</th><th>Chapters</th>
+            <th>Oldest Planned CWA</th><th>Actual CWA Date</th><th>Days</th><th>Teacher</th>
           </tr></thead>
           <tbody>`;
 
     sRows.forEach(g => {
-      let statusBadge, daysCell, rowStyle = '';
-      if (g.type === 'overdue') {
-        statusBadge = `<span class="gap-sev sev-high">🔴 Overdue</span>`;
-        daysCell    = `<span style="color:var(--red);font-weight:700">${g.daysOverdue}d past due</span>`;
-        rowStyle    = ' style="background:#fff8f8"';
-      } else if (g.type === 'late') {
-        const sc = g.daysLate >= 7 ? 'sev-high' : g.daysLate >= 3 ? 'sev-mid' : 'sev-low';
-        statusBadge = `<span class="gap-sev ${sc}">🟠 Late</span>`;
-        daysCell    = `<span style="color:#c2410c;font-weight:700">+${g.daysLate}d</span>`;
-        rowStyle    = ' style="background:#fffbeb"';
-      } else {
-        statusBadge = `<span class="gap-sev" style="background:#f5f5f5;color:#9ca3af;border-color:#e0e0e0">⚪ No mapping</span>`;
-        daysCell    = `<span style="color:#9ca3af">—</span>`;
-      }
+      let statusBadge, daysCell, chCell, plannedCell, actualCell, rowStyle = '';
 
-      const chLabel = g.chapterNo
-        ? `Ch ${g.chapterNo}${g.chapterName ? ': '+g.chapterName : ''}`
-        : (g.chapterName || '—');
+      if (g.type === 'overdue') {
+        const sc = g.maxDaysOverdue >= 30 ? 'sev-high' : g.maxDaysOverdue >= 14 ? 'sev-mid' : 'sev-low';
+        statusBadge  = `<span class="gap-sev ${sc}">🔴 Overdue</span>`;
+        daysCell     = `<span style="color:var(--red);font-weight:700">${g.maxDaysOverdue}d past due</span>`;
+        rowStyle     = ' style="background:#fff8f8"';
+        plannedCell  = fmtDate(g.oldestPlanned);
+        actualCell   = `<span style="color:#9ca3af">Not yet taken</span>`;
+        // Chapter chips — sorted oldest first
+        const sorted = [...g.chapters].sort((a,b)=>a.planned-b.planned);
+        chCell = `<div class="chapter-chips">
+          ${sorted.map(c=>`<span class="ch-chip" title="${esc(c.name)} · planned ${fmtDate(c.planned)}">${c.no?'Ch '+c.no+': ':''}${esc(c.name||'—')}</span>`).join('')}
+        </div>`;
+
+      } else if (g.type === 'late') {
+        const sc = g.daysLate >= 14 ? 'sev-high' : g.daysLate >= 7 ? 'sev-mid' : 'sev-low';
+        statusBadge  = `<span class="gap-sev ${sc}">🟠 Late</span>`;
+        daysCell     = `<span style="color:#c2410c;font-weight:700">+${g.daysLate}d</span>`;
+        rowStyle     = ' style="background:#fffbeb"';
+        plannedCell  = fmtDate(g.plannedDate);
+        actualCell   = fmtDate(g.actualDate);
+        const chLabel = g.chapterNo ? `Ch ${g.chapterNo}: ${g.chapterName||''}` : (g.chapterName||'—');
+        chCell = `<span class="ch-chip">${esc(chLabel)}</span>`;
+
+      } else {
+        statusBadge  = `<span class="gap-sev" style="background:#f5f5f5;color:#9ca3af;border-color:#e0e0e0">⚪ No mapping</span>`;
+        daysCell     = `<span style="color:#9ca3af">—</span>`;
+        plannedCell  = `<span style="color:#9ca3af">—</span>`;
+        actualCell   = fmtDate(g.actualDate);
+        chCell = g.chapterName ? `<span class="ch-chip">${esc(g.chapterName)}</span>` : '—';
+      }
 
       html += `<tr${rowStyle}>
         <td>${statusBadge}</td>
         <td><span class="class-badge">${esc(g.cls)}</span></td>
         <td><span class="subj-chip">${esc(g.subject)}</span></td>
-        <td class="chapter-cell" style="max-width:200px">${esc(chLabel)}</td>
-        <td class="date-range">${g.plannedDate ? fmtDate(g.plannedDate) : '<span style="color:#9ca3af">—</span>'}</td>
-        <td class="date-range">${g.actualDate  ? fmtDate(g.actualDate)  : '<span style="color:#9ca3af">Not yet taken</span>'}</td>
-        <td style="text-align:center">${daysCell}</td>
+        <td>${chCell}</td>
+        <td class="date-range">${plannedCell}</td>
+        <td class="date-range">${actualCell}</td>
+        <td style="text-align:center;white-space:nowrap">${daysCell}</td>
         <td class="teacher-cell">${esc(g.teacher||'—')}</td>
       </tr>`;
     });
