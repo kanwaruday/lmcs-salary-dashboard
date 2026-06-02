@@ -679,7 +679,7 @@ function parseCMTab(table) {
 }
 
 const CM_CACHE_KEY = 'lmcs_cm_store_v2';
-const CM_CACHE_TTL = 2 * 60 * 60 * 1000; // 2 hours in ms
+const CM_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours in ms
 
 function saveCMCache() {
   try {
@@ -700,12 +700,13 @@ function saveCMCache() {
   } catch(e) { /* quota exceeded — ignore */ }
 }
 
+// Returns: 'fresh' | 'stale' | false
 function loadCMCache() {
   try {
     const raw = localStorage.getItem(CM_CACHE_KEY);
     if (!raw) return false;
     const { ts, data } = JSON.parse(raw);
-    if (Date.now() - ts > CM_CACHE_TTL) return false; // stale
+    const age = Date.now() - ts;
     // Rehydrate Date objects
     Object.entries(data).forEach(([li, tabs]) => {
       cmStore[+li] = {};
@@ -718,7 +719,7 @@ function loadCMCache() {
         }));
       });
     });
-    return true;
+    return age > CM_CACHE_TTL ? 'stale' : 'fresh';
   } catch(e) { return false; }
 }
 
@@ -726,40 +727,34 @@ async function loadCourseMapping(forceRefresh = false) {
   if (cmLoaded && !forceRefresh) return;
 
   // Try cache first (unless forced)
-  if (!forceRefresh && loadCMCache()) {
-    cmLoaded = true;
+  if (!forceRefresh) {
+    const cacheStatus = loadCMCache();
+    if (cacheStatus === 'fresh') {
+      cmLoaded = true;
+      return; // fast path — no UI update needed
+    }
+    if (cacheStatus === 'stale') {
+      // Use stale data immediately so the tab renders, then refresh silently in background
+      cmLoaded = true;
+      const p = document.getElementById('loadingGaps')?.querySelector('p');
+      if (p) p.textContent = 'Showing cached data — refreshing in background…';
+      // Kick off background refresh without awaiting
+      _refreshCMInBackground();
+      return;
+    }
+  }
+
+  // If a background prefetch is already in flight, wait for it
+  if (_cmPrefetchPromise) {
     document.getElementById('loadingGaps').querySelector('p').textContent =
-      'Loaded from cache — rendering…';
+      'Loading… (prefetch in progress)';
+    await _cmPrefetchPromise;
     return;
   }
 
   document.getElementById('loadingGaps').querySelector('p').textContent =
     'Fetching Course Mapping data…';
-
-  // Only fetch CWA-applicable tabs (skip M-I, M-II, M-III — no CWA)
-  const cwaTabs = CM_CLASSES.filter(c => c.cwaApplicable).map(c => c.tab);
-
-  const jobs = CM_SCHOOLS.flatMap((school, idx) =>
-    cwaTabs.map(tab => ({ idx, tab, id: school.id }))
-  );
-
-  const total = jobs.length;
-  let done = 0;
-  const loadingP = document.getElementById('loadingGaps')?.querySelector('p');
-
-  const results = await Promise.allSettled(jobs.map(j =>
-    fetchCMTab(j.id, j.tab).then(r => { done++; if(loadingP) loadingP.textContent = `Loading… ${done}/${total}`; return r; })
-  ));
-
-  results.forEach((r, i) => {
-    const { idx, tab } = jobs[i];
-    if (!cmStore[idx]) cmStore[idx] = {};
-    cmStore[idx][tab] = r.status === 'fulfilled' ? parseCMTab(r.value) : null;
-  });
-
-  saveCMCache();
-
-  cmLoaded = true;
+  await _fetchAndStoreCM();
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1753,6 +1748,55 @@ async function init() {
 
   buildChips();
   renderFeed();
+
+  // ── Prefetch Course Mapping in the background ──────────
+  // User is on the Activity Feed tab. While they read, silently load
+  // all CM data so clicking "CWA Gap Report" is instant.
+  _prefetchCM();
+}
+
+let _cmPrefetchPromise = null;
+function _prefetchCM() {
+  if (cmLoaded || _cmPrefetchPromise) return; // already done or in flight
+  _cmPrefetchPromise = _fetchAndStoreCM().catch(() => {});
+}
+
+async function _refreshCMInBackground() {
+  cmLoaded = false; cmStore = {};
+  await _fetchAndStoreCM().catch(() => {});
+  cmLoaded = true;
+  // If the gap tab is currently visible, re-render it silently
+  if (document.getElementById('panel-gaps')?.classList.contains('active')) {
+    gapData = [];
+    renderGaps();
+  }
+}
+
+async function _fetchAndStoreCM() {
+  const cwaTabs = CM_CLASSES.filter(c => c.cwaApplicable).map(c => c.tab);
+  const jobs = CM_SCHOOLS.flatMap((school, idx) =>
+    cwaTabs.map(tab => ({ idx, tab, id: school.id }))
+  );
+  const total = jobs.length;
+  let done = 0;
+  const loadingP = document.getElementById('loadingGaps')?.querySelector('p');
+
+  const results = await Promise.allSettled(jobs.map(j =>
+    fetchCMTab(j.id, j.tab).then(r => {
+      done++;
+      if (loadingP && document.getElementById('panel-gaps')?.classList.contains('active')) {
+        loadingP.textContent = `Loading… ${done}/${total}`;
+      }
+      return r;
+    })
+  ));
+  results.forEach((r, i) => {
+    const { idx, tab } = jobs[i];
+    if (!cmStore[idx]) cmStore[idx] = {};
+    cmStore[idx][tab] = r.status === 'fulfilled' ? parseCMTab(r.value) : null;
+  });
+  saveCMCache();
+  cmLoaded = true;
 }
 
 async function reloadAll() {
