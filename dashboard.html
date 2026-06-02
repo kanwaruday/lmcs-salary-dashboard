@@ -695,8 +695,9 @@ function renderTuition(school){
     :`<div class="ti na"><div class="tc">${cls[i]}</div><div class="tf">—</div></div>`;}).join('');
 }
 
-// Init — default to LMS 6 (EPF=No per policy)
+// Init — default to LMS 6 (EPF=No per policy), existing employee mode
 window.addEventListener('DOMContentLoaded',()=>{
+  setEmpType('existing');
   document.getElementById('inp-school').value='LMS 6';
   onSchoolChange();
   document.getElementById('inp-designation').value='PRT';
