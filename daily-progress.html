@@ -116,16 +116,48 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
 
 /* ── CWA GAP TABLE ── */
 .gap-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:6px;margin-bottom:1.5rem}
-.gap-table{width:100%;border-collapse:collapse;min-width:800px;font-size:.82rem}
-.gap-table thead th{background:var(--red);color:#fff;padding:8px 12px;text-align:left;font-size:.75rem;font-weight:700;letter-spacing:.3px;white-space:nowrap}
+.gap-table{width:100%;border-collapse:collapse;min-width:700px;font-size:.82rem}
+.gap-table thead th{background:var(--red);color:#fff;padding:8px 12px;text-align:left;font-size:.75rem;font-weight:700;letter-spacing:.3px;white-space:nowrap;cursor:pointer;user-select:none}
+.gap-table thead th:hover{background:var(--red-h)}
 .gap-table tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
 .gap-table tbody tr:last-child{border-bottom:none}
 .gap-table tbody tr:nth-child(even) td{background:var(--lgray)}
 .gap-table tbody tr:hover td{background:rgba(206,0,0,.03)}
-.gap-table td{padding:8px 12px;vertical-align:middle}
+.gap-table td{padding:7px 12px;vertical-align:middle}
 .gap-count{font-size:13px;font-weight:700;text-align:center}
 .gap-count.red{color:var(--red)}.gap-count.green{color:#15803d}.gap-count.muted{color:#9ca3af}
-.action-note{font-size:.78rem;color:var(--gray);line-height:1.4}
+
+/* Gap severity badges */
+.gap-sev{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;min-width:28px;text-align:center}
+.gap-sev.sev-low {background:#fef3c7;color:#b45309;border:1px solid #fde68a}
+.gap-sev.sev-mid {background:#fed7aa;color:#c2410c;border:1px solid #fdba74}
+.gap-sev.sev-high{background:#fee2e2;color:var(--red);border:1px solid #fecaca}
+
+/* Chapter chips inside gap table */
+.chapter-chips{display:flex;flex-wrap:wrap;gap:3px}
+.ch-chip{background:#f5f5f5;border:1px solid #e0e0e0;border-radius:3px;font-size:.7rem;padding:1px 6px;color:var(--dark);white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis}
+
+/* Gap filter bar */
+.gap-filter-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 0 14px;border-bottom:1px solid var(--border);margin-bottom:14px}
+.gap-filter-bar label{font-size:11px;font-weight:700;color:var(--gray);display:flex;align-items:center;gap:5px}
+.gap-filter-bar select{background:var(--white);border:1.5px solid var(--border);border-radius:4px;padding:4px 8px;font-size:11px;font-family:inherit;color:var(--dark);outline:none;transition:border-color .13s}
+.gap-filter-bar select:focus{border-color:var(--red)}
+.gap-sort-lbl{font-size:11px;font-weight:700;color:var(--gray);margin-left:auto}
+
+/* Gap summary chips */
+.gap-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.gap-chip{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:6px 14px;display:flex;flex-direction:column;gap:1px;min-width:100px}
+.gap-chip-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:var(--gray);font-weight:700}
+.gap-chip-val{font-size:18px;font-weight:700;line-height:1.1}
+
+/* Gap school group */
+.gap-school-grp{margin-bottom:18px}
+.gap-school-hdr{display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--lgray);border:1px solid var(--border);border-radius:6px 6px 0 0;border-bottom:none}
+.gap-school-hdr-name{font-size:12px;font-weight:700;color:var(--dark)}
+.gap-school-hdr-meta{margin-left:auto;font-size:10px}
+
+/* Date range */
+.date-range{font-size:.72rem;color:var(--gray);white-space:nowrap}
 
 /* ── WEEKLY PULSE ── */
 .weekly-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:1.5rem}
@@ -810,122 +842,233 @@ function renderFeed() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   RENDER — CWA Gap Report
-   Compares daily sheet CWA events against Course Mapping CWA Dates.
+   RENDER — CWA Gap Report (redesigned)
 ═══════════════════════════════════════════════════════════ */
+let gapData      = [];   // full computed gap list, cached after first CM load
+let gapSortKey   = 'gap'; // gap | date | class | school
+let gapSortDir   = -1;    // -1 desc, 1 asc
+let gapFiltSchool  = '';
+let gapFiltClass   = '';
+let gapFiltSubject = '';
+
 async function renderGaps() {
   const panel = document.getElementById('panel-gaps');
-  panel.innerHTML = `<div class="loading-state" id="loadingGaps">
-    <div class="spinner"></div><p>Loading Course Mapping data for comparison…</p></div>`;
+  panel.innerHTML = `<div class="loading-state"><div class="spinner"></div><p>Loading Course Mapping data…</p></div>`;
 
-  try {
-    await loadCourseMapping();
-  } catch(e) {
-    panel.innerHTML = `<div class="notice" style="display:flex">⚠ Failed to load Course Mapping data: ${e.message}</div>`;
+  try { await loadCourseMapping(); }
+  catch(e) {
+    panel.innerHTML = `<div class="notice" style="display:flex">⚠ Failed to load Course Mapping: ${e.message}</div>`;
     return;
   }
 
-  // Build daily CWA events: key={lmsIdx}_{classMapped}_{normSubject} → [{chapter, date, teacher}]
+  // ── Build daily CWA events ──────────────────────────────
   const dailyCWA = {};
   allRecords.filter(r => hasCWA(r.cwTag, r.subject)).forEach(r => {
     if (r.lmsIdx === null || !r.classMapped) return;
     const key = `${r.lmsIdx}|${r.classMapped}|${normalizeSubject(r.subject)}`;
     if (!dailyCWA[key]) dailyCWA[key] = [];
-    dailyCWA[key].push({ chapter: r.cwChapter, dateStr: r.dateStr, teacher: r.teacher, subj: r.subject, lmsIdx: r.lmsIdx, cls: r.classMapped });
+    dailyCWA[key].push({ chapter:r.cwChapter, dateStr:r.dateStr, teacher:r.teacher, subj:r.subject, lmsIdx:r.lmsIdx, cls:r.classMapped });
   });
 
-  // Build CM CWA counts: key={lmsIdx}_{tab}_{normSubject} → count
+  // ── Build CM CWA counts ─────────────────────────────────
   const cmCWA = {};
   Object.entries(cmStore).forEach(([lmsIdx, tabs]) => {
     Object.entries(tabs).forEach(([tab, subs]) => {
       if (!subs) return;
       Object.entries(subs).forEach(([subj, data]) => {
-        const key = `${lmsIdx}|${tab}|${normalizeSubject(subj)}`;
-        cmCWA[key] = data.cwaCount || 0;
+        cmCWA[`${lmsIdx}|${tab}|${normalizeSubject(subj)}`] = data.cwaCount || 0;
       });
     });
   });
 
-  // Find gaps
-  const gaps = [];
+  // ── Compute gaps ────────────────────────────────────────
+  gapData = [];
   Object.entries(dailyCWA).forEach(([key, events]) => {
-    // Try direct key match first
     let cmCount = cmCWA[key];
-
-    // If not found, try fuzzy subject matching
     if (cmCount === undefined) {
-      const [lmsIdx, cls, normSubj] = key.split('|');
-      const prefix = `${lmsIdx}|${cls}|`;
-      const cmKey = Object.keys(cmCWA).find(k => {
-        if (!k.startsWith(prefix)) return false;
-        const cNorm = k.slice(prefix.length);
-        return cNorm === normSubj || cNorm.includes(normSubj) || normSubj.includes(cNorm);
-      });
-      cmCount = cmKey !== undefined ? cmCWA[cmKey] : 0;
+      const [li, cls, ns] = key.split('|');
+      const prefix = `${li}|${cls}|`;
+      const found = Object.keys(cmCWA).find(k => k.startsWith(prefix) && (() => { const c=k.slice(prefix.length); return c===ns||c.includes(ns)||ns.includes(c); })());
+      cmCount = found !== undefined ? cmCWA[found] : 0;
     }
-
     const gap = events.length - (cmCount || 0);
-    if (gap > 0) {
-      gaps.push({ key, events, dailyCount: events.length, cmCount: cmCount||0, gap });
-    }
+    if (gap <= 0) return;
+    const dates    = events.map(e=>e.dateStr).sort();
+    const chapters = [...new Set(events.map(e=>e.chapter).filter(Boolean))];
+    const teachers = [...new Set(events.map(e=>e.teacher))];
+    const sample   = events[0];
+    gapData.push({
+      key, gap, dailyCount:events.length, cmCount:cmCount||0,
+      lmsIdx:sample.lmsIdx, cls:sample.cls, subj:sample.subj,
+      chapters, teachers, firstDate:dates[0], lastDate:dates[dates.length-1],
+    });
   });
 
-  gaps.sort((a,b) => b.gap - a.gap);
-
-  // Update badge
+  // badge
   const badge = document.getElementById('gapBadge');
-  badge.textContent = gaps.length;
-  badge.style.display = gaps.length > 0 ? 'inline' : 'none';
-  document.getElementById('cGaps').textContent = gaps.length;
+  badge.textContent = gapData.length;
+  badge.style.display = gapData.length > 0 ? 'inline' : 'none';
+  document.getElementById('cGaps').textContent = gapData.length;
 
-  if (!gaps.length) {
-    panel.innerHTML = `<div class="empty-state">
-      <div class="icon">✅</div>
+  renderGapPanel();
+}
+
+function renderGapPanel() {
+  const panel = document.getElementById('panel-gaps');
+
+  if (!gapData.length) {
+    panel.innerHTML = `<div class="empty-state"><div class="icon">✅</div>
       <h3>No CWA gaps found</h3>
-      <p>All CWA events logged in the daily sheet appear to be recorded in the Course Mapping sheets too.</p>
-    </div>`;
+      <p>All CWA events in the Daily Sheet are reflected in the Course Mapping.</p></div>`;
     return;
   }
 
-  const intro = `<div style="margin-bottom:1rem">
-    <div class="sec-hdr">CWA Gap Report</div>
-    <p class="sec-sub">
-      The table below shows subjects where teachers logged a <strong>CWA</strong> tag in the Daily Classwork Sheet
-      but the same chapter count is not yet reflected as a CWA Date (column K) in the Course Mapping Sheet.
-      <br>Action: ask the teacher to open their Course Mapping sheet and fill column K for completed chapters.
-    </p>
+  // ── Filter ──────────────────────────────────────────────
+  let rows = gapData;
+  if (gapFiltSchool)  rows = rows.filter(g => g.lmsIdx === parseInt(gapFiltSchool));
+  if (gapFiltClass)   rows = rows.filter(g => g.cls === gapFiltClass);
+  if (gapFiltSubject) rows = rows.filter(g => g.subj === gapFiltSubject);
+
+  // ── Sort ────────────────────────────────────────────────
+  rows = [...rows].sort((a,b) => {
+    let v = 0;
+    if (gapSortKey === 'gap')    v = a.gap - b.gap;
+    else if (gapSortKey === 'date')   v = a.lastDate.localeCompare(b.lastDate);
+    else if (gapSortKey === 'class')  v = a.cls.localeCompare(b.cls);
+    else if (gapSortKey === 'school') v = a.lmsIdx - b.lmsIdx;
+    return v * gapSortDir;
+  });
+
+  // ── Dropdown options ─────────────────────────────────────
+  const allClasses  = [...new Set(gapData.map(g=>g.cls))].sort();
+  const allSubjects = [...new Set(gapData.map(g=>g.subj))].sort();
+  const schoolsHit  = new Set(gapData.map(g=>g.lmsIdx));
+
+  // ── Summary chips ────────────────────────────────────────
+  const totalGapCount = gapData.reduce((s,g)=>s+g.gap,0);
+  const schoolsAffected = new Set(rows.map(g=>g.lmsIdx)).size;
+  const subjectsAffected = new Set(rows.map(g=>g.subj)).size;
+  const highSev = rows.filter(g=>g.gap>=4).length;
+
+  const sortArrow = (k) => gapSortKey===k ? (gapSortDir===-1?' ↓':' ↑') : '';
+
+  // ── Build HTML ───────────────────────────────────────────
+  let html = `
+  <p class="sec-sub" style="margin-bottom:10px">
+    Shows subjects where a <strong>CWA</strong> tag was logged in the Daily Sheet but the CWA Date (col K) in the Course Mapping sheet is not yet updated.
+    Gaps are grouped by school. Use the filters below to narrow down.
+  </p>
+
+  <!-- Filter bar -->
+  <div class="gap-filter-bar">
+    <label>🏫 School
+      <select onchange="gapFiltSchool=this.value;renderGapPanel()">
+        <option value="">All Schools</option>
+        ${CM_SCHOOLS.map((s,i)=> schoolsHit.has(i)?`<option value="${i}"${gapFiltSchool==i?'selected':''}>${esc(s.name)}</option>`:'' ).join('')}
+      </select>
+    </label>
+    <label>📚 Class
+      <select onchange="gapFiltClass=this.value;renderGapPanel()">
+        <option value="">All Classes</option>
+        ${allClasses.map(c=>`<option value="${esc(c)}"${gapFiltClass===c?'selected':''}>${esc(c)}</option>`).join('')}
+      </select>
+    </label>
+    <label>📖 Subject
+      <select onchange="gapFiltSubject=this.value;renderGapPanel()">
+        <option value="">All Subjects</option>
+        ${allSubjects.map(s=>`<option value="${esc(s)}"${gapFiltSubject===s?'selected':''}>${esc(s)}</option>`).join('')}
+      </select>
+    </label>
+    <label class="gap-sort-lbl">Sort by
+      <select onchange="const p=this.value.split('|');gapSortKey=p[0];gapSortDir=+p[1];renderGapPanel()">
+        <option value="gap|-1"${gapSortKey==='gap'&&gapSortDir===-1?' selected':''}>Gap — largest first</option>
+        <option value="gap|1"${gapSortKey==='gap'&&gapSortDir===1?' selected':''}>Gap — smallest first</option>
+        <option value="date|-1"${gapSortKey==='date'&&gapSortDir===-1?' selected':''}>Last CWA — newest first</option>
+        <option value="date|1"${gapSortKey==='date'&&gapSortDir===1?' selected':''}>Last CWA — oldest first</option>
+        <option value="class|1"${gapSortKey==='class'?' selected':''}>Class (A→Z)</option>
+        <option value="school|1"${gapSortKey==='school'?' selected':''}>School</option>
+      </select>
+    </label>
+    ${(gapFiltSchool||gapFiltClass||gapFiltSubject)?`<button class="filt-btn" onclick="gapFiltSchool='';gapFiltClass='';gapFiltSubject='';renderGapPanel()">✕ Clear filters</button>`:''}
+  </div>
+
+  <!-- Summary chips -->
+  <div class="gap-chips">
+    <div class="gap-chip alert"><div class="gap-chip-lbl">Showing Gaps</div><div class="gap-chip-val" style="color:var(--red)">${rows.length}</div></div>
+    <div class="gap-chip"><div class="gap-chip-lbl">CWAs Unlogged</div><div class="gap-chip-val" style="color:#d97706">${rows.reduce((s,g)=>s+g.gap,0)}</div></div>
+    <div class="gap-chip"><div class="gap-chip-lbl">Schools Affected</div><div class="gap-chip-val" style="color:#1d4ed8">${schoolsAffected}</div></div>
+    <div class="gap-chip"><div class="gap-chip-lbl">Subjects Affected</div><div class="gap-chip-val" style="color:var(--gray)">${subjectsAffected}</div></div>
+    ${highSev>0?`<div class="gap-chip alert"><div class="gap-chip-lbl">High Severity (≥4)</div><div class="gap-chip-val" style="color:var(--red)">${highSev}</div></div>`:''}
   </div>`;
 
-  const tableRows = gaps.map(g => {
-    const sample = g.events[0];
-    const allChapters = [...new Set(g.events.map(e => e.chapter))].join(', ');
-    const lastDate    = g.events.reduce((a,b)=>a.dateStr>b.dateStr?a:b).dateStr;
-    const teachers    = [...new Set(g.events.map(e => e.teacher))].join(', ');
-    return `<tr>
-      <td>${lmsName(sample.lmsIdx)}</td>
-      <td><span class="class-badge">${esc(sample.cls)}</span></td>
-      <td><span class="subj-chip">${esc(sample.subj)}</span></td>
-      <td class="chapter-cell">${esc(allChapters)}</td>
-      <td class="gap-count green">${g.dailyCount}</td>
-      <td class="gap-count ${g.cmCount>0?'':'red'}">${g.cmCount}</td>
-      <td class="gap-count red">${g.gap}</td>
-      <td>${lastDate}</td>
-      <td class="teacher-cell">${esc(teachers)}</td>
-      <td class="action-note">Ask teacher to update <strong>column K (CWA Date)</strong> in the Course Mapping sheet for each completed chapter.</td>
-    </tr>`;
-  }).join('');
+  if (!rows.length) {
+    html += `<div class="empty-state"><div class="icon">🔍</div><h3>No gaps match these filters</h3><p>Try clearing filters to see all gaps.</p></div>`;
+    panel.innerHTML = html;
+    return;
+  }
 
-  panel.innerHTML = intro + `
-    <div class="gap-table-wrap">
-      <table class="gap-table">
-        <thead><tr>
-          <th>School</th><th>Class</th><th>Subject</th><th>Chapter(s) in Daily Sheet</th>
-          <th>CWA in Daily</th><th>CWA in Mapping</th><th>Gap ⚠</th>
-          <th>Last CWA Date</th><th>Teacher(s)</th><th>Action</th>
-        </tr></thead>
-        <tbody>${tableRows}</tbody>
-      </table>
-    </div>`;
+  // ── Group by school ──────────────────────────────────────
+  const bySchool = {};
+  rows.forEach(g => {
+    if (!bySchool[g.lmsIdx]) bySchool[g.lmsIdx] = [];
+    bySchool[g.lmsIdx].push(g);
+  });
+
+  Object.keys(bySchool).sort((a,b)=>+a-+b).forEach(lmsIdx => {
+    const schoolRows = bySchool[lmsIdx];
+    const schoolGapTotal = schoolRows.reduce((s,g)=>s+g.gap,0);
+    const sheetUrl = CM_SCHOOLS[+lmsIdx]?.id
+      ? `https://docs.google.com/spreadsheets/d/${CM_SCHOOLS[+lmsIdx].id}/edit`
+      : '#';
+
+    html += `<div class="gap-school-grp">
+      <div class="gap-school-hdr">
+        <span class="gap-school-hdr-name">🏫 ${lmsName(+lmsIdx)}</span>
+        <span class="gap-school-hdr-meta">
+          <span style="color:var(--red);font-weight:700">${schoolRows.length} gap${schoolRows.length!==1?'s':''}</span>
+          &nbsp;·&nbsp; ${schoolGapTotal} CWA${schoolGapTotal!==1?'s':''} unlogged
+          &nbsp;·&nbsp; <a href="${sheetUrl}" target="_blank" rel="noopener" style="color:var(--red);font-weight:600;text-decoration:none;font-size:10px">↗ Open Course Mapping</a>
+        </span>
+      </div>
+      <div class="gap-table-wrap" style="border-radius:0 0 6px 6px;margin-bottom:0">
+        <table class="gap-table">
+          <thead><tr>
+            <th>Class</th>
+            <th>Subject</th>
+            <th>Teacher(s)</th>
+            <th>Chapters with CWA</th>
+            <th>Daily CWAs</th>
+            <th>In Mapping</th>
+            <th>Gap</th>
+            <th>Date Range</th>
+          </tr></thead>
+          <tbody>`;
+
+    schoolRows.forEach(g => {
+      const sevClass = g.gap >= 4 ? 'sev-high' : g.gap >= 2 ? 'sev-mid' : 'sev-low';
+      const chipsHtml = g.chapters.length
+        ? g.chapters.map(c=>`<span class="ch-chip" title="${esc(c)}">${esc(c)}</span>`).join('')
+        : '<span style="color:#9ca3af;font-size:.72rem">—</span>';
+      const dateRange = g.firstDate === g.lastDate
+        ? g.lastDate
+        : `${g.firstDate} → ${g.lastDate}`;
+
+      html += `<tr>
+        <td><span class="class-badge">${esc(g.cls)}</span></td>
+        <td><span class="subj-chip">${esc(g.subj)}</span></td>
+        <td class="teacher-cell">${esc(g.teachers.join(', '))}</td>
+        <td><div class="chapter-chips">${chipsHtml}</div></td>
+        <td class="gap-count green">${g.dailyCount}</td>
+        <td class="gap-count ${g.cmCount>0?'muted':'red'}">${g.cmCount}</td>
+        <td style="text-align:center"><span class="gap-sev ${sevClass}">+${g.gap}</span></td>
+        <td class="date-range">${dateRange}</td>
+      </tr>`;
+    });
+
+    html += `</tbody></table></div></div>`;
+  });
+
+  panel.innerHTML = html;
 }
 
 /* ═══════════════════════════════════════════════════════════
