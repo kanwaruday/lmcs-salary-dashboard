@@ -170,6 +170,23 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
 .comp-teacher{font-size:.75rem;color:#9ca3af;margin-top:2px}
 .comp-count{font-size:.75rem;color:var(--gray)}
 
+/* ── MISSING UPLOADS ── */
+.missing-school{margin-bottom:20px;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.missing-school-hdr{background:var(--lgray);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:10px}
+.missing-school-name{font-size:12px;font-weight:700;color:var(--dark)}
+.missing-school-meta{font-size:10px;color:var(--gray);margin-left:auto}
+.missing-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.missing-table th{background:#fef3c7;color:#92400e;font-size:.72rem;font-weight:700;letter-spacing:.3px;text-transform:uppercase;padding:5px 12px;text-align:left;border-bottom:1px solid #fde68a}
+.missing-table td{padding:6px 12px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+.missing-table tbody tr:last-child td{border-bottom:none}
+.missing-table tbody tr:hover td{background:#fffbeb}
+.miss-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
+.miss-absent{background:#fee2e2;color:var(--red);border:1px solid #fecaca}
+.miss-present{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
+.miss-last{font-size:.75rem;color:#9ca3af}
+.miss-lookback{font-size:.78rem;color:var(--gray);background:var(--lgray);border:1px solid var(--border);border-radius:4px;padding:6px 12px;margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.miss-lookback strong{color:var(--dark)}
+
 /* ── SCROLLBAR ── */
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:var(--lgray)}
@@ -257,6 +274,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
   <button class="tab-btn" id="tab-comply" onclick="showTab('comply',this)">
     ✅ Upload Compliance
   </button>
+  <button class="tab-btn" id="tab-missing" onclick="showTab('missing',this)">
+    🔴 Missing Uploads
+    <span class="tab-badge amber" id="missingBadge" style="display:none">0</span>
+  </button>
 </div>
 
 <!-- APP BODY -->
@@ -283,6 +304,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
     <div class="loading-state" id="loadingComply">
       <div class="spinner"></div>
       <p>Checking upload compliance…</p>
+    </div>
+  </div>
+  <div class="tab-panel" id="panel-missing">
+    <div class="loading-state" id="loadingMissing">
+      <div class="spinner"></div>
+      <p>Calculating missing uploads…</p>
     </div>
   </div>
 </div>
@@ -1093,6 +1120,126 @@ function renderUploaderTable() {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   RENDER — Missing Uploads
+   Compares the selected date against the last 14 days to find
+   school+class+subject+teacher combos that uploaded recently
+   but have no entry on the selected date.
+═══════════════════════════════════════════════════════════ */
+function renderMissing() {
+  const panel = document.getElementById('panel-missing');
+
+  // Need a specific date to compare against
+  const checkDate = activeDate || [...new Set(allRecords.map(r => r.dateStr))].sort().reverse()[0] || todayStr();
+
+  // Look-back window: 14 calendar days before checkDate (school days only)
+  const lookbackStart = new Date(new Date(checkDate) - 14 * 86400000).toISOString().slice(0, 10);
+  const lookbackRecs  = allRecords.filter(r => r.dateStr >= lookbackStart && r.dateStr < checkDate);
+
+  if (!lookbackRecs.length) {
+    panel.innerHTML = `<div class="empty-state"><div class="icon">📋</div>
+      <h3>Not enough historical data</h3>
+      <p>No uploads found in the 14 days before <strong>${checkDate}</strong> to build an expected set.</p></div>`;
+    return;
+  }
+
+  // Build expected set: unique (lmsIdx, classMapped, subject, teacher) seen in look-back window
+  const expected = {};
+  lookbackRecs.forEach(r => {
+    const key = `${r.lmsIdx}|${r.classMapped||r.classRaw}|${r.subject}|${r.teacher}`;
+    if (!expected[key]) {
+      expected[key] = {
+        lmsIdx: r.lmsIdx,
+        cls: r.classMapped || r.classRaw || '?',
+        subject: r.subject,
+        teacher: r.teacher,
+        lastSeen: r.dateStr,
+        daysActive: new Set(),
+      };
+    }
+    expected[key].daysActive.add(r.dateStr);
+    if (r.dateStr > expected[key].lastSeen) expected[key].lastSeen = r.dateStr;
+  });
+
+  // Build uploaded set for checkDate
+  const uploaded = new Set(
+    allRecords
+      .filter(r => r.dateStr === checkDate)
+      .map(r => `${r.lmsIdx}|${r.classMapped||r.classRaw}|${r.subject}|${r.teacher}`)
+  );
+
+  // Filter: only flag combos active on ≥2 days in look-back (reduces noise from one-off uploads)
+  const missing = Object.entries(expected)
+    .filter(([key, e]) => e.daysActive.size >= 2 && !uploaded.has(key))
+    .map(([, e]) => e)
+    .sort((a, b) => +a.lmsIdx - +b.lmsIdx || (a.cls).localeCompare(b.cls) || a.subject.localeCompare(b.subject));
+
+  // Update badge
+  const badge = document.getElementById('missingBadge');
+  badge.textContent = missing.length;
+  badge.style.display = missing.length > 0 ? 'inline' : 'none';
+
+  if (!missing.length) {
+    panel.innerHTML = `<div class="empty-state"><div class="icon">✅</div>
+      <h3>No missing uploads for ${checkDate}</h3>
+      <p>Every teacher who uploaded in the previous 14 days has also uploaded on this date.</p></div>`;
+    return;
+  }
+
+  // Apply school filter
+  const filtered = activeSchool !== ''
+    ? missing.filter(e => e.lmsIdx === parseInt(activeSchool))
+    : missing;
+
+  // Group by school
+  const bySchool = {};
+  filtered.forEach(e => {
+    if (!bySchool[e.lmsIdx]) bySchool[e.lmsIdx] = [];
+    bySchool[e.lmsIdx].push(e);
+  });
+
+  const lookbackDays = [...new Set(lookbackRecs.map(r => r.dateStr))].length;
+  let html = `<div class="miss-lookback">
+    <span>📅 Checking date: <strong>${checkDate}</strong></span>
+    <span style="color:var(--border)">|</span>
+    <span>Look-back: last <strong>${lookbackDays} active days</strong> (up to 14 calendar days)</span>
+    <span style="color:var(--border)">|</span>
+    <span>Expected combinations active on ≥ 2 days: <strong>${Object.keys(expected).filter(k=>expected[k].daysActive.size>=2).length}</strong></span>
+    <span style="color:var(--border)">|</span>
+    <span style="color:var(--red);font-weight:700">Missing: ${missing.length}</span>
+  </div>`;
+
+  Object.keys(bySchool).sort((a,b)=>+a-+b).forEach(lmsIdx => {
+    const rows = bySchool[lmsIdx];
+    html += `<div class="missing-school">
+      <div class="missing-school-hdr">
+        <span class="missing-school-name">🏫 ${lmsName(+lmsIdx)}</span>
+        <span class="missing-school-meta" style="color:var(--red);font-weight:700">${rows.length} missing</span>
+      </div>
+      <table class="missing-table">
+        <thead><tr>
+          <th>Class</th><th>Subject</th><th>Teacher</th>
+          <th>Status</th><th>Last Uploaded</th><th>Active Days (14d)</th>
+        </tr></thead>
+        <tbody>`;
+
+    rows.forEach(e => {
+      html += `<tr>
+        <td><span class="class-badge">${esc(e.cls)}</span></td>
+        <td><span class="subj-chip">${esc(e.subject)}</span></td>
+        <td style="font-weight:600">${esc(e.teacher)}</td>
+        <td><span class="miss-badge miss-absent">✗ Not uploaded</span></td>
+        <td class="miss-last">${e.lastSeen}</td>
+        <td class="miss-last" style="text-align:center">${e.daysActive.size}</td>
+      </tr>`;
+    });
+
+    html += `</tbody></table></div>`;
+  });
+
+  panel.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════════════
    UI HELPERS
 ═══════════════════════════════════════════════════════════ */
 function esc(str) {
@@ -1105,9 +1252,10 @@ function showTab(name, btn) {
   document.getElementById('panel-'+name).classList.add('active');
   btn.classList.add('active');
 
-  if (name === 'gaps')   renderGaps();
-  if (name === 'weekly') renderWeekly();
-  if (name === 'comply') renderCompliance();
+  if (name === 'gaps')    renderGaps();
+  if (name === 'weekly')  renderWeekly();
+  if (name === 'comply')  renderCompliance();
+  if (name === 'missing') renderMissing();
 }
 
 function applyFilters() {
@@ -1123,6 +1271,8 @@ function applyFilters() {
   if (dateVal === todayStr()) document.getElementById('qToday')?.classList.add('active');
 
   renderFeed();
+  // Re-render missing tab if it's active
+  if (document.getElementById('panel-missing')?.classList.contains('active')) renderMissing();
 }
 
 function setQuickDate(which) {
@@ -1145,6 +1295,7 @@ function setQuickDate(which) {
   document.getElementById('filterDate').value = val;
   activeDate = val || null;
   renderFeed();
+  if (document.getElementById('panel-missing')?.classList.contains('active')) renderMissing();
 }
 
 /* ═══════════════════════════════════════════════════════════
