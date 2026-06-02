@@ -75,18 +75,34 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
 
 /* Entry table */
 .entry-table{width:100%;border-collapse:collapse;font-size:.82rem}
-.entry-table thead th{background:var(--red);color:#fff;padding:6px 10px;text-align:left;font-size:.75rem;font-weight:700;letter-spacing:.3px;white-space:nowrap}
+/* Group header row */
+.entry-table thead tr.grp-hdr th{padding:4px 10px;font-size:.7rem;font-weight:800;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;text-align:center;border-bottom:1px solid rgba(255,255,255,.2)}
+.entry-table thead tr.grp-hdr th.th-meta{background:var(--red)}
+.entry-table thead tr.grp-hdr th.th-cw{background:#15803d}
+.entry-table thead tr.grp-hdr th.th-hw{background:#1d4ed8}
+/* Column header row */
+.entry-table thead tr.col-hdr th{padding:5px 10px;font-size:.72rem;font-weight:700;letter-spacing:.3px;white-space:nowrap;text-align:left}
+.entry-table thead tr.col-hdr th.th-meta{background:#b91c1c;color:#fff}
+.entry-table thead tr.col-hdr th.th-cw-col{background:#166534;color:#fff}
+.entry-table thead tr.col-hdr th.th-hw-col{background:#1e40af;color:#fff}
+/* Body */
 .entry-table tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
 .entry-table tbody tr:last-child{border-bottom:none}
-.entry-table tbody tr:nth-child(even) td{background:var(--lgray)}
+.entry-table tbody tr:nth-child(even) td{background:#fafafa}
 .entry-table tbody tr:hover td{background:rgba(206,0,0,.03)}
-.entry-table td{padding:7px 10px;vertical-align:top}
+.entry-table td{padding:6px 10px;vertical-align:top}
+/* CW / HW column distinction */
+.entry-table td.cw-col{border-left:2px solid #dcfce7}
+.entry-table td.hw-col{border-left:2px solid #dbeafe}
+.entry-table td.hw-col:first-of-type{border-left:3px solid #93c5fd}
+/* Cells */
 .class-badge{display:inline-block;background:#fee2e2;color:var(--red);border:1px solid #fecaca;padding:1px 8px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap}
 .teacher-cell{font-size:.8rem;color:var(--gray)}
-.chapter-cell{font-weight:600;color:var(--dark);max-width:180px}
-.desc-cell{font-size:.78rem;color:var(--gray);max-width:200px;line-height:1.4}
+.chapter-cell{font-weight:600;color:var(--dark);max-width:160px}
+.desc-cell{font-size:.78rem;color:var(--gray);max-width:180px;line-height:1.4}
 .time-cell{font-size:.75rem;color:#9ca3af;white-space:nowrap}
 .subj-chip{display:inline-block;background:var(--lgray);border:1px solid var(--border);padding:1px 7px;border-radius:3px;font-size:10px;font-weight:600;color:var(--gray)}
+.no-hw{font-size:.75rem;color:#d1d5db;font-style:italic}
 
 /* ── ACTIVITY TAGS ── */
 .tag-chip{font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap;display:inline-block}
@@ -720,24 +736,41 @@ function renderFeed() {
       const entries = classes[cls].sort((a,b)=>b.dateObj-a.dateObj);
       html += `<div class="class-group">
         <table class="entry-table">
-          <thead><tr>
-            <th><span class="class-badge">${cls}</span></th>
-            <th>Teacher</th>
-            <th>Subject</th>
-            <th>Chapter (Classwork)</th>
-            <th>Description</th>
-            <th>Tag</th>
-            <th>Time</th>
-          </tr></thead>
+          <thead>
+            <tr class="grp-hdr">
+              <th class="th-meta" colspan="4"><span class="class-badge" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)">${cls}</span></th>
+              <th class="th-cw" colspan="3">📖 Classwork</th>
+              <th class="th-hw" colspan="3">📝 Homework</th>
+              <th class="th-meta">Time</th>
+            </tr>
+            <tr class="col-hdr">
+              <th class="th-meta">Date</th>
+              <th class="th-meta">Teacher</th>
+              <th class="th-meta">Subject</th>
+              <th class="th-meta">Book</th>
+              <th class="th-cw-col">Chapter</th>
+              <th class="th-cw-col">Description</th>
+              <th class="th-cw-col">Tag</th>
+              <th class="th-hw-col">Chapter</th>
+              <th class="th-hw-col">Description</th>
+              <th class="th-hw-col">Tag</th>
+              <th class="th-meta">—</th>
+            </tr>
+          </thead>
           <tbody>`;
       entries.forEach(r => {
-        html += `<tr>
+        const cwCWA = hasCWA(r.cwTag, r.subject);
+        html += `<tr${cwCWA ? ' style="background:#f0fdf4"' : ''}>
           <td><span style="font-size:10px;color:var(--gray)">${r.dateStr}</span></td>
           <td class="teacher-cell">${esc(r.teacher)}</td>
           <td><span class="subj-chip">${esc(r.subject)}</span></td>
-          <td class="chapter-cell">${esc(r.cwChapter)}</td>
-          <td class="desc-cell">${esc(r.cwDesc)}</td>
-          <td style="white-space:nowrap">${tagChipsHTML(r.cwTag)}</td>
+          <td style="font-size:.75rem;color:var(--gray);max-width:120px">${esc(r.cwBook||r.hwBook||'')}</td>
+          <td class="chapter-cell cw-col">${esc(r.cwChapter)}</td>
+          <td class="desc-cell cw-col">${esc(r.cwDesc)}</td>
+          <td class="cw-col" style="white-space:nowrap">${tagChipsHTML(r.cwTag)}</td>
+          <td class="chapter-cell hw-col">${r.hwChapter ? esc(r.hwChapter) : '<span class="no-hw">—</span>'}</td>
+          <td class="desc-cell hw-col">${r.hwDesc ? esc(r.hwDesc) : '<span class="no-hw">—</span>'}</td>
+          <td class="hw-col" style="white-space:nowrap">${r.hwTag ? tagChipsHTML(r.hwTag) : '<span class="no-hw">—</span>'}</td>
           <td class="time-cell">${r.timeStr}</td>
         </tr>`;
       });
