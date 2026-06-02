@@ -853,7 +853,7 @@ let gapFiltSubject = '';
 
 async function renderGaps() {
   const panel = document.getElementById('panel-gaps');
-  panel.innerHTML = `<div class="loading-state"><div class="spinner"></div><p>Loading Course Mapping data…</p></div>`;
+  panel.innerHTML = `<div class="loading-state" id="loadingGaps"><div class="spinner"></div><p>Loading Course Mapping data…</p></div>`;
 
   try { await loadCourseMapping(); }
   catch(e) {
