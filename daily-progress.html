@@ -348,20 +348,33 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
 
 <script>
 /* ═══════════════════════════════════════════════════════════
-   PROXY — paste your Apps Script Web App URL here after deploying.
-   Leave empty to fall back to direct Google Sheets fetching.
+   CONFIGURATION — values are read from Admin Panel (localStorage).
+   Defaults below are used only if Admin Panel has never been saved.
 ═══════════════════════════════════════════════════════════ */
-const PROXY_URL = 'https://script.google.com/macros/s/AKfycbyYk0uDnp-PHdUDdOh5-KfD2xK1ahYCQ_vt7SJigQMhSA3DSs5t5v_q4tnseoZKw3_L/exec';
+
+// Load admin config first so PROXY_URL and DAILY_SHEET_ID can use it
+const CONFIG_KEY_EARLY = 'lmcs_cmp_config';
+function _earlyLoadCfg() {
+  try { const s = localStorage.getItem(CONFIG_KEY_EARLY); return s ? JSON.parse(s) : null; } catch(e) { return null; }
+}
+const _earlyCfg = _earlyLoadCfg();
+
+const PROXY_URL = _earlyCfg?.proxyUrl
+  ?? 'https://script.google.com/macros/s/AKfycbyYk0uDnp-PHdUDdOh5-KfD2xK1ahYCQ_vt7SJigQMhSA3DSs5t5v_q4tnseoZKw3_L/exec';
+
+const DAILY_SHEET_ID = _earlyCfg?.dailySheetId
+  ?? '1z5hzpMRHMru6ulpYs2lsGZr7quAywwpQ_zySa3rvGUA';
+
+const CM_CACHE_TTL = ((_earlyCfg?.cacheTtlMinutes) || 30) * 60 * 1000;
 
 /* ═══════════════════════════════════════════════════════════
    CONFIGURATION
    School name mapping matches the daily classwork sheet's "School Name"
    column to the LMS school indices used in the Course Mapping system.
 ═══════════════════════════════════════════════════════════ */
-const DAILY_SHEET_ID = '1z5hzpMRHMru6ulpYs2lsGZr7quAywwpQ_zySa3rvGUA';
 
-// Load shared config from localStorage (written by course-mapping-admin.html)
-const CONFIG_KEY = 'lmcs_cmp_config';
+// Config key (matches Admin Panel)
+const CONFIG_KEY = CONFIG_KEY_EARLY;
 const DEFAULT_SCHOOLS = [
   {name:'LMS 1', id:'1BorpCdePG7O6iZiwgGwNpWZBl7I1IGAT-OAh0fw2yMs'},
   {name:'LMS 2', id:'1ejXKsnK3a2kNGEboTs-yQ2d3Tpk3xG5JRtm9DAmiYXs'},
@@ -685,7 +698,7 @@ function parseCMTab(table) {
 }
 
 const CM_CACHE_KEY = 'lmcs_cm_store_v2';
-const CM_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours in ms
+// CM_CACHE_TTL is set from Admin Panel → Daily Sheet & Proxy → Cache Duration (default 30 min)
 
 function saveCMCache() {
   try {

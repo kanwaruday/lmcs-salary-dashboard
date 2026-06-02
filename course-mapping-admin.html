@@ -180,6 +180,7 @@ footer{text-align:center;font-size:.78rem;color:var(--gray);padding:2rem;border-
       <li><a href="#classes" class="nav-link">📚 Class Configuration</a></li>
       <li><a href="#thresholds" class="nav-link">⚙ Progress Thresholds</a></li>
       <li><a href="#cwa-subjects" class="nav-link">🚫 CWA-Exempt Subjects</a></li>
+      <li><a href="#daily-proxy" class="nav-link">🔗 Daily Sheet &amp; Proxy</a></li>
     </ul>
     <div class="section-label">Tools</div>
     <ul>
@@ -288,6 +289,54 @@ footer{text-align:center;font-size:.78rem;color:var(--gray);padding:2rem;border-
       <p class="field-note" style="margin-top:.5rem">Press Enter or click Add. Changes take effect after saving.</p>
     </section>
 
+    <!-- ── DAILY SHEET & PROXY ── -->
+    <section id="daily-proxy">
+      <h2>Daily Sheet &amp; Proxy</h2>
+      <p class="section-desc">
+        The <strong>CW/HW Sheet ID</strong> is the Google Sheet that teachers upload daily classwork to.
+        The <strong>Proxy URL</strong> is the Google Apps Script Web App that pre-processes all data — it makes the dashboard load in ~6 seconds instead of 20+.
+        Changes here take effect on the next dashboard page load.
+      </p>
+      <div class="callout callout-blue">
+        <strong>When to update these</strong>
+        Update the Proxy URL if you redeploy the Apps Script (the URL changes on each new deployment).
+        Update the Sheet ID if the CW/HW Google Sheet is ever replaced. After changing either, also update <code>Code.gs</code> in the Apps Script editor and run <code>updateCache()</code>.
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="inp-daily-sheet">CW/HW Google Sheet ID</label>
+        <div class="field-row">
+          <input type="text" id="inp-daily-sheet" class="mono" placeholder="Google Sheet ID"
+            style="max-width:520px" oninput="updateSheetIdLink();markDirty()">
+          <a id="daily-sheet-link" href="#" target="_blank" rel="noopener" class="open-link" style="display:none">↗ Open Sheet</a>
+        </div>
+        <p class="field-note">Found in the sheet URL: docs.google.com/spreadsheets/d/<strong>SHEET_ID</strong>/edit</p>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="inp-proxy-url">Apps Script Proxy URL</label>
+        <div class="field-row">
+          <input type="url" id="inp-proxy-url" placeholder="https://script.google.com/macros/s/…/exec"
+            style="max-width:520px" oninput="updateProxyLink();markDirty()">
+          <a id="proxy-link" href="#" target="_blank" rel="noopener" class="open-link" style="display:none">↗ Test</a>
+        </div>
+        <p class="field-note">Leave empty to fall back to direct Google Sheets fetching (slower but always works).</p>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="inp-cache-ttl">Proxy Cache Duration</label>
+        <div class="field-row">
+          <select id="inp-cache-ttl" oninput="markDirty()" style="padding:5px 8px;border:1.5px solid var(--border);border-radius:4px;font-size:.875rem;font-family:inherit">
+            <option value="15">15 minutes</option>
+            <option value="30">30 minutes</option>
+            <option value="60">1 hour</option>
+            <option value="120">2 hours</option>
+          </select>
+        </div>
+        <p class="field-note">How long the dashboard caches data before re-fetching from the proxy. Match this to your Apps Script time trigger interval.</p>
+      </div>
+    </section>
+
     <!-- ── IMPORT / EXPORT ── -->
     <section id="import-export">
       <h2>Import / Export</h2>
@@ -369,6 +418,9 @@ const DEFAULT_CONFIG = {
     graceDays: 0,    // days after planned completion before flagging overdue
   },
   cwaExemptSubjects: ['General Knowledge', 'Computer'],
+  dailySheetId: '1z5hzpMRHMru6ulpYs2lsGZr7quAywwpQ_zySa3rvGUA',
+  proxyUrl: 'https://script.google.com/macros/s/AKfycbyYk0uDnp-PHdUDdOh5-KfD2xK1ahYCQ_vt7SJigQMhSA3DSs5t5v_q4tnseoZKw3_L/exec',
+  cacheTtlMinutes: 30,
 };
 
 /* ════════════════════════════════════════════════════
@@ -385,6 +437,9 @@ function loadConfig() {
         classes: p.classes || DEFAULT_CONFIG.classes,
         thresholds: { ...DEFAULT_CONFIG.thresholds, ...(p.thresholds||{}) },
         cwaExemptSubjects: p.cwaExemptSubjects || DEFAULT_CONFIG.cwaExemptSubjects,
+        dailySheetId:      p.dailySheetId      || DEFAULT_CONFIG.dailySheetId,
+        proxyUrl:          p.proxyUrl          ?? DEFAULT_CONFIG.proxyUrl,
+        cacheTtlMinutes:   p.cacheTtlMinutes   || DEFAULT_CONFIG.cacheTtlMinutes,
       };
     }
   } catch(e) {}
@@ -434,8 +489,11 @@ function collectConfig() {
   };
 
   const cwaExemptSubjects = [...document.querySelectorAll('.exempt-chip')].map(c => c.dataset.subject);
+  const dailySheetId    = document.getElementById('inp-daily-sheet')?.value.trim() || DEFAULT_CONFIG.dailySheetId;
+  const proxyUrl        = document.getElementById('inp-proxy-url')?.value.trim()   || '';
+  const cacheTtlMinutes = parseInt(document.getElementById('inp-cache-ttl')?.value) || 30;
 
-  return { version:1, schools, classes, thresholds, cwaExemptSubjects };
+  return { version:1, schools, classes, thresholds, cwaExemptSubjects, dailySheetId, proxyUrl, cacheTtlMinutes };
 }
 
 function validate(config) {
@@ -693,6 +751,45 @@ function removeExemptSubject(name) {
 }
 
 /* ════════════════════════════════════════════════════
+   RENDER — Daily Sheet & Proxy
+════════════════════════════════════════════════════ */
+function buildDailyProxy() {
+  const sheetId = cfg.dailySheetId || '';
+  const proxy   = cfg.proxyUrl     || '';
+  const ttl     = cfg.cacheTtlMinutes || 30;
+
+  const sheetInput = document.getElementById('inp-daily-sheet');
+  const proxyInput = document.getElementById('inp-proxy-url');
+  const ttlInput   = document.getElementById('inp-cache-ttl');
+  if (sheetInput) sheetInput.value = sheetId;
+  if (proxyInput) proxyInput.value = proxy;
+  if (ttlInput)   ttlInput.value   = String(ttl);
+
+  updateSheetIdLink();
+  updateProxyLink();
+}
+
+function updateSheetIdLink() {
+  const id   = document.getElementById('inp-daily-sheet')?.value.trim();
+  const link = document.getElementById('daily-sheet-link');
+  if (!link) return;
+  if (id) {
+    link.href = 'https://docs.google.com/spreadsheets/d/' + id + '/edit';
+    link.style.display = '';
+  } else {
+    link.style.display = 'none';
+  }
+}
+
+function updateProxyLink() {
+  const url  = document.getElementById('inp-proxy-url')?.value.trim();
+  const link = document.getElementById('proxy-link');
+  if (!link) return;
+  if (url) { link.href = url; link.style.display = ''; }
+  else       link.style.display = 'none';
+}
+
+/* ════════════════════════════════════════════════════
    IMPORT / EXPORT
 ════════════════════════════════════════════════════ */
 function doExport() {
@@ -783,6 +880,7 @@ function buildForms() {
   buildClasses();
   buildThresholds();
   buildCwaSubjects();
+  buildDailyProxy();
 }
 
 buildForms();
