@@ -884,9 +884,17 @@ async function renderGaps() {
 
   const today = new Date(); today.setHours(0,0,0,0);
 
-  // ── Build daily CWA index: [lmsIdx][classMapped][normSubject] → sorted [{dateObj,dateStr,chapter,teacher}]
+  // ── Academic year: 1 Apr → 31 Mar ───────────────────────
+  // Current academic year start = April 1 of this calendar year if we're past it, else last year.
+  const ayStartYear = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+  const ayStart = new Date(ayStartYear, 3, 1);   // April 1
+  const ayEnd   = new Date(ayStartYear + 1, 2, 31, 23, 59, 59); // March 31 next year
+  const ayLabel = `${ayStartYear}-${String(ayStartYear + 1).slice(2)}`; // e.g. "2026-27"
+
+  // ── Build daily CWA index — restricted to current academic year ──
+  // [lmsIdx][classMapped][normSubject] → sorted [{dateObj,dateStr,chapter,teacher}]
   const dailyCWA = {};
-  allRecords.filter(r => hasCWA(r.cwTag, r.subject)).forEach(r => {
+  allRecords.filter(r => hasCWA(r.cwTag, r.subject) && r.dateObj >= ayStart && r.dateObj <= ayEnd).forEach(r => {
     if (r.lmsIdx === null || !r.classMapped) return;
     const ns = normalizeSubject(r.subject);
     if (!dailyCWA[r.lmsIdx])                     dailyCWA[r.lmsIdx] = {};
@@ -899,11 +907,11 @@ async function renderGaps() {
     Object.values(byS).forEach(arr => arr.sort((a,b)=>a.dateObj-b.dateObj))
   ));
 
-  // ── Teacher lookup from ALL records (not just CWA) ──────
+  // ── Teacher lookup from current academic year records ────
   // Used to fill teacher names for overdue entries where no CWA event exists yet.
   // Key: lmsIdx|classMapped|normSubject → most recent teacher(s)
   const teacherIndex = {};
-  allRecords.forEach(r => {
+  allRecords.filter(r => r.dateObj >= ayStart && r.dateObj <= ayEnd).forEach(r => {
     if (r.lmsIdx === null || !r.classMapped || !r.teacher) return;
     const key = `${r.lmsIdx}|${r.classMapped}|${normalizeSubject(r.subject)}`;
     if (!teacherIndex[key]) teacherIndex[key] = { teachers: new Set(), lastDate: '' };
@@ -955,8 +963,10 @@ async function renderGaps() {
       });
 
       Object.entries(bySubj).forEach(([ns, chList]) => {
-        // Only chapters with a planned CWA date
-        const planned = chList.filter(ch => ch.cwaDate).sort((a,b) => a.cwaDate - b.cwaDate);
+        // Only chapters with a planned CWA date that falls within the current academic year
+        const planned = chList
+          .filter(ch => ch.cwaDate && ch.cwaDate >= ayStart && ch.cwaDate <= ayEnd)
+          .sort((a,b) => a.cwaDate - b.cwaDate);
         if (!planned.length) return;
 
         const actual = getDailyArr(lmsIdx, tab, chList[0].subject).slice(); // copy
@@ -1066,9 +1076,10 @@ function renderGapPanel() {
 
   let html = `
   <p class="sec-sub" style="margin-bottom:10px">
-    Cross-references the <strong>planned CWA Date</strong> in each school's Course Mapping sheet
+    Academic year <strong>${ayLabel}</strong> (1 Apr ${ayStartYear} – 31 Mar ${ayStartYear+1}) ·
+    Cross-references the <strong>planned CWA Date</strong> in each school's Course Mapping
     against the <strong>actual CWA date</strong> logged in the Daily Classwork sheet.
-    <strong style="color:var(--red)">Overdue</strong> = planned date passed, CWA not yet taken.
+    <strong style="color:var(--red)">Overdue</strong> = planned date passed, CWA not yet taken. &nbsp;
     <strong style="color:#c2410c">Late</strong> = CWA taken after the planned date.
   </p>
 
