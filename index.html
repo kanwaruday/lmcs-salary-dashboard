@@ -54,18 +54,24 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .card-amber::before{background:linear-gradient(135deg,rgba(245,158,11,.05),transparent)}
 .card-amber:hover::before{opacity:1}
 
+.card-red{border-color:#7f1d1d}.card-red:hover{border-color:#ef4444;box-shadow:0 12px 32px rgba(239,68,68,.12)}
+.card-red::before{background:linear-gradient(135deg,rgba(239,68,68,.06),transparent)}
+.card-red:hover::before{opacity:1}
+
 /* CARD INNER */
 .card-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px}
 .ci-blue{background:rgba(59,130,246,.15)}
 .ci-indigo{background:rgba(99,102,241,.15)}
 .ci-green{background:rgba(34,197,94,.12)}
 .ci-amber{background:rgba(245,158,11,.12)}
+.ci-red{background:rgba(239,68,68,.12)}
 
 .card-top{display:flex;align-items:center;gap:10px}
 .card-badge{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:2px 7px;border-radius:20px;margin-left:auto;flex-shrink:0}
 .badge-live{background:#052e16;color:#22c55e;border:1px solid #166534}
 .badge-admin{background:#1e1b4b;color:#a5b4fc;border:1px solid #4338ca}
 .badge-ref{background:#1c1400;color:#fbbf24;border:1px solid #92400e}
+.badge-doc{background:#3f0c0c;color:#fca5a5;border:1px solid #991b1b}
 
 .card-title{font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;color:#f1f5f9;line-height:1.3}
 .card-desc{font-size:11px;color:#64748b;line-height:1.55;flex:1}
@@ -108,7 +114,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   <div class="sec-lbl">Principal Tools</div>
   <div class="cards">
 
-    <a href="LMCS_Hiring_Dashboard_2026.html" class="card card-blue">
+    <a href="dashboard.html" class="card card-blue">
       <div class="card-top">
         <div class="card-icon ci-blue">👤</div>
         <div class="card-badge badge-live">Live</div>
@@ -118,7 +124,37 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         <div class="card-desc">Interactive salary calculator for new hires. Select school, designation, experience and kid details to get a full salary breakdown across Y1–Y3.</div>
       </div>
       <div class="card-footer">
-        <span class="card-url">LMCS_Hiring_Dashboard_2026.html</span>
+        <span class="card-url">dashboard.html</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="course-mapping-progress.html" class="card card-green">
+      <div class="card-top">
+        <div class="card-icon ci-green">📚</div>
+        <div class="card-badge badge-live">Live</div>
+      </div>
+      <div>
+        <div class="card-title">Course Mapping Progress</div>
+        <div class="card-desc">Live T1 &amp; T2 course mapping progress across all 6 LMS schools. School, Class, and Subject views — drill from school overview to per-subject cross-school matrix.</div>
+      </div>
+      <div class="card-footer">
+        <span class="card-url">course-mapping-progress.html</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="guide.html" class="card card-amber">
+      <div class="card-top">
+        <div class="card-icon ci-amber">📖</div>
+        <div class="card-badge badge-ref">Guide</div>
+      </div>
+      <div>
+        <div class="card-title">Academic Coordinator Guide</div>
+        <div class="card-desc">How to read, interpret, and act on the Course Progress Dashboard. Explains all metrics, status values, target distributions, and the weekly compliance routine.</div>
+      </div>
+      <div class="card-footer">
+        <span class="card-url">guide.html</span>
         <span class="card-arrow">→</span>
       </div>
     </a>
@@ -129,7 +165,37 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   <div class="sec-lbl">Admin Tools</div>
   <div class="cards">
 
-    <a href="LMCS_Admin_Panel_2026.html" class="card card-indigo">
+    <a href="daily-progress.html" class="card card-blue">
+      <div class="card-top">
+        <div class="card-icon ci-blue">📋</div>
+        <div class="card-badge badge-live">Live</div>
+      </div>
+      <div>
+        <div class="card-title">Daily Progress & CWA Tracking</div>
+        <div class="card-desc">Activity feed from the daily classwork portal vs. Course Mapping comparison. CWA gap report, weekly pulse, and upload compliance across all schools.</div>
+      </div>
+      <div class="card-footer">
+        <span class="card-url">daily-progress.html</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="course-mapping-admin.html" class="card card-green">
+      <div class="card-top">
+        <div class="card-icon ci-green">⚙️</div>
+        <div class="card-badge badge-admin">Admin Only</div>
+      </div>
+      <div>
+        <div class="card-title">Course Mapping Admin</div>
+        <div class="card-desc">Configure Google Sheet links for each school, set per-class T1/T2 distribution targets, adjust CWA thresholds, tolerance, and overdue grace period.</div>
+      </div>
+      <div class="card-footer">
+        <span class="card-url">course-mapping-admin.html</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="admin.html" class="card card-indigo">
       <div class="card-top">
         <div class="card-icon ci-indigo">⚙️</div>
         <div class="card-badge badge-admin">Admin Only</div>
@@ -139,7 +205,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         <div class="card-desc">Configure DA, ADA, EPF/ESI rates, RRF percentages, increment formulas, and EPF defaults per school. All changes are logged with timestamps.</div>
       </div>
       <div class="card-footer">
-        <span class="card-url">LMCS_Admin_Panel_2026.html</span>
+        <span class="card-url">admin.html</span>
         <span class="card-arrow">→</span>
       </div>
     </a>
@@ -182,19 +248,74 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 
   </div>
 
+  <!-- SCHOOL BYE LAWS -->
+  <div class="sec-lbl">School Bye Laws</div>
+  <div class="cards">
+
+    <a href="bye-laws/index.html" class="card card-red">
+      <div class="card-top">
+        <div class="card-icon ci-red">📜</div>
+        <div class="card-badge badge-doc">2026</div>
+      </div>
+      <div>
+        <div class="card-title">LMCS Bye Laws 2026</div>
+        <div class="card-desc">Full index of all bye-law documents — abbreviations, vision &amp; mission, student CoC, employee CoC and administrative CoC.</div>
+      </div>
+      <div class="card-footer">
+        <span class="card-url">bye-laws/index.html</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="bye-laws/student-code-of-conduct/index.html" class="card card-red">
+      <div class="card-top">
+        <div class="card-icon ci-red">🧑‍🎓</div>
+        <div class="card-badge badge-doc">Student</div>
+      </div>
+      <div>
+        <div class="card-title">Student Code of Conduct</div>
+        <div class="card-desc">Starting at LMS, transport &amp; attendance, fees, behaviour &amp; uniform, academic tips, examination rules and FAQ.</div>
+      </div>
+      <div class="card-footer">
+        <span class="card-url">bye-laws/student-code-of-conduct/</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="bye-laws/employee-code-of-conduct/index.html" class="card card-red">
+      <div class="card-top">
+        <div class="card-icon ci-red">👩‍🏫</div>
+        <div class="card-badge badge-doc">Employee</div>
+      </div>
+      <div>
+        <div class="card-title">Employee Code of Conduct</div>
+        <div class="card-desc">HR &amp; appointments, service rules, job roles, leaves, fines, transport fees, school rules and examination process.</div>
+      </div>
+      <div class="card-footer">
+        <span class="card-url">bye-laws/employee-code-of-conduct/</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+  </div>
+
   <!-- QUICK LINKS -->
   <div class="quick-strip">
     <span class="qs-label">Quick Access</span>
-    <a href="LMCS_Hiring_Dashboard_2026.html" class="qs-link"><span class="qs-dot" style="background:#3b82f6"></span>Hiring Dashboard</a>
-    <a href="LMCS_Admin_Panel_2026.html" class="qs-link"><span class="qs-dot" style="background:#6366f1"></span>Admin Panel</a>
-    <a href="LMCS_Admin_Panel_2026.html#log" class="qs-link"><span class="qs-dot" style="background:#f59e0b"></span>Change Log</a>
+    <a href="dashboard.html" class="qs-link"><span class="qs-dot" style="background:#3b82f6"></span>Hiring Dashboard</a>
+    <a href="admin.html" class="qs-link"><span class="qs-dot" style="background:#6366f1"></span>Admin Panel</a>
+    <a href="admin.html#log" class="qs-link"><span class="qs-dot" style="background:#f59e0b"></span>Change Log</a>
+    <a href="course-mapping-progress.html" class="qs-link"><span class="qs-dot" style="background:#22c55e"></span>Course Mapping Progress</a>
+    <a href="course-mapping-admin.html" class="qs-link"><span class="qs-dot" style="background:#6366f1"></span>Mapping Admin</a>
+    <a href="guide.html" class="qs-link"><span class="qs-dot" style="background:#f59e0b"></span>Coordinator Guide</a>
+    <a href="bye-laws/index.html" class="qs-link"><span class="qs-dot" style="background:#ef4444"></span>Bye Laws 2026</a>
   </div>
 
 </div>
 
 <div class="footer">
   La Montessori Chain of Schools &nbsp;&middot;&nbsp; Internal Tools &nbsp;&middot;&nbsp; Pay Scale 2026 &nbsp;&middot;&nbsp;
-  <a href="LMCS_Admin_Panel_2026.html">Admin Panel</a>
+  <a href="admin.html">Admin Panel</a>
 </div>
 
 </body>
