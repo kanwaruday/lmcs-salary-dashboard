@@ -348,6 +348,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
 
 <script>
 /* ═══════════════════════════════════════════════════════════
+   PROXY — paste your Apps Script Web App URL here after deploying.
+   Leave empty to fall back to direct Google Sheets fetching.
+═══════════════════════════════════════════════════════════ */
+const PROXY_URL = ''; // e.g. 'https://script.google.com/macros/s/YOUR_ID/exec'
+
+/* ═══════════════════════════════════════════════════════════
    CONFIGURATION
    School name mapping matches the daily classwork sheet's "School Name"
    column to the LMS school indices used in the Course Mapping system.
@@ -1703,21 +1709,74 @@ function setQuickDate(which) {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   PROXY HELPERS
+═══════════════════════════════════════════════════════════ */
+async function fetchViaProxy() {
+  if (!PROXY_URL) return null;
+  try {
+    const res = await fetch(PROXY_URL, { cache: 'no-cache' });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch(_) { return null; }
+}
+
+function hydrateProxy(data) {
+  // Reconstruct allRecords with dateObj from timeMs
+  allRecords = data.cwRecords.map(r => ({
+    ...r,
+    dateObj:  new Date(r.timeMs),
+    timeStr:  new Date(r.timeMs).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}),
+    section:  '',
+    classRaw: '',
+    cwBook:   r.cwBook || '',
+  }));
+
+  // Reconstruct cmStore with Date objects (proxy sends ISO date strings)
+  cmStore = {};
+  Object.entries(data.cmData).forEach(([li, tabs]) => {
+    cmStore[+li] = {};
+    Object.entries(tabs).forEach(([tab, chapters]) => {
+      if (!Array.isArray(chapters)) { cmStore[+li][tab] = chapters; return; }
+      cmStore[+li][tab] = chapters.map(ch => ({
+        ...ch,
+        startDate: ch.startDate ? new Date(ch.startDate) : null,
+        cwaDate:   ch.cwaDate   ? new Date(ch.cwaDate)   : null,
+      }));
+    });
+  });
+  cmLoaded = true;
+  saveCMCache(); // persist to localStorage so gap tab is instant even after proxy call
+}
+
+/* ═══════════════════════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════════════════════ */
 async function init() {
   document.getElementById('lastUpdated').textContent =
     new Date().toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'});
 
-  // Set default date filter to today
   const today = todayStr();
   document.getElementById('filterDate').value = today;
   activeDate = today;
 
+  // ── Try proxy first (single fast request) ───────────────
+  if (PROXY_URL) {
+    document.getElementById('loadingFeed').querySelector('p').textContent =
+      'Loading via proxy…';
+    const proxyData = await fetchViaProxy();
+    if (proxyData) {
+      hydrateProxy(proxyData);
+      finishInit();
+      return;
+    }
+    // Proxy failed — fall through to direct fetch
+    console.warn('Proxy unavailable, falling back to direct fetch');
+  }
+
+  // ── Direct fetch fallback ────────────────────────────────
   try {
     const table = await fetchDailySheet();
     allRecords = parseDailyTable(table);
-    // allRecords is already sorted DESC by date (from query), keep as-is
   } catch(e) {
     document.getElementById('panel-feed').innerHTML = `<div class="notice" style="display:flex;margin:14px 0">
       ⚠ Could not load daily classwork sheet. Ensure the sheet is shared as "Anyone with the link → Viewer".<br>
@@ -1726,33 +1785,36 @@ async function init() {
     return;
   }
 
-  // Auto-detect most recent date in the loaded data and use it as the default
+  // Direct-fetch path: finish init normally
+  finishInit();
+}
+
+function finishInit() {
   const dates = [...new Set(allRecords.map(r => r.dateStr))].sort().reverse();
   const mostRecentDate = dates[0] || todayStr();
   const todayData = todayStr();
 
-  // Default to most recent date that has data; show a note if data is not current
   activeDate = mostRecentDate;
   document.getElementById('filterDate').value = mostRecentDate;
 
-  // If the most recent data is not today, show a note in the context line
   if (mostRecentDate !== todayData) {
     const daysDiff = Math.round((new Date(todayData) - new Date(mostRecentDate)) / 86400000);
+    const src = PROXY_URL ? 'proxy' : 'direct';
     document.getElementById('hdrCtx').textContent =
-      `Most recent data: ${mostRecentDate} (${daysDiff} day${daysDiff!==1?'s':''} ago) · ${allRecords.length} entries loaded`;
+      `Most recent data: ${mostRecentDate} (${daysDiff} day${daysDiff!==1?'s':''} ago) · ${allRecords.length} entries · via ${src}`;
+  } else if (PROXY_URL) {
+    document.getElementById('hdrCtx').textContent =
+      `${allRecords.length} entries loaded · via proxy · ${new Date().toLocaleTimeString('en-IN',{timeStyle:'short'})}`;
   }
 
-  // Clear the "Today" quick button active state since we defaulted to data's most recent date
   document.querySelectorAll('.filt-btn').forEach(b => b.classList.remove('active'));
   if (mostRecentDate === todayData) document.getElementById('qToday')?.classList.add('active');
 
   buildChips();
   renderFeed();
 
-  // ── Prefetch Course Mapping in the background ──────────
-  // User is on the Activity Feed tab. While they read, silently load
-  // all CM data so clicking "CWA Gap Report" is instant.
-  _prefetchCM();
+  // Prefetch CM in the background only if not already loaded via proxy
+  if (!cmLoaded) _prefetchCM();
 }
 
 let _cmPrefetchPromise = null;
