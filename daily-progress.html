@@ -302,6 +302,11 @@ const DAILY_SCHOOL_NAMES = [
   'La Montessori School Jogindernagar', // LMS 6 → index 5
 ];
 
+// Alternative / historical names that map to an LMS index (0-based)
+const DAILY_SCHOOL_ALIASES = [
+  { pattern: 'guru international', idx: 5 }, // LMS 6 alternate name
+];
+
 function loadCfg() {
   try {
     const s = localStorage.getItem(CONFIG_KEY);
@@ -376,11 +381,21 @@ function lmsName(idx) {
 
 function dailySchoolToLMS(schoolName) {
   const n = String(schoolName||'').trim();
+  const nl = n.toLowerCase();
+
+  // Check primary names first
   const idx = DAILY_SCHOOL_NAMES.findIndex(s =>
-    s.toLowerCase() === n.toLowerCase() ||
-    n.toLowerCase().includes(s.toLowerCase().split(' ').slice(-1)[0].toLowerCase())
+    s.toLowerCase() === nl ||
+    nl.includes(s.toLowerCase().split(' ').slice(-1)[0].toLowerCase())
   );
-  return idx >= 0 ? idx : null;
+  if (idx >= 0) return idx;
+
+  // Check aliases (e.g. "Guru International LMS" → LMS 6)
+  for (const alias of DAILY_SCHOOL_ALIASES) {
+    if (nl.includes(alias.pattern)) return alias.idx;
+  }
+
+  return null;
 }
 
 /* Returns the primary tag chip (most significant from a comma-separated list) */
@@ -453,10 +468,10 @@ function parseDateStr(str) {
 async function fetchDailySheet() {
   const year = new Date().getFullYear();
   // Filter for entries containing the current year in the date column (text match).
-  // LIMIT 20000 safely covers ~78 days at 256 entries/day = one full term.
+  // LIMIT 100000 covers a full academic year at 256 entries/day (~200 school days = ~51200 rows).
   // We do NOT use ORDER BY here because the date is stored as text and
   // lexicographic sorting ("9/…" > "6/…") would return wrong rows.
-  const query = encodeURIComponent(`SELECT * WHERE B CONTAINS '/${year}' LIMIT 20000`);
+  const query = encodeURIComponent(`SELECT * WHERE B CONTAINS '/${year}' LIMIT 100000`);
   const url = `https://docs.google.com/spreadsheets/d/${DAILY_SHEET_ID}/gviz/tq?tqx=out:json&tq=${query}`;
   const res  = await fetch(url, {cache:'no-cache'});
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
