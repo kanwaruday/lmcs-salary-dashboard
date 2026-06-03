@@ -265,9 +265,11 @@ function mapDailyClass(classStr, sectionStr) {
     if (ROMAN[s]===3||s==='3'||s==='III') return 'M-III';
     return 'M-I';
   }
+  // "XII Commerce Stream" / "XI Science Stream" — extract leading Roman numeral only
+  const firstWord = c.split(/\s+/)[0];
+  if (firstWord && ROMAN[firstWord] && c.length > firstWord.length) return `Class ${ROMAN[firstWord]}`;
   if (ROMAN[c]) return `Class ${ROMAN[c]}`;
-  const n = parseInt(c);
-  if (!isNaN(n) && n >= 1 && n <= 12) return `Class ${n}`;
+  const n = parseInt(c); if (!isNaN(n)&&n>=1&&n<=12) return `Class ${n}`;
   return null;
 }
 

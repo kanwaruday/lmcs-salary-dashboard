@@ -459,6 +459,16 @@ const CM_TABS = CM_CLASSES.map(c => c.tab);
 ═══════════════════════════════════════════════════════════ */
 const ROMAN = {I:1,II:2,III:3,IV:4,V:5,VI:6,VII:7,VIII:8,IX:9,X:10,XI:11,XII:12};
 
+/**
+ * mapDailyClass — converts the raw Class + Section values from the sheet
+ * into the standard tab name used in Course Mapping (e.g. "Class 12", "M-I").
+ *
+ * Handles the Class 11/12 stream pattern:
+ *   "XII Commerce Stream" / "XII Humanities Stream" / "XII Science Stream"
+ *   "XI Commerce Stream"  / "XI Humanities Stream"  / "XI Science Stream"
+ * In these cases only the leading Roman numeral is used for classMapped;
+ * the stream label is extracted separately (see parseDailyTable → r.stream).
+ */
 function mapDailyClass(classStr, sectionStr) {
   const c = String(classStr||'').trim().toUpperCase();
   const s = String(sectionStr||'').trim().toUpperCase();
@@ -471,7 +481,13 @@ function mapDailyClass(classStr, sectionStr) {
     return 'M-I';
   }
 
-  // Roman numeral class (II → Class 2, VIII → Class 8)
+  // "XII Commerce Stream" / "XI Science Stream" etc. — extract leading Roman numeral
+  const firstWord = c.split(/\s+/)[0];
+  if (firstWord && ROMAN[firstWord] && c.length > firstWord.length) {
+    return `Class ${ROMAN[firstWord]}`;
+  }
+
+  // Plain Roman numeral (II → Class 2, VIII → Class 8)
   if (ROMAN[c]) return `Class ${ROMAN[c]}`;
 
   // Arabic numeral
@@ -479,6 +495,17 @@ function mapDailyClass(classStr, sectionStr) {
   if (!isNaN(n) && n >= 1 && n <= 12) return `Class ${n}`;
 
   return null; // unmapped
+}
+
+/** Extract stream label from raw class string, e.g. "XII Commerce Stream" → "Commerce Stream" */
+function extractStream(classStr) {
+  const c = String(classStr||'').trim().toUpperCase();
+  const firstWord = c.split(/\s+/)[0];
+  if (firstWord && ROMAN[firstWord] && c.length > firstWord.length) {
+    // Return original-case remainder after the first word
+    return String(classStr).trim().replace(/^\S+\s+/, '').trim();
+  }
+  return '';
 }
 
 /* Tags can be comma-separated lists: "Chapter Teaching, OTT, CWA" */
@@ -668,6 +695,9 @@ function parseDailyTable(table) {
     const classStr    = cell(3);
     const section     = cell(4);
     const classMapped = mapDailyClass(classStr, section);
+    const stream      = extractStream(classStr);                          // e.g. "Commerce Stream"
+    const classDisplay = classMapped && stream
+      ? `${classMapped} · ${stream}` : classMapped;                      // e.g. "Class 12 · Commerce Stream"
 
     rows.push({
       school, lmsIdx, dateObj,
@@ -677,6 +707,8 @@ function parseDailyTable(table) {
       classRaw:   classStr,
       section,
       classMapped,
+      stream,
+      classDisplay,
       subject:    cell(5),
       cwBook:     cell(6),
       cwChapter:  cell(7),
@@ -930,7 +962,8 @@ function renderFeed() {
   const bySchool = {};
   recs.forEach(r => {
     const k = r.lmsIdx;
-    const c = r.classMapped || (r.classRaw ? r.classRaw : NO_CLASS_KEY);
+    // Use classDisplay (includes stream for Class 11/12) so streams appear as separate groups
+    const c = r.classDisplay || r.classMapped || (r.classRaw ? r.classRaw : NO_CLASS_KEY);
     if (!bySchool[k]) bySchool[k] = {};
     if (!bySchool[k][c]) bySchool[k][c] = [];
     bySchool[k][c].push(r);
