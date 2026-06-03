@@ -331,7 +331,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
     📋 Activity Feed
   </button>
   <button class="tab-btn" id="tab-weekly" onclick="showTab('weekly',this)">
-    📊 30-Day Pulse
+    📊 Pulse
   </button>
   <button class="tab-btn" id="tab-comply" onclick="showTab('comply',this)">
     ✅ Upload Compliance
@@ -1488,44 +1488,89 @@ function renderGapPanel() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   RENDER — Weekly Pulse
+   RENDER — Pulse (date-range driven)
+   Uses activeDateFrom / activeDateTo set by the filter bar.
+   Falls back to last 30 days when no filter is active.
+   Capped at 90 days — beyond that the table becomes unreadable.
 ═══════════════════════════════════════════════════════════ */
 function renderWeekly() {
   const panel = document.getElementById('panel-weekly');
+  const MAX_DAYS = 90;
 
-  // Build last 30 days anchored to the most recent date in loaded data
+  // Determine range from active filters
+  const latestDataDate = [...new Set(allRecords.map(r => r.dateStr))].sort().reverse()[0] || todayStr();
+
+  let rangeFrom, rangeTo;
+  if (activeDateFrom && activeDateTo) {
+    rangeFrom = activeDateFrom;
+    rangeTo   = activeDateTo;
+  } else if (activeDateFrom) {
+    rangeFrom = activeDateFrom;
+    rangeTo   = latestDataDate;
+  } else if (activeDateTo) {
+    const d = new Date(activeDateTo); d.setDate(d.getDate() - 29);
+    rangeFrom = localDateStr(d);
+    rangeTo   = activeDateTo;
+  } else {
+    // No filter — default to last 30 days of data
+    const d = new Date(latestDataDate); d.setDate(d.getDate() - 29);
+    rangeFrom = localDateStr(d);
+    rangeTo   = latestDataDate;
+  }
+
+  // Build calendar days
+  const startD = new Date(rangeFrom); startD.setHours(0,0,0,0);
+  const endD   = new Date(rangeTo);   endD.setHours(0,0,0,0);
+  const totalDays = Math.round((endD - startD) / 86400000) + 1;
+
+  if (totalDays > MAX_DAYS) {
+    panel.innerHTML = `<div class="empty-state">
+      <div class="icon">📊</div>
+      <h3>Date range too wide (${totalDays} days)</h3>
+      <p>Select up to ${MAX_DAYS} days to display the pulse.<br>
+         Try <strong>Today</strong>, <strong>Yesterday</strong>, <strong>This Week</strong>,
+         or set a custom From / To range in the filter bar.</p>
+    </div>`;
+    return;
+  }
+
   const days = [];
-  const dates = [...new Set(allRecords.map(r => r.dateStr))].sort().reverse();
-  const anchor = dates[0] ? new Date(dates[0]) : new Date();
-  anchor.setHours(0,0,0,0);
-  for (let i=29; i>=0; i--) {
-    const d = new Date(anchor); d.setDate(d.getDate()-i);
+  for (let d = new Date(startD); d <= endD; d.setDate(d.getDate() + 1)) {
+    const copy = new Date(d);
     days.push({
-      date:d,
-      dateStr:localDateStr(d),
-      label:d.toLocaleDateString('en-IN',{weekday:'short'}),
-      dayNum:d.getDate(),
-      month:d.toLocaleDateString('en-IN',{month:'short'}),
-      isToday:i===0, // most recent day = "today" relative to data
+      date:    copy,
+      dateStr: localDateStr(copy),
+      label:   copy.toLocaleDateString('en-IN', {weekday:'short'}),
+      dayNum:  copy.getDate(),
+      month:   copy.toLocaleDateString('en-IN', {month:'short'}),
+      isLatest: localDateStr(copy) === latestDataDate,
     });
   }
 
-  // Aggregate daily records by day
+  // Range label for headings
+  const rangeLabel = rangeFrom === rangeTo
+    ? rangeFrom
+    : `${rangeFrom} → ${rangeTo}`;
+  const periodLabel = totalDays === 1 ? '1 day'
+    : totalDays <= 7  ? `${totalDays} days`
+    : totalDays <= 31 ? `${totalDays} days`
+    : `${totalDays} days`;
+
+  // Aggregate by day
   const byDay = {};
   days.forEach(d => {
     const recs = allRecords.filter(r => r.dateStr === d.dateStr);
     byDay[d.dateStr] = {
       total: recs.length,
-      cwa:   recs.filter(r=>hasCWA(r.cwTag, r.subject)).length,
-      schools: new Set(recs.map(r=>r.lmsIdx)),
+      cwa:   recs.filter(r => hasCWA(r.cwTag, r.subject)).length,
     };
   });
 
-  // 30-day overview cards
+  // Overview cards
   const dayCards = days.map(d => {
     const info = byDay[d.dateStr];
     const colClass = info.total === 0 ? 'empty' : info.total >= 20 ? 'green' : 'blue';
-    return `<div class="day-card ${d.isToday?'today':''} ${info.total===0?'empty':''}" style="padding:7px 4px;min-width:0">
+    return `<div class="day-card ${d.isLatest?'today':''} ${info.total===0?'empty':''}" style="padding:7px 4px;min-width:0">
       <div class="day-name" style="font-size:8px">${d.label}</div>
       <div class="day-date" style="font-size:9px">${d.month} ${d.dayNum}</div>
       <div class="day-uploads ${colClass}" style="font-size:15px">${info.total || '—'}</div>
@@ -1533,60 +1578,63 @@ function renderWeekly() {
     </div>`;
   }).join('');
 
-  // Per-school breakdown
-  const schoolRows = CM_SCHOOLS.map((school, idx) => {
+  // Per-school breakdown — respects activeSchools filter
+  const visibleSchools = activeSchools.length
+    ? CM_SCHOOLS.filter((_, i) => activeSchools.includes(i)).map((s, _, arr) => ({ school: s, idx: CM_SCHOOLS.indexOf(s) }))
+    : CM_SCHOOLS.map((school, idx) => ({ school, idx }));
+
+  const schoolRows = visibleSchools.map(({ school, idx }) => {
     const dayCells = days.map(d => {
       const recs = allRecords.filter(r => r.dateStr === d.dateStr && r.lmsIdx === idx);
       const cwa  = recs.filter(r => hasCWA(r.cwTag, r.subject)).length;
       if (!recs.length) return `<td class="day-cell empty">—</td>`;
-      if (cwa > 0)      return `<td class="day-cell cwa" title="${cwa} CWA events">${recs.length} <span style="font-size:9px">✓${cwa}</span></td>`;
+      if (cwa > 0) return `<td class="day-cell cwa" title="${cwa} CWA events">${recs.length} <span style="font-size:9px">✓${cwa}</span></td>`;
       return `<td class="day-cell some">${recs.length}</td>`;
     }).join('');
 
-    const totalThisWeek = days.reduce((sum,d) => sum + allRecords.filter(r=>r.dateStr===d.dateStr&&r.lmsIdx===idx).length, 0);
-    const totalCWA      = days.reduce((sum,d) => sum + allRecords.filter(r=>r.dateStr===d.dateStr&&r.lmsIdx===idx&&hasCWA(r.cwTag, r.subject)).length, 0);
+    const totalPeriod = days.reduce((s,d) => s + allRecords.filter(r=>r.dateStr===d.dateStr&&r.lmsIdx===idx).length, 0);
+    const totalCWA    = days.reduce((s,d) => s + allRecords.filter(r=>r.dateStr===d.dateStr&&r.lmsIdx===idx&&hasCWA(r.cwTag,r.subject)).length, 0);
 
     return `<div class="school-pulse">
       <div class="sp-hdr">
         <span class="sp-name">🏫 ${school.name}</span>
-        <span class="sp-meta">${totalThisWeek} entries this week &nbsp;·&nbsp; ${totalCWA > 0 ? `<span style="color:#15803d">${totalCWA} CWA events</span>` : '0 CWA'}</span>
+        <span class="sp-meta">${totalPeriod} entries &nbsp;·&nbsp; ${totalCWA > 0 ? `<span style="color:#15803d">${totalCWA} CWA events</span>` : '0 CWA'}</span>
       </div>
       <table class="sp-table">
         <thead><tr>
           <th>Class</th>
-          ${days.map(d=>`<th${d.isToday?' style="color:var(--red)"':''}>${d.label} ${d.dayNum}</th>`).join('')}
+          ${days.map(d=>`<th${d.isLatest?' style="color:var(--red)"':''}>${d.label} ${d.dayNum}</th>`).join('')}
         </tr></thead>
-        <tbody>${schoolClassWeekRows(idx, days)}</tbody>
+        <tbody>${schoolClassRows(idx, days)}</tbody>
       </table>
     </div>`;
   }).join('');
 
   panel.innerHTML = `
-    <div class="sec-hdr">30-Day Overview</div>
+    <div class="sec-hdr">Overview — ${rangeLabel} <span style="font-size:.75rem;font-weight:400;color:var(--gray);margin-left:8px">${periodLabel}</span></div>
     <div class="weekly-grid">${dayCards}</div>
-    <div class="sec-hdr" style="margin-top:1.5rem">School × Day Breakdown (Last 30 Days)</div>
-    <p class="sec-sub">Numbers show upload counts. <span style="color:#15803d;font-weight:700">Green with ✓</span> = CWA events that day. Scroll right to see all 30 days.</p>
+    <div class="sec-hdr" style="margin-top:1.5rem">School × Day Breakdown</div>
+    <p class="sec-sub">Numbers show upload counts. <span style="color:#15803d;font-weight:700">Green with ✓</span> = CWA events that day.${totalDays > 10 ? ' Scroll right →' : ''}</p>
     ${schoolRows}`;
 }
 
-function schoolClassWeekRows(lmsIdx, days) {
-  // Get all classes active this week for this school
+function schoolClassRows(lmsIdx, days) {
   const classes = [...new Set(
     allRecords
-      .filter(r => r.lmsIdx === lmsIdx && days.some(d=>d.dateStr===r.dateStr))
-      .map(r => r.classMapped || r.classRaw || '?')
-  )].sort();
+      .filter(r => r.lmsIdx === lmsIdx && days.some(d => d.dateStr === r.dateStr))
+      .map(r => r.classDisplay || r.classMapped || r.classRaw || '?')
+  )].sort((a,b) => a.localeCompare(b,'en',{numeric:true}));
 
   if (!classes.length) {
-    return `<tr><td colspan="${days.length+1}" style="text-align:center;color:#9ca3af;font-size:11px;padding:10px">No uploads this week</td></tr>`;
+    return `<tr><td colspan="${days.length+1}" style="text-align:center;color:#9ca3af;font-size:11px;padding:10px">No uploads in this period</td></tr>`;
   }
 
   return classes.map(cls => {
     const cells = days.map(d => {
-      const recs = allRecords.filter(r=>r.dateStr===d.dateStr&&r.lmsIdx===lmsIdx&&(r.classMapped||r.classRaw)===cls);
-      const cwa = recs.filter(r=>hasCWA(r.cwTag, r.subject)).length;
+      const recs = allRecords.filter(r => r.dateStr===d.dateStr && r.lmsIdx===lmsIdx && (r.classDisplay||r.classMapped||r.classRaw)===cls);
+      const cwa  = recs.filter(r => hasCWA(r.cwTag, r.subject)).length;
       if (!recs.length) return `<td class="day-cell empty">—</td>`;
-      if (cwa>0) return `<td class="day-cell cwa">${recs.length} ✓${cwa}</td>`;
+      if (cwa > 0) return `<td class="day-cell cwa">${recs.length} ✓${cwa}</td>`;
       return `<td class="day-cell some">${recs.length}</td>`;
     }).join('');
     return `<tr><td>${cls}</td>${cells}</tr>`;
