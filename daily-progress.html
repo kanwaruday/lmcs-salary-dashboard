@@ -592,8 +592,9 @@ async function fetchDailySheet() {
   // Fall back to CONTAINS (for text-typed date columns) if year() errors or returns 0 rows.
   // We avoid ORDER BY because lexicographic sort on M/D/YYYY text causes wrong row ordering.
   async function tryQuery(tq) {
-    const url = `https://docs.google.com/spreadsheets/d/${DAILY_SHEET_ID}/gviz/tq?tqx=out:json&tq=${encodeURIComponent(tq)}`;
-    const res = await fetch(url, {cache:'no-cache'});
+    // Use no-store + timestamp to bypass both browser and CDN cache on gviz responses
+    const url = `https://docs.google.com/spreadsheets/d/${DAILY_SHEET_ID}/gviz/tq?tqx=out:json&tq=${encodeURIComponent(tq)}&_=${Date.now()}`;
+    const res = await fetch(url, {cache:'no-store'});
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
     const s = text.indexOf('{'), e = text.lastIndexOf('}');
