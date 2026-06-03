@@ -1512,8 +1512,8 @@ function renderWeekly() {
     rangeFrom = localDateStr(d);
     rangeTo   = activeDateTo;
   } else {
-    // No filter — default to last 30 days of data
-    const d = new Date(latestDataDate); d.setDate(d.getDate() - 29);
+    // No filter — default to last 7 days of data
+    const d = new Date(latestDataDate); d.setDate(d.getDate() - 6);
     rangeFrom = localDateStr(d);
     rangeTo   = latestDataDate;
   }
