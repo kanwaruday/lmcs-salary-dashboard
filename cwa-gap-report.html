@@ -64,9 +64,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
 
 /* Gap severity badges */
 .gap-sev{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;min-width:28px;text-align:center}
-.gap-sev.sev-low{background:#fef3c7;color:#b45309;border:1px solid #fde68a}
-.gap-sev.sev-mid{background:#fed7aa;color:#c2410c;border:1px solid #fdba74}
+.gap-sev.sev-low {background:#fef3c7;color:#b45309;border:1px solid #fde68a}
+.gap-sev.sev-mid {background:#fed7aa;color:#c2410c;border:1px solid #fdba74}
 .gap-sev.sev-high{background:#fee2e2;color:var(--red);border:1px solid #fecaca}
+.gap-sev.sev-ok  {background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
 
 /* Chapter chips */
 .chapter-chips{display:flex;flex-wrap:wrap;gap:3px}
@@ -146,11 +147,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
 
 <!-- CHIPS STRIP -->
 <div class="chips-strip">
-  <div class="chip alert"><div class="chip-lbl">🔴 Overdue Groups</div><div class="chip-val red" id="cOverdue">—</div><div class="chip-sub">planned date passed, no CWA logged</div></div>
+  <div class="chip ok" ><div class="chip-lbl">✅ On Time</div><div class="chip-val green" id="cOnTime">—</div><div class="chip-sub">CWA taken on or before planned date</div></div>
   <div class="chip warn"><div class="chip-lbl">🟠 Taken Late</div><div class="chip-val amber" id="cLate">—</div><div class="chip-sub">CWA after planned date</div></div>
+  <div class="chip alert"><div class="chip-lbl">🔴 Overdue Groups</div><div class="chip-val red" id="cOverdue">—</div><div class="chip-sub">planned date passed, no CWA logged</div></div>
   <div class="chip"><div class="chip-lbl">⚪ Not in Mapping</div><div class="chip-val muted" id="cUnmapped">—</div><div class="chip-sub">CWA logged, no CM entry</div></div>
-  <div class="chip ok"><div class="chip-lbl">✅ CWA Events Logged</div><div class="chip-val green" id="cCWATotal">—</div><div class="chip-sub">from classwork column (CW tag)</div></div>
-  <div class="chip"><div class="chip-lbl">Schools Affected</div><div class="chip-val blue" id="cSchools">—</div><div class="chip-sub">with at least one gap</div></div>
+  <div class="chip ok"><div class="chip-lbl">Total CWA Events</div><div class="chip-val green" id="cCWATotal">—</div><div class="chip-sub">from classwork column (CW tag)</div></div>
+  <div class="chip"><div class="chip-lbl">Schools w/ Gaps</div><div class="chip-val blue" id="cSchools">—</div><div class="chip-sub">at least one overdue / late</div></div>
   <div class="chip"><div class="chip-lbl">Academic Year</div><div class="chip-val muted" style="font-size:13px" id="cAcYear">—</div><div class="chip-sub" id="cAcYearSub">—</div></div>
 </div>
 
@@ -483,7 +485,7 @@ let gapSortDir  = -1;
 let gapFiltSchool  = '';
 let gapFiltClass   = '';
 let gapFiltSubject = '';
-let gapFiltType    = '';
+let gapFiltType    = 'gaps'; // default: show gaps only (overdue+late+unmapped); 'all' shows ontime too
 let gapMinDays     = 7;
 
 /* ═══════════════════════════════════════════════════════════
@@ -576,14 +578,24 @@ function buildGapData() {
           const actualEv = actual[i] || null;
           if (actualEv) {
             const daysLate = Math.round((actualEv.dateObj - ch.cwaDate) / 86400000);
-            if (daysLate > 0) gaps.push({
-              type:'late', daysLate,
-              lmsIdx, cls:tab, subject:ch.subject,
-              chapterNo:ch.chapterNo, chapterName:ch.chapterName,
-              plannedDate:ch.cwaDate, actualDate:actualEv.dateObj,
-              actualDateStr:actualEv.dateStr, teacher:actualEv.teacher,
-            });
-            // on-time: no gap entry
+            if (daysLate > 0) {
+              gaps.push({
+                type:'late', daysLate,
+                lmsIdx, cls:tab, subject:ch.subject,
+                chapterNo:ch.chapterNo, chapterName:ch.chapterName,
+                plannedDate:ch.cwaDate, actualDate:actualEv.dateObj,
+                actualDateStr:actualEv.dateStr, teacher:actualEv.teacher,
+              });
+            } else {
+              // On time (daysLate ≤ 0 means taken on planned date or earlier)
+              gaps.push({
+                type:'ontime', daysEarly: -daysLate,
+                lmsIdx, cls:tab, subject:ch.subject,
+                chapterNo:ch.chapterNo, chapterName:ch.chapterName,
+                plannedDate:ch.cwaDate, actualDate:actualEv.dateObj,
+                actualDateStr:actualEv.dateStr, teacher:actualEv.teacher,
+              });
+            }
           } else if (ch.cwaDate < today) {
             const daysOverdue = Math.round((today - ch.cwaDate) / 86400000);
             gaps.push({
@@ -619,12 +631,14 @@ function buildGapData() {
 function renderGapPanel() {
   const panel = document.getElementById('gapPanel');
 
-  // Apply min-days threshold
+  // Apply min-days threshold (on-time entries are never filtered by min-days)
   const visible = gapData.filter(g => {
     if (g.type==='overdue') return g.daysOverdue >= gapMinDays;
     if (g.type==='late')    return g.daysLate    >= gapMinDays;
     return true;
   });
+
+  const ontimeCt = visible.filter(g=>g.type==='ontime').length;
 
   // Collapse overdue into school+class+subject groups
   const overdueGroups = {};
@@ -643,9 +657,14 @@ function renderGapPanel() {
     ...Object.values(overdueGroups).map(g=>({...g,type:'overdue',days:g.maxDaysOverdue})),
     ...visible.filter(g=>g.type==='late').map(g=>({...g,days:g.daysLate})),
     ...visible.filter(g=>g.type==='unmapped').map(g=>({...g,days:0})),
+    ...visible.filter(g=>g.type==='ontime').map(g=>({...g,days:0})),
   ];
 
-  if (gapFiltType)    rows = rows.filter(g=>g.type===gapFiltType);
+  // Type filter: 'gaps' = overdue+late+unmapped only; 'ontime' = on-time only; 'all' = everything; exact type = that type
+  if (gapFiltType === 'gaps')   rows = rows.filter(g=>g.type!=='ontime');
+  else if (gapFiltType === 'ontime') rows = rows.filter(g=>g.type==='ontime');
+  else if (gapFiltType && gapFiltType !== 'all') rows = rows.filter(g=>g.type===gapFiltType);
+
   if (gapFiltSchool)  rows = rows.filter(g=>g.lmsIdx===parseInt(gapFiltSchool));
   if (gapFiltClass)   rows = rows.filter(g=>g.cls===gapFiltClass);
   if (gapFiltSubject) rows = rows.filter(g=>g.subject===gapFiltSubject);
@@ -673,14 +692,16 @@ function renderGapPanel() {
   document.getElementById('cOverdue').textContent  = overdueGrpCt;
   document.getElementById('cLate').textContent     = lateCt;
   document.getElementById('cUnmapped').textContent = unmappedCt;
-  document.getElementById('cSchools').textContent  = new Set(gapData.map(g=>g.lmsIdx)).size;
+  document.getElementById('cOnTime').textContent   = ontimeCt;
+  document.getElementById('cSchools').textContent  = new Set(gapData.filter(g=>g.type!=='ontime').map(g=>g.lmsIdx)).size;
 
   let html = `
   <div class="legend">
     <span style="font-size:11px;font-weight:700;color:var(--dark);margin-right:4px">How to read:</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#fee2e2;border:1px solid #fecaca"></span>🔴 <strong>Overdue</strong> — planned CWA date passed, no CWA entry found in the classwork column</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#dcfce7;border:1px solid #bbf7d0"></span>✅ <strong>On Time</strong> — CWA taken on or before the planned date</span>
     <span class="legend-item"><span class="legend-dot" style="background:#fffbeb;border:1px solid #fde68a"></span>🟠 <strong>Late</strong> — CWA was logged but after the planned date</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#f5f5f5;border:1px solid #e0e0e0"></span>⚪ <strong>Not in mapping</strong> — CWA logged in classwork but no matching entry in Course Mapping</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#fee2e2;border:1px solid #fecaca"></span>🔴 <strong>Overdue</strong> — planned date passed, no CWA logged yet</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#f5f5f5;border:1px solid #e0e0e0"></span>⚪ <strong>Not in mapping</strong> — CWA logged but no matching CM entry</span>
     <span style="margin-left:auto;color:#9ca3af;font-size:10px">Source: CW Tag column only (col 9). HW tags are not used.</span>
   </div>
 
@@ -693,11 +714,13 @@ function renderGapPanel() {
         <option value="30"${gapMinDays===30?' selected':''}>≥ 30 days</option>
       </select>
     </label>
-    <label>Type
+    <label>Show
       <select onchange="gapFiltType=this.value;renderGapPanel()">
-        <option value=""${!gapFiltType?' selected':''}>All types</option>
-        <option value="overdue"${gapFiltType==='overdue'?' selected':''}>🔴 Overdue (${overdueGrpCt} groups)</option>
-        <option value="late"${gapFiltType==='late'?' selected':''}>🟠 Late (${lateCt})</option>
+        <option value="gaps"${gapFiltType==='gaps'?' selected':''}>⚠ Gaps only (overdue + late)</option>
+        <option value="all"${gapFiltType==='all'?' selected':''}>All (gaps + on time)</option>
+        <option value="ontime"${gapFiltType==='ontime'?' selected':''}>✅ On Time only (${ontimeCt})</option>
+        <option value="overdue"${gapFiltType==='overdue'?' selected':''}>🔴 Overdue only (${overdueGrpCt} groups)</option>
+        <option value="late"${gapFiltType==='late'?' selected':''}>🟠 Late only (${lateCt})</option>
         <option value="unmapped"${gapFiltType==='unmapped'?' selected':''}>⚪ Not in Mapping (${unmappedCt})</option>
       </select>
     </label>
@@ -734,15 +757,20 @@ function renderGapPanel() {
   </div>
 
   <div class="gap-chips">
-    <div class="gap-chip${overdueGrpCt?' alert':''}">
-      <div class="gap-chip-lbl">🔴 Overdue Groups</div>
-      <div class="gap-chip-val" style="color:var(--red)">${overdueGrpCt}</div>
-      <div style="font-size:.7rem;color:#9ca3af">${totalOvChs} chapters · max ${maxDaysOver}d</div>
+    <div class="gap-chip ok">
+      <div class="gap-chip-lbl">✅ On Time</div>
+      <div class="gap-chip-val" style="color:#15803d">${ontimeCt}</div>
+      <div style="font-size:.7rem;color:#9ca3af">taken on or before planned date</div>
     </div>
     <div class="gap-chip${lateCt?' warn':''}">
       <div class="gap-chip-lbl">🟠 Taken Late</div>
       <div class="gap-chip-val" style="color:#c2410c">${lateCt}</div>
       <div style="font-size:.7rem;color:#9ca3af">max ${maxDaysLate}d late</div>
+    </div>
+    <div class="gap-chip${overdueGrpCt?' alert':''}">
+      <div class="gap-chip-lbl">🔴 Overdue Groups</div>
+      <div class="gap-chip-val" style="color:var(--red)">${overdueGrpCt}</div>
+      <div style="font-size:.7rem;color:#9ca3af">${totalOvChs} chapters · max ${maxDaysOver}d</div>
     </div>
     <div class="gap-chip">
       <div class="gap-chip-lbl">⚪ Not Mapped</div>
@@ -750,8 +778,8 @@ function renderGapPanel() {
       <div style="font-size:.7rem;color:#9ca3af">no CM entry found</div>
     </div>
     <div class="gap-chip">
-      <div class="gap-chip-lbl">Schools Affected</div>
-      <div class="gap-chip-val" style="color:#1d4ed8">${new Set(rows.map(g=>g.lmsIdx)).size}</div>
+      <div class="gap-chip-lbl">Schools w/ Gaps</div>
+      <div class="gap-chip-val" style="color:#1d4ed8">${new Set(rows.filter(g=>g.type!=='ontime').map(g=>g.lmsIdx)).size}</div>
     </div>
   </div>`;
 
@@ -807,6 +835,15 @@ function renderGapPanel() {
         statusBadge = `<span class="gap-sev ${sc}">🟠 Late</span>`;
         daysCell    = `<span style="color:#c2410c;font-weight:700">+${g.daysLate}d</span>`;
         rowStyle    = ' style="background:#fffbeb"';
+        plannedCell = fmtDate(g.plannedDate);
+        actualCell  = fmtDate(g.actualDate);
+        chCell = `<span class="ch-chip">${esc(g.chapterNo?`Ch ${g.chapterNo}: ${g.chapterName||''}`:g.chapterName||'—')}</span>`;
+      } else if (g.type==='ontime') {
+        statusBadge = `<span class="gap-sev sev-ok">✅ On Time</span>`;
+        daysCell    = g.daysEarly > 0
+          ? `<span style="color:#15803d;font-weight:700">${g.daysEarly}d early</span>`
+          : `<span style="color:#15803d;font-weight:700">On date</span>`;
+        rowStyle    = ' style="background:#f0fdf4"';
         plannedCell = fmtDate(g.plannedDate);
         actualCell  = fmtDate(g.actualDate);
         chCell = `<span class="ch-chip">${esc(g.chapterNo?`Ch ${g.chapterNo}: ${g.chapterName||''}`:g.chapterName||'—')}</span>`;
@@ -909,6 +946,7 @@ function buildAndRender() {
   const totalCWA = allRecords.filter(r => hasCWA(r.cwTag, r.subject) && r.dateObj>=_ayStart && r.dateObj<=_ayEnd).length;
 
   document.getElementById('cCWATotal').textContent = totalCWA;
+  document.getElementById('cOnTime').textContent   = gaps.filter(g=>g.type==='ontime').length;
   document.getElementById('cAcYear').textContent   = ayLabel;
   document.getElementById('cAcYearSub').textContent= `1 Apr – 31 Mar`;
   document.getElementById('hdrCtx').textContent    =
