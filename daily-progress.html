@@ -160,7 +160,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
 .date-range{font-size:.72rem;color:var(--gray);white-space:nowrap}
 
 /* ── WEEKLY PULSE ── */
-.weekly-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:1.5rem}
+.weekly-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:4px;margin-bottom:1.5rem}
 .day-card{background:var(--lgray);border:1px solid var(--border);border-radius:6px;padding:10px 8px;text-align:center}
 .day-card.today{border-color:var(--red);background:#fff8f8}
 .day-card.empty{opacity:.45}
@@ -288,6 +288,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
     <button class="filt-btn active" id="qToday" onclick="setQuickDate('today')">Today</button>
     <button class="filt-btn" id="qYest" onclick="setQuickDate('yesterday')">Yesterday</button>
     <button class="filt-btn" id="qWeek" onclick="setQuickDate('week')">This Week</button>
+    <button class="filt-btn" id="q30days" onclick="setQuickDate('30days')">Last 30 Days</button>
   </div>
 </div>
 
@@ -301,7 +302,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
     <span class="tab-badge" id="gapBadge" style="display:none">0</span>
   </button>
   <button class="tab-btn" id="tab-weekly" onclick="showTab('weekly',this)">
-    📊 Weekly Pulse
+    📊 30-Day Pulse
   </button>
   <button class="tab-btn" id="tab-comply" onclick="showTab('comply',this)">
     ✅ Upload Compliance
@@ -533,12 +534,13 @@ function tagChipsHTML(tagStr) {
 /* ═══════════════════════════════════════════════════════════
    DATA STORE
 ═══════════════════════════════════════════════════════════ */
-let allRecords   = [];   // parsed daily sheet rows
-let cmStore      = {};   // Course Mapping data: cmStore[lmsIdx][tabName] = {subjects,...}
-let cmLoaded     = false;
-let activeDate   = null; // current filter date (null = show all/week)
-let activeSchool = '';
-let activeSubject= '';
+let allRecords    = [];   // parsed daily sheet rows
+let cmStore       = {};   // Course Mapping data: cmStore[lmsIdx][tabName] = {subjects,...}
+let cmLoaded      = false;
+let activeDate    = null; // current filter date (null = show all)
+let activeDateStart = null; // lower-bound for range filters (e.g. last 30 days)
+let activeSchool  = '';
+let activeSubject = '';
 
 /* ═══════════════════════════════════════════════════════════
    DATE PARSING
@@ -786,6 +788,7 @@ function todayStr() {
 function filtered(records) {
   let r = records;
   if (activeDate) r = r.filter(x => x.dateStr === activeDate);
+  else if (activeDateStart) r = r.filter(x => x.dateStr >= activeDateStart);
   if (activeSchool) r = r.filter(x => x.lmsIdx === parseInt(activeSchool));
   if (activeSubject) r = r.filter(x => x.subject === activeSubject);
   return r;
@@ -1357,19 +1360,20 @@ function renderGapPanel() {
 function renderWeekly() {
   const panel = document.getElementById('panel-weekly');
 
-  // Build last 7 days anchored to the most recent date in loaded data
+  // Build last 30 days anchored to the most recent date in loaded data
   const days = [];
   const dates = [...new Set(allRecords.map(r => r.dateStr))].sort().reverse();
   const anchor = dates[0] ? new Date(dates[0]) : new Date();
   anchor.setHours(0,0,0,0);
-  for (let i=6; i>=0; i--) {
+  for (let i=29; i>=0; i--) {
     const d = new Date(anchor); d.setDate(d.getDate()-i);
     days.push({
       date:d,
       dateStr:d.toISOString().slice(0,10),
       label:d.toLocaleDateString('en-IN',{weekday:'short'}),
       dayNum:d.getDate(),
-      isToday:i===6, // last in range = most recent = "today" relative to data
+      month:d.toLocaleDateString('en-IN',{month:'short'}),
+      isToday:i===0, // most recent day = "today" relative to data
     });
   }
 
@@ -1384,16 +1388,15 @@ function renderWeekly() {
     };
   });
 
-  // 7-day overview cards
+  // 30-day overview cards
   const dayCards = days.map(d => {
     const info = byDay[d.dateStr];
     const colClass = info.total === 0 ? 'empty' : info.total >= 20 ? 'green' : 'blue';
-    return `<div class="day-card ${d.isToday?'today':''} ${info.total===0?'empty':''}">
-      <div class="day-name">${d.label}</div>
-      <div class="day-date">${d.dayNum}</div>
-      <div class="day-uploads ${colClass}">${info.total || '—'}</div>
-      <div class="day-label">entries</div>
-      ${info.cwa>0?`<div class="day-cwa">✓ ${info.cwa} CWA</div>`:''}
+    return `<div class="day-card ${d.isToday?'today':''} ${info.total===0?'empty':''}" style="padding:7px 4px;min-width:0">
+      <div class="day-name" style="font-size:8px">${d.label}</div>
+      <div class="day-date" style="font-size:9px">${d.month} ${d.dayNum}</div>
+      <div class="day-uploads ${colClass}" style="font-size:15px">${info.total || '—'}</div>
+      ${info.cwa>0?`<div class="day-cwa" style="font-size:8px">✓${info.cwa}</div>`:'<div style="font-size:8px;color:transparent">·</div>'}
     </div>`;
   }).join('');
 
@@ -1426,10 +1429,10 @@ function renderWeekly() {
   }).join('');
 
   panel.innerHTML = `
-    <div class="sec-hdr">7-Day Overview</div>
+    <div class="sec-hdr">30-Day Overview</div>
     <div class="weekly-grid">${dayCards}</div>
-    <div class="sec-hdr" style="margin-top:1.5rem">School × Day Breakdown</div>
-    <p class="sec-sub">Numbers show upload counts. <span style="color:#15803d;font-weight:700">Green with ✓</span> = CWA events that day.</p>
+    <div class="sec-hdr" style="margin-top:1.5rem">School × Day Breakdown (Last 30 Days)</div>
+    <p class="sec-sub">Numbers show upload counts. <span style="color:#15803d;font-weight:700">Green with ✓</span> = CWA events that day. Scroll right to see all 30 days.</p>
     ${schoolRows}`;
 }
 
@@ -1554,14 +1557,14 @@ function renderMissing() {
   // Need a specific date to compare against
   const checkDate = activeDate || [...new Set(allRecords.map(r => r.dateStr))].sort().reverse()[0] || todayStr();
 
-  // Look-back window: 14 calendar days before checkDate (school days only)
-  const lookbackStart = new Date(new Date(checkDate) - 14 * 86400000).toISOString().slice(0, 10);
+  // Look-back window: 30 calendar days before checkDate (school days only)
+  const lookbackStart = new Date(new Date(checkDate) - 30 * 86400000).toISOString().slice(0, 10);
   const lookbackRecs  = allRecords.filter(r => r.dateStr >= lookbackStart && r.dateStr < checkDate);
 
   if (!lookbackRecs.length) {
     panel.innerHTML = `<div class="empty-state"><div class="icon">📋</div>
       <h3>Not enough historical data</h3>
-      <p>No uploads found in the 14 days before <strong>${checkDate}</strong> to build an expected set.</p></div>`;
+      <p>No uploads found in the 30 days before <strong>${checkDate}</strong> to build an expected set.</p></div>`;
     return;
   }
 
@@ -1624,7 +1627,7 @@ function renderMissing() {
   let html = `<div class="miss-lookback">
     <span>📅 Checking date: <strong>${checkDate}</strong></span>
     <span style="color:var(--border)">|</span>
-    <span>Look-back: last <strong>${lookbackDays} active days</strong> (up to 14 calendar days)</span>
+    <span>Look-back: last <strong>${lookbackDays} active days</strong> (up to 30 calendar days)</span>
     <span style="color:var(--border)">|</span>
     <span>Expected combinations active on ≥ 2 days: <strong>${Object.keys(expected).filter(k=>expected[k].daysActive.size>=2).length}</strong></span>
     <span style="color:var(--border)">|</span>
@@ -1686,6 +1689,7 @@ function applyFilters() {
   const schoolVal  = document.getElementById('filterSchool').value;
   const subjectVal = document.getElementById('filterSubject').value;
   activeDate    = dateVal   || null;
+  activeDateStart = null; // manual date pick clears range
   activeSchool  = schoolVal || '';
   activeSubject = subjectVal|| '';
 
@@ -1701,18 +1705,23 @@ function applyFilters() {
 function setQuickDate(which) {
   const today = new Date(); today.setHours(0,0,0,0);
   let val;
+  document.querySelectorAll('.filt-btn').forEach(b=>b.classList.remove('active'));
+  activeDateStart = null;
   if (which === 'today') {
     val = todayStr();
-    document.querySelectorAll('.filt-btn').forEach(b=>b.classList.remove('active'));
     document.getElementById('qToday').classList.add('active');
   } else if (which === 'yesterday') {
     const y = new Date(today); y.setDate(y.getDate()-1);
     val = y.toISOString().slice(0,10);
-    document.querySelectorAll('.filt-btn').forEach(b=>b.classList.remove('active'));
     document.getElementById('qYest').classList.add('active');
-  } else {
+  } else if (which === '30days') {
     val = '';
-    document.querySelectorAll('.filt-btn').forEach(b=>b.classList.remove('active'));
+    const d = new Date(today); d.setDate(d.getDate()-29);
+    activeDateStart = d.toISOString().slice(0,10);
+    document.getElementById('q30days').classList.add('active');
+  } else {
+    // 'week' — show all loaded data
+    val = '';
     document.getElementById('qWeek').classList.add('active');
   }
   document.getElementById('filterDate').value = val;
