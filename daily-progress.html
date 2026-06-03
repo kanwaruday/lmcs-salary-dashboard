@@ -31,13 +31,28 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
 .chip-sub{font-size:9px;color:#9ca3af;margin-top:1px}
 
 /* ── FILTER BAR ── */
-.filter-bar{background:var(--white);border-bottom:1px solid var(--border);padding:8px 24px;display:flex;align-items:center;gap:12px;flex-shrink:0;flex-wrap:wrap}
-.filter-bar label{font-size:11px;font-weight:700;color:var(--gray);display:flex;align-items:center;gap:6px}
-.filter-bar select,.filter-bar input[type=date]{background:var(--white);border:1.5px solid var(--border);border-radius:4px;padding:4px 8px;font-size:12px;font-family:inherit;color:var(--dark);outline:none;transition:border-color .13s}
-.filter-bar select:focus,.filter-bar input[type=date]:focus{border-color:var(--red)}
+.filter-bar{background:var(--white);border-bottom:1px solid var(--border);padding:8px 24px;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
+.filter-bar label{font-size:11px;font-weight:700;color:var(--gray);display:flex;align-items:center;gap:5px}
+.filter-bar input[type=date]{background:var(--white);border:1.5px solid var(--border);border-radius:4px;padding:4px 8px;font-size:12px;font-family:inherit;color:var(--dark);outline:none;transition:border-color .13s}
+.filter-bar input[type=date]:focus{border-color:var(--red)}
 .filter-btn-group{display:flex;gap:4px;margin-left:auto}
 .filt-btn{background:var(--lgray);border:1.5px solid var(--border);border-radius:4px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--gray);cursor:pointer;transition:all .13s}
 .filt-btn:hover,.filt-btn.active{background:var(--red-lt);border-color:var(--red);color:var(--red)}
+
+/* ── MULTI-SELECT DROPDOWN ── */
+.ms-wrap{position:relative;display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--gray)}
+.ms-btn{background:var(--white);border:1.5px solid var(--border);border-radius:4px;padding:4px 26px 4px 8px;font-size:12px;font-family:inherit;color:var(--dark);cursor:pointer;outline:none;transition:border-color .13s;white-space:nowrap;position:relative;min-width:130px;text-align:left;line-height:1.4}
+.ms-btn:focus,.ms-btn.open{border-color:var(--red)}
+.ms-arrow{position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:9px;color:#9ca3af;pointer-events:none}
+.ms-panel{position:absolute;top:calc(100% + 4px);left:0;z-index:200;background:var(--white);border:1.5px solid var(--border);border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.12);min-width:210px;max-height:300px;overflow-y:auto;display:none;padding:4px 0}
+.ms-panel.open{display:block}
+.ms-actions{display:flex;gap:12px;padding:5px 10px 7px;border-bottom:1px solid var(--border);margin-bottom:2px}
+.ms-actions a{font-size:10px;color:var(--red);text-decoration:none;font-weight:700}
+.ms-actions a:hover{text-decoration:underline}
+.ms-opt{display:flex;align-items:center;gap:7px;padding:5px 10px;font-size:11px;font-weight:400;color:var(--dark);cursor:pointer;transition:background .1s;white-space:nowrap}
+.ms-opt:hover{background:var(--lgray)}
+.ms-opt.ms-all{font-weight:700;border-bottom:1px solid var(--border);margin-bottom:2px;padding-bottom:7px}
+.ms-opt input[type=checkbox]{accent-color:var(--red);width:13px;height:13px;cursor:pointer;flex-shrink:0}
 
 /* ── TABS ── */
 .tabs-bar{background:var(--white);border-bottom:1px solid var(--border);display:flex;padding:0 24px;gap:2px;flex-shrink:0}
@@ -269,27 +284,44 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
 
 <!-- FILTER BAR -->
 <div class="filter-bar">
-  <label>
-    📅 Date
-    <input type="date" id="filterDate" onchange="applyFilters()">
+  <label>📅 From <input type="date" id="dateFrom" onchange="applyFilters()"></label>
+  <label>To <input type="date" id="dateTo" onchange="applyFilters()"></label>
+
+  <label>🏫
+    <div class="ms-wrap" id="msSchool">
+      <button class="ms-btn" type="button" id="msSchoolBtn" onclick="toggleMs('msSchool')">
+        <span id="msSchoolLabel">All Schools</span><span class="ms-arrow">▾</span>
+      </button>
+      <div class="ms-panel" id="msSchoolPanel">
+        <div class="ms-actions">
+          <a href="#" onclick="event.preventDefault();msAll('msSchool')">Select all</a>
+          <a href="#" onclick="event.preventDefault();msNone('msSchool')">Clear</a>
+        </div>
+        <label class="ms-opt ms-all"><input type="checkbox" id="msSchoolAll" checked onchange="msAllToggle('msSchool',this)"> All Schools</label>
+      </div>
+    </div>
   </label>
-  <label>
-    🏫 School
-    <select id="filterSchool" onchange="applyFilters()">
-      <option value="">All Schools</option>
-    </select>
+
+  <label>📚
+    <div class="ms-wrap" id="msSubject">
+      <button class="ms-btn" type="button" id="msSubjectBtn" onclick="toggleMs('msSubject')">
+        <span id="msSubjectLabel">All Subjects</span><span class="ms-arrow">▾</span>
+      </button>
+      <div class="ms-panel" id="msSubjectPanel">
+        <div class="ms-actions">
+          <a href="#" onclick="event.preventDefault();msAll('msSubject')">Select all</a>
+          <a href="#" onclick="event.preventDefault();msNone('msSubject')">Clear</a>
+        </div>
+        <label class="ms-opt ms-all"><input type="checkbox" id="msSubjectAll" checked onchange="msAllToggle('msSubject',this)"> All Subjects</label>
+      </div>
+    </div>
   </label>
-  <label>
-    📚 Subject
-    <select id="filterSubject" onchange="applyFilters()">
-      <option value="">All Subjects</option>
-    </select>
-  </label>
+
   <div class="filter-btn-group">
     <button class="filt-btn active" id="qToday" onclick="setQuickDate('today')">Today</button>
-    <button class="filt-btn" id="qYest" onclick="setQuickDate('yesterday')">Yesterday</button>
-    <button class="filt-btn" id="qWeek" onclick="setQuickDate('week')">This Week</button>
-    <button class="filt-btn" id="q30days" onclick="setQuickDate('30days')">Last 30 Days</button>
+    <button class="filt-btn" id="qYest"  onclick="setQuickDate('yesterday')">Yesterday</button>
+    <button class="filt-btn" id="qWeek"  onclick="setQuickDate('week')">This Week</button>
+    <button class="filt-btn" id="qClear" onclick="clearAllFilters()">✕ Clear</button>
   </div>
 </div>
 
@@ -538,10 +570,10 @@ function tagChipsHTML(tagStr) {
 let allRecords    = [];   // parsed daily sheet rows
 let cmStore       = {};   // Course Mapping data: cmStore[lmsIdx][tabName] = {subjects,...}
 let cmLoaded      = false;
-let activeDate    = null; // current filter date (null = show all)
-let activeDateStart = null; // lower-bound for range filters (e.g. last 30 days)
-let activeSchool  = '';
-let activeSubject = '';
+let activeDateFrom  = null; // date-range from (inclusive, YYYY-MM-DD)
+let activeDateTo    = null; // date-range to   (inclusive, YYYY-MM-DD)
+let activeSchools   = [];   // [] = all schools; otherwise array of lmsIdx numbers
+let activeSubjects  = [];   // [] = all subjects; otherwise array of subject name strings
 
 /* ═══════════════════════════════════════════════════════════
    DATE PARSING
@@ -822,10 +854,10 @@ function todayStr() {
 
 function filtered(records) {
   let r = records;
-  if (activeDate) r = r.filter(x => x.dateStr === activeDate);
-  else if (activeDateStart) r = r.filter(x => x.dateStr >= activeDateStart);
-  if (activeSchool) r = r.filter(x => x.lmsIdx === parseInt(activeSchool));
-  if (activeSubject) r = r.filter(x => x.subject === activeSubject);
+  if (activeDateFrom) r = r.filter(x => x.dateStr >= activeDateFrom);
+  if (activeDateTo)   r = r.filter(x => x.dateStr <= activeDateTo);
+  if (activeSchools.length)  r = r.filter(x => activeSchools.includes(x.lmsIdx));
+  if (activeSubjects.length) r = r.filter(x => activeSubjects.includes(x.subject));
   return r;
 }
 
@@ -859,23 +891,26 @@ function buildChips() {
   }
   document.getElementById('chipsStrip')?.classList?.remove('hidden');
 
-  // Populate school filter
-  const sel = document.getElementById('filterSchool');
-  while (sel.options.length > 1) sel.remove(1);
+  // Populate school multi-select (static — CM_SCHOOLS never changes)
+  const schoolPanel = document.getElementById('msSchoolPanel');
+  // Remove previously added item checkboxes (keep actions + All row)
+  schoolPanel.querySelectorAll('.ms-item').forEach(el => el.remove());
   CM_SCHOOLS.forEach((s, i) => {
-    const opt = document.createElement('option');
-    opt.value = i; opt.textContent = s.name;
-    sel.appendChild(opt);
+    const lbl = document.createElement('label');
+    lbl.className = 'ms-opt ms-item';
+    lbl.innerHTML = `<input type="checkbox" class="ms-item-cb" value="${i}" checked onchange="msItemToggle('msSchool')"> ${esc(s.name)}`;
+    schoolPanel.appendChild(lbl);
   });
 
-  // Populate subject filter
+  // Populate subject multi-select (dynamic — depends on loaded data)
   const subjects = [...new Set(allRecords.map(r => r.subject).filter(Boolean))].sort();
-  const sSel = document.getElementById('filterSubject');
-  while (sSel.options.length > 1) sSel.remove(1);
+  const subjPanel = document.getElementById('msSubjectPanel');
+  subjPanel.querySelectorAll('.ms-item').forEach(el => el.remove());
   subjects.forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s; opt.textContent = s;
-    sSel.appendChild(opt);
+    const lbl = document.createElement('label');
+    lbl.className = 'ms-opt ms-item';
+    lbl.innerHTML = `<input type="checkbox" class="ms-item-cb" value="${esc(s)}" checked onchange="msItemToggle('msSubject')"> ${esc(s)}`;
+    subjPanel.appendChild(lbl);
   });
 }
 
@@ -1619,8 +1654,8 @@ function renderUploaderTable() {
 function renderMissing() {
   const panel = document.getElementById('panel-missing');
 
-  // Need a specific date to compare against
-  const checkDate = activeDate || [...new Set(allRecords.map(r => r.dateStr))].sort().reverse()[0] || todayStr();
+  // Need a specific date to compare against — use dateTo, then dateFrom, then most-recent data date
+  const checkDate = activeDateTo || activeDateFrom || [...new Set(allRecords.map(r => r.dateStr))].sort().reverse()[0] || todayStr();
 
   // Look-back window: 30 calendar days before checkDate (school days only)
   const lookbackStart = new Date(new Date(checkDate) - 30 * 86400000).toISOString().slice(0, 10);
@@ -1677,8 +1712,8 @@ function renderMissing() {
   }
 
   // Apply school filter
-  const filtered = activeSchool !== ''
-    ? missing.filter(e => e.lmsIdx === parseInt(activeSchool))
+  const filtered = activeSchools.length
+    ? missing.filter(e => activeSchools.includes(e.lmsIdx))
     : missing;
 
   // Group by school
@@ -1749,51 +1784,123 @@ function showTab(name, btn) {
   if (name === 'missing') renderMissing();
 }
 
+/* ── Multi-select helpers ── */
+function toggleMs(id) {
+  const panel = document.getElementById(id + 'Panel');
+  const btn   = document.getElementById(id + 'Btn');
+  const isOpen = panel.classList.contains('open');
+  // Close all panels first
+  document.querySelectorAll('.ms-panel.open').forEach(p => p.classList.remove('open'));
+  document.querySelectorAll('.ms-btn.open').forEach(b => b.classList.remove('open'));
+  if (!isOpen) { panel.classList.add('open'); btn.classList.add('open'); }
+}
+
+function msAll(id) {
+  const panel = document.getElementById(id + 'Panel');
+  panel.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = true);
+  _msSyncState(id);
+}
+function msNone(id) {
+  const panel = document.getElementById(id + 'Panel');
+  panel.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
+  _msSyncState(id);
+}
+function msAllToggle(id, allCb) {
+  const panel = document.getElementById(id + 'Panel');
+  panel.querySelectorAll('.ms-item-cb').forEach(cb => cb.checked = allCb.checked);
+  _msSyncState(id);
+}
+function msItemToggle(id) {
+  const panel  = document.getElementById(id + 'Panel');
+  const items  = [...panel.querySelectorAll('.ms-item-cb')];
+  const allCb  = panel.querySelector('#' + id + 'All');
+  if (allCb) allCb.checked = items.every(cb => cb.checked);
+  _msSyncState(id);
+}
+function _msSyncState(id) {
+  const panel  = document.getElementById(id + 'Panel');
+  const items  = [...panel.querySelectorAll('.ms-item-cb')];
+  const checked = items.filter(cb => cb.checked);
+  const label   = document.getElementById(id + 'Label');
+
+  if (id === 'msSchool') {
+    activeSchools = checked.length === items.length ? [] : checked.map(cb => parseInt(cb.value));
+    label.textContent = activeSchools.length === 0
+      ? 'All Schools'
+      : activeSchools.length === 1
+        ? (CM_SCHOOLS[activeSchools[0]]?.name || `LMS ${activeSchools[0]+1}`)
+        : `${activeSchools.length} schools`;
+  } else {
+    activeSubjects = checked.length === items.length ? [] : checked.map(cb => cb.value);
+    label.textContent = activeSubjects.length === 0
+      ? 'All Subjects'
+      : activeSubjects.length === 1
+        ? activeSubjects[0]
+        : `${activeSubjects.length} subjects`;
+  }
+  _rerender();
+}
+
 function applyFilters() {
-  const dateVal    = document.getElementById('filterDate').value;
-  const schoolVal  = document.getElementById('filterSchool').value;
-  const subjectVal = document.getElementById('filterSubject').value;
-  activeDate    = dateVal   || null;
-  activeDateStart = null; // manual date pick clears range
-  activeSchool  = schoolVal || '';
-  activeSubject = subjectVal|| '';
-
-  // Clear quick buttons
-  document.querySelectorAll('.filt-btn').forEach(b=>b.classList.remove('active'));
-  if (dateVal === todayStr()) document.getElementById('qToday')?.classList.add('active');
-
-  renderFeed();
-  // Re-render missing tab if it's active
-  if (document.getElementById('panel-missing')?.classList.contains('active')) renderMissing();
+  activeDateFrom = document.getElementById('dateFrom').value || null;
+  activeDateTo   = document.getElementById('dateTo').value   || null;
+  // Sync quick buttons
+  document.querySelectorAll('.filt-btn').forEach(b => b.classList.remove('active'));
+  const t = todayStr();
+  if (activeDateFrom === t && activeDateTo === t) document.getElementById('qToday')?.classList.add('active');
+  _rerender();
 }
 
 function setQuickDate(which) {
   const today = new Date(); today.setHours(0,0,0,0);
-  let val;
-  document.querySelectorAll('.filt-btn').forEach(b=>b.classList.remove('active'));
-  activeDateStart = null;
+  document.querySelectorAll('.filt-btn').forEach(b => b.classList.remove('active'));
+
   if (which === 'today') {
-    val = todayStr();
+    activeDateFrom = activeDateTo = todayStr();
     document.getElementById('qToday').classList.add('active');
   } else if (which === 'yesterday') {
-    const y = new Date(today); y.setDate(y.getDate()-1);
-    val = y.toISOString().slice(0,10);
+    const y = new Date(today); y.setDate(y.getDate() - 1);
+    activeDateFrom = activeDateTo = y.toISOString().slice(0, 10);
     document.getElementById('qYest').classList.add('active');
-  } else if (which === '30days') {
-    val = '';
-    const d = new Date(today); d.setDate(d.getDate()-29);
-    activeDateStart = d.toISOString().slice(0,10);
-    document.getElementById('q30days').classList.add('active');
-  } else {
-    // 'week' — show all loaded data
-    val = '';
+  } else if (which === 'week') {
+    // Monday of current week → today
+    const dow = today.getDay(); // 0=Sun
+    const mon = new Date(today); mon.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
+    activeDateFrom = mon.toISOString().slice(0, 10);
+    activeDateTo   = todayStr();
     document.getElementById('qWeek').classList.add('active');
   }
-  document.getElementById('filterDate').value = val;
-  activeDate = val || null;
+
+  document.getElementById('dateFrom').value = activeDateFrom || '';
+  document.getElementById('dateTo').value   = activeDateTo   || '';
+  _rerender();
+}
+
+function clearAllFilters() {
+  activeDateFrom = activeDateTo = null;
+  document.getElementById('dateFrom').value = '';
+  document.getElementById('dateTo').value   = '';
+  document.querySelectorAll('.filt-btn').forEach(b => b.classList.remove('active'));
+  // Reset both multi-selects to "all"
+  msAll('msSchool');
+  msAll('msSubject');
+  // _msSyncState is called inside msAll → _rerender already triggered
+}
+
+function _rerender() {
   renderFeed();
+  if (document.getElementById('panel-weekly')?.classList.contains('active'))  renderWeekly();
+  if (document.getElementById('panel-comply')?.classList.contains('active'))  renderCompliance();
   if (document.getElementById('panel-missing')?.classList.contains('active')) renderMissing();
 }
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('.ms-wrap')) {
+    document.querySelectorAll('.ms-panel.open').forEach(p => p.classList.remove('open'));
+    document.querySelectorAll('.ms-btn.open').forEach(b => b.classList.remove('open'));
+  }
+});
 
 /* ═══════════════════════════════════════════════════════════
    PROXY HELPERS
@@ -1843,8 +1950,9 @@ async function init() {
     new Date().toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'});
 
   const today = todayStr();
-  document.getElementById('filterDate').value = today;
-  activeDate = today;
+  document.getElementById('dateFrom').value = today;
+  document.getElementById('dateTo').value   = today;
+  activeDateFrom = activeDateTo = today;
 
   // ── Try proxy first (single fast request) ───────────────
   if (PROXY_URL) {
@@ -1881,8 +1989,9 @@ function finishInit() {
   const mostRecentDate = dates[0] || todayStr();
   const todayData = todayStr();
 
-  activeDate = mostRecentDate;
-  document.getElementById('filterDate').value = mostRecentDate;
+  activeDateFrom = activeDateTo = mostRecentDate;
+  document.getElementById('dateFrom').value = mostRecentDate;
+  document.getElementById('dateTo').value   = mostRecentDate;
 
   if (mostRecentDate !== todayData) {
     const daysDiff = Math.round((new Date(todayData) - new Date(mostRecentDate)) / 86400000);
@@ -1896,6 +2005,7 @@ function finishInit() {
 
   document.querySelectorAll('.filt-btn').forEach(b => b.classList.remove('active'));
   if (mostRecentDate === todayData) document.getElementById('qToday')?.classList.add('active');
+  else document.getElementById('qClear')?.classList.add('active');
 
   buildChips();
   renderFeed();
