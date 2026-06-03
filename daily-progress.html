@@ -389,6 +389,11 @@ const PROXY_URL = _earlyCfg?.proxyUrl
 const DAILY_SHEET_ID = _earlyCfg?.dailySheetId
   ?? '1z5hzpMRHMru6ulpYs2lsGZr7quAywwpQ_zySa3rvGUA';
 
+// Teacher Allocation Sheet — source of truth for Missing Uploads
+const ALLOCATION_SHEET_ID = '1Z4-tAwHePJfOQygOA948RyB75mA9TUE9S_VUfoydla4';
+const ALLOC_CACHE_KEY = 'lmcs_allocation_v1';
+const ALLOC_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
 const CM_CACHE_TTL = ((_earlyCfg?.cacheTtlMinutes) || 30) * 60 * 1000;
 
 /* ═══════════════════════════════════════════════════════════
@@ -1673,60 +1678,116 @@ function renderUploaderTable() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   RENDER — Missing Uploads
-   Compares the selected date against the last 14 days to find
-   school+class+subject+teacher combos that uploaded recently
-   but have no entry on the selected date.
+   ALLOCATION SHEET — fetch & cache
+   Source of truth for Missing Uploads.
+   Columns: School | School Code | Class | Subject | Teacher | Active | Daily
 ═══════════════════════════════════════════════════════════ */
-function renderMissing() {
+async function fetchAllocation() {
+  // Return from cache if fresh
+  try {
+    const cached = localStorage.getItem(ALLOC_CACHE_KEY);
+    if (cached) {
+      const { ts, data } = JSON.parse(cached);
+      if (Date.now() - ts < ALLOC_CACHE_TTL) return data;
+    }
+  } catch(e) {}
+
+  // Fetch — range A2:G400 makes row 2 (the header row) the first row returned
+  const url = `https://docs.google.com/spreadsheets/d/${ALLOCATION_SHEET_ID}/gviz/tq?tqx=out:json&sheet=Allocation&range=A2:G400&_=${Date.now()}`;
+  const res = await fetch(url, {cache:'no-store'});
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  const d = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}')+1));
+  if (d.status === 'error') throw new Error('Allocation sheet error');
+
+  const cell = (row, i) => { const c = row.c?.[i]; return (c?.v != null) ? String(c.v).trim() : null; };
+
+  const data = (d.table?.rows || [])
+    .slice(1)  // skip the header row returned in the data
+    .map(row => {
+      const schoolCode = cell(row, 1);          // "LMS 1" … "LMS 6"
+      const m = schoolCode?.match(/LMS\s*(\d+)/i);
+      const lmsIdx = m ? parseInt(m[1]) - 1 : null;  // LMS 1→0, LMS 2→1 …
+      if (lmsIdx === null) return null;
+      if (cell(row, 5) !== 'Y') return null;    // Active = N → skip
+      if (cell(row, 6) !== 'Y') return null;    // Daily Submission = N → skip
+      return {
+        lmsIdx,
+        cls:     cell(row, 2),                  // "Class 1", "M-I" etc.
+        subject: cell(row, 3),
+        teacher: cell(row, 4) || null,           // null = not yet assigned
+      };
+    })
+    .filter(Boolean);
+
+  try { localStorage.setItem(ALLOC_CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch(e) {}
+  return data;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER — Missing Uploads
+   Primary: cross-references against the Teacher Allocation Sheet.
+   Fallback: 30-day historical inference if the sheet is unreachable.
+═══════════════════════════════════════════════════════════ */
+async function renderMissing() {
   const panel = document.getElementById('panel-missing');
 
-  // Need a specific date to compare against — use dateTo, then dateFrom, then most-recent data date
-  const checkDate = activeDateTo || activeDateFrom || [...new Set(allRecords.map(r => r.dateStr))].sort().reverse()[0] || todayStr();
+  // Show spinner while loading allocation
+  panel.innerHTML = `<div class="loading-state"><div class="spinner"></div><p>Loading allocation data…</p></div>`;
 
-  // Look-back window: 30 calendar days before checkDate (school days only)
-  const lookbackStart = localDateStr(new Date(new Date(checkDate) - 30 * 86400000));
-  const lookbackRecs  = allRecords.filter(r => r.dateStr >= lookbackStart && r.dateStr < checkDate);
+  const checkDate = activeDateTo || activeDateFrom
+    || [...new Set(allRecords.map(r => r.dateStr))].sort().reverse()[0]
+    || todayStr();
 
-  if (!lookbackRecs.length) {
-    panel.innerHTML = `<div class="empty-state"><div class="icon">📋</div>
-      <h3>Not enough historical data</h3>
-      <p>No uploads found in the 30 days before <strong>${checkDate}</strong> to build an expected set.</p></div>`;
-    return;
+  let allocation = null;
+  try {
+    allocation = await fetchAllocation();
+  } catch(e) {
+    console.warn('Allocation sheet unavailable, falling back to history:', e.message);
   }
 
-  // Build expected set: unique (lmsIdx, classMapped, subject, teacher) seen in look-back window
-  const expected = {};
-  lookbackRecs.forEach(r => {
-    const key = `${r.lmsIdx}|${r.classMapped||r.classRaw}|${r.subject}|${r.teacher}`;
-    if (!expected[key]) {
-      expected[key] = {
-        lmsIdx: r.lmsIdx,
-        cls: r.classMapped || r.classRaw || '?',
-        subject: r.subject,
-        teacher: r.teacher,
-        lastSeen: r.dateStr,
-        daysActive: new Set(),
-      };
-    }
-    expected[key].daysActive.add(r.dateStr);
-    if (r.dateStr > expected[key].lastSeen) expected[key].lastSeen = r.dateStr;
+  if (allocation && allocation.length > 0) {
+    _renderMissingFromAllocation(panel, checkDate, allocation);
+  } else {
+    _renderMissingFromHistory(panel, checkDate);
+  }
+}
+
+function _renderMissingFromAllocation(panel, checkDate, allocation) {
+  // Apply school filter
+  const allocFiltered = activeSchools.length
+    ? allocation.filter(e => activeSchools.includes(e.lmsIdx))
+    : allocation;
+
+  // uploadedByCombo[lmsIdx|cls|subject] → Set of teacher names
+  const uploadedByCombo = {};
+  allRecords.filter(r => r.dateStr === checkDate).forEach(r => {
+    if (!r.classMapped) return;
+    const key = `${r.lmsIdx}|${r.classMapped}|${r.subject}`;
+    if (!uploadedByCombo[key]) uploadedByCombo[key] = new Set();
+    if (r.teacher) uploadedByCombo[key].add(r.teacher.trim());
   });
 
-  // Build uploaded set for checkDate
-  const uploaded = new Set(
-    allRecords
-      .filter(r => r.dateStr === checkDate)
-      .map(r => `${r.lmsIdx}|${r.classMapped||r.classRaw}|${r.subject}|${r.teacher}`)
-  );
+  // Determine missing
+  const missing = [];
+  for (const exp of allocFiltered) {
+    const comboKey = `${exp.lmsIdx}|${exp.cls}|${exp.subject}`;
+    const uploaded  = uploadedByCombo[comboKey];
 
-  // Filter: only flag combos active on ≥2 days in look-back (reduces noise from one-off uploads)
-  const missing = Object.entries(expected)
-    .filter(([key, e]) => e.daysActive.size >= 2 && !uploaded.has(key))
-    .map(([, e]) => e)
-    .sort((a, b) => +a.lmsIdx - +b.lmsIdx || (a.cls).localeCompare(b.cls) || a.subject.localeCompare(b.subject));
+    if (exp.teacher) {
+      // Specific teacher expected — flag if they haven't uploaded
+      if (!uploaded || !uploaded.has(exp.teacher.trim())) {
+        missing.push({ ...exp, uploadedBy: uploaded ? [...uploaded] : [] });
+      }
+    } else {
+      // No teacher assigned yet — flag if nobody uploaded this combo at all
+      if (!uploaded || uploaded.size === 0) {
+        missing.push({ ...exp, uploadedBy: [] });
+      }
+    }
+  }
 
-  // Update badge
+  // Badge
   const badge = document.getElementById('missingBadge');
   badge.textContent = missing.length;
   badge.style.display = missing.length > 0 ? 'inline' : 'none';
@@ -1734,35 +1795,29 @@ function renderMissing() {
   if (!missing.length) {
     panel.innerHTML = `<div class="empty-state"><div class="icon">✅</div>
       <h3>No missing uploads for ${checkDate}</h3>
-      <p>Every teacher who uploaded in the previous 14 days has also uploaded on this date.</p></div>`;
+      <p>All ${allocFiltered.length} expected allocations have been uploaded.</p></div>`;
     return;
   }
 
-  // Apply school filter
-  const filtered = activeSchools.length
-    ? missing.filter(e => activeSchools.includes(e.lmsIdx))
-    : missing;
-
   // Group by school
   const bySchool = {};
-  filtered.forEach(e => {
-    if (!bySchool[e.lmsIdx]) bySchool[e.lmsIdx] = [];
-    bySchool[e.lmsIdx].push(e);
-  });
+  missing.forEach(e => { if (!bySchool[e.lmsIdx]) bySchool[e.lmsIdx]=[]; bySchool[e.lmsIdx].push(e); });
 
-  const lookbackDays = [...new Set(lookbackRecs.map(r => r.dateStr))].length;
   let html = `<div class="miss-lookback">
     <span>📅 Checking date: <strong>${checkDate}</strong></span>
     <span style="color:var(--border)">|</span>
-    <span>Look-back: last <strong>${lookbackDays} active days</strong> (up to 30 calendar days)</span>
-    <span style="color:var(--border)">|</span>
-    <span>Expected combinations active on ≥ 2 days: <strong>${Object.keys(expected).filter(k=>expected[k].daysActive.size>=2).length}</strong></span>
+    <span>Source: <strong>Teacher Allocation Sheet</strong> · ${allocFiltered.length} expected daily submissions</span>
     <span style="color:var(--border)">|</span>
     <span style="color:var(--red);font-weight:700">Missing: ${missing.length}</span>
+    <span style="margin-left:auto">
+      <button class="filt-btn" onclick="localStorage.removeItem('${ALLOC_CACHE_KEY}');renderMissing()" title="Re-fetch allocation sheet">↺ Refresh allocation</button>
+    </span>
   </div>`;
 
   Object.keys(bySchool).sort((a,b)=>+a-+b).forEach(lmsIdx => {
-    const rows = bySchool[lmsIdx];
+    const rows = bySchool[lmsIdx]
+      .sort((a,b) => a.cls.localeCompare(b.cls,'en',{numeric:true}) || a.subject.localeCompare(b.subject));
+
     html += `<div class="missing-school">
       <div class="missing-school-hdr">
         <span class="missing-school-name">🏫 ${lmsName(+lmsIdx)}</span>
@@ -1770,11 +1825,91 @@ function renderMissing() {
       </div>
       <table class="missing-table">
         <thead><tr>
-          <th>Class</th><th>Subject</th><th>Teacher</th>
-          <th>Status</th><th>Last Uploaded</th><th>Active Days (14d)</th>
+          <th>Class</th><th>Subject</th><th>Teacher</th><th>Status</th>
         </tr></thead>
         <tbody>`;
 
+    rows.forEach(e => {
+      const noTeacher = !e.teacher;
+      const teacherCell = noTeacher
+        ? `<span style="color:#9ca3af;font-style:italic">Not Assigned</span>`
+        : `<span style="font-weight:600">${esc(e.teacher)}</span>`;
+      const statusBadge = noTeacher
+        ? `<span class="miss-badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a">⚠ No teacher assigned</span>`
+        : `<span class="miss-badge miss-absent">✗ Not uploaded</span>`;
+      // Show if someone else uploaded this combo (substitute teacher)
+      const subNote = (!noTeacher && e.uploadedBy?.length)
+        ? `<div style="font-size:10px;color:#15803d;margin-top:2px">↳ Uploaded by: ${e.uploadedBy.map(esc).join(', ')}</div>` : '';
+      html += `<tr>
+        <td><span class="class-badge">${esc(e.cls)}</span></td>
+        <td><span class="subj-chip">${esc(e.subject)}</span></td>
+        <td>${teacherCell}${subNote}</td>
+        <td>${statusBadge}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+  });
+
+  panel.innerHTML = html;
+}
+
+function _renderMissingFromHistory(panel, checkDate) {
+  // Fallback: infer expected set from 30-day upload history
+  const lookbackStart = localDateStr(new Date(new Date(checkDate) - 30 * 86400000));
+  const lookbackRecs  = allRecords.filter(r => r.dateStr >= lookbackStart && r.dateStr < checkDate);
+
+  if (!lookbackRecs.length) {
+    panel.innerHTML = `<div class="empty-state"><div class="icon">📋</div>
+      <h3>Allocation sheet unavailable &amp; no historical data</h3>
+      <p>Could not load the allocation sheet and found no uploads in the 30 days before <strong>${checkDate}</strong>.</p></div>`;
+    return;
+  }
+
+  const expected = {};
+  lookbackRecs.forEach(r => {
+    const key = `${r.lmsIdx}|${r.classMapped||r.classRaw}|${r.subject}|${r.teacher}`;
+    if (!expected[key]) expected[key] = { lmsIdx:r.lmsIdx, cls:r.classMapped||r.classRaw||'?', subject:r.subject, teacher:r.teacher, lastSeen:r.dateStr, daysActive:new Set() };
+    expected[key].daysActive.add(r.dateStr);
+    if (r.dateStr > expected[key].lastSeen) expected[key].lastSeen = r.dateStr;
+  });
+
+  const uploaded = new Set(allRecords.filter(r=>r.dateStr===checkDate).map(r=>`${r.lmsIdx}|${r.classMapped||r.classRaw}|${r.subject}|${r.teacher}`));
+  const missing = Object.entries(expected)
+    .filter(([key,e]) => e.daysActive.size >= 2 && !uploaded.has(key))
+    .map(([,e]) => e)
+    .sort((a,b) => +a.lmsIdx-+b.lmsIdx || a.cls.localeCompare(b.cls) || a.subject.localeCompare(b.subject));
+
+  const badge = document.getElementById('missingBadge');
+  badge.textContent = missing.length;
+  badge.style.display = missing.length > 0 ? 'inline' : 'none';
+
+  if (!missing.length) {
+    panel.innerHTML = `<div class="empty-state"><div class="icon">✅</div><h3>No missing uploads for ${checkDate}</h3></div>`;
+    return;
+  }
+
+  const filtMissing = activeSchools.length ? missing.filter(e=>activeSchools.includes(e.lmsIdx)) : missing;
+  const bySchool = {};
+  filtMissing.forEach(e => { if(!bySchool[e.lmsIdx]) bySchool[e.lmsIdx]=[]; bySchool[e.lmsIdx].push(e); });
+  const lookbackDays = [...new Set(lookbackRecs.map(r=>r.dateStr))].length;
+
+  let html = `<div class="miss-lookback">
+    <span>📅 Checking: <strong>${checkDate}</strong></span>
+    <span style="color:var(--border)">|</span>
+    <span style="color:#d97706;font-weight:700">⚠ Allocation sheet unavailable — using 30-day history (${lookbackDays} active days)</span>
+    <span style="color:var(--border)">|</span>
+    <span style="color:var(--red);font-weight:700">Missing: ${missing.length}</span>
+  </div>`;
+
+  Object.keys(bySchool).sort((a,b)=>+a-+b).forEach(lmsIdx => {
+    const rows = bySchool[lmsIdx];
+    html += `<div class="missing-school"><div class="missing-school-hdr">
+        <span class="missing-school-name">🏫 ${lmsName(+lmsIdx)}</span>
+        <span class="missing-school-meta" style="color:var(--red);font-weight:700">${rows.length} missing</span>
+      </div>
+      <table class="missing-table"><thead><tr>
+        <th>Class</th><th>Subject</th><th>Teacher</th><th>Status</th><th>Last Uploaded</th>
+      </tr></thead><tbody>`;
     rows.forEach(e => {
       html += `<tr>
         <td><span class="class-badge">${esc(e.cls)}</span></td>
@@ -1782,13 +1917,10 @@ function renderMissing() {
         <td style="font-weight:600">${esc(e.teacher)}</td>
         <td><span class="miss-badge miss-absent">✗ Not uploaded</span></td>
         <td class="miss-last">${e.lastSeen}</td>
-        <td class="miss-last" style="text-align:center">${e.daysActive.size}</td>
       </tr>`;
     });
-
     html += `</tbody></table></div>`;
   });
-
   panel.innerHTML = html;
 }
 
@@ -1917,7 +2049,7 @@ function _rerender() {
   renderFeed();
   if (document.getElementById('panel-weekly')?.classList.contains('active'))  renderWeekly();
   if (document.getElementById('panel-comply')?.classList.contains('active'))  renderCompliance();
-  if (document.getElementById('panel-missing')?.classList.contains('active')) renderMissing();
+  if (document.getElementById('panel-missing')?.classList.contains('active')) renderMissing(); // async — fire and forget
 }
 
 // Close dropdowns when clicking outside
