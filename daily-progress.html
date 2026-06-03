@@ -277,7 +277,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
   <div class="chip ok"><div class="chip-lbl">Uploads Today</div><div class="chip-val" id="cUploads">—</div><div class="chip-sub">entries logged today</div></div>
   <div class="chip"><div class="chip-lbl">Schools Active Today</div><div class="chip-val blue" id="cSchools">—</div><div class="chip-sub">out of 6 schools</div></div>
   <div class="chip ok"><div class="chip-lbl">CWA Events Today</div><div class="chip-val" id="cCWAToday">—</div><div class="chip-sub">assessments conducted</div></div>
-  <div class="chip alert"><div class="chip-lbl">CWA Gaps</div><div class="chip-val red" id="cGaps">—</div><div class="chip-sub">done but not in mapping</div></div>
+
   <div class="chip warn"><div class="chip-lbl">Missing Uploads</div><div class="chip-val amber" id="cMissing">—</div><div class="chip-sub">schools silent today</div></div>
   <div class="chip"><div class="chip-lbl">Last Entry</div><div class="chip-val muted" style="font-size:13px" id="cLastEntry">—</div><div class="chip-sub" id="cLastTime">—</div></div>
 </div>
@@ -330,10 +330,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
   <button class="tab-btn active" id="tab-feed" onclick="showTab('feed',this)">
     📋 Activity Feed
   </button>
-  <button class="tab-btn" id="tab-gaps" onclick="showTab('gaps',this)">
-    ⚠ CWA Gap Report
-    <span class="tab-badge" id="gapBadge" style="display:none">0</span>
-  </button>
   <button class="tab-btn" id="tab-weekly" onclick="showTab('weekly',this)">
     📊 30-Day Pulse
   </button>
@@ -352,12 +348,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
     <div class="loading-state" id="loadingFeed">
       <div class="spinner"></div>
       <p>Loading daily classwork records…</p>
-    </div>
-  </div>
-  <div class="tab-panel" id="panel-gaps">
-    <div class="loading-state" id="loadingGaps">
-      <div class="spinner"></div>
-      <p>Loading daily sheet and Course Mapping data to compare…</p>
     </div>
   </div>
   <div class="tab-panel" id="panel-weekly">
@@ -1782,7 +1772,6 @@ function showTab(name, btn) {
   document.getElementById('panel-'+name).classList.add('active');
   btn.classList.add('active');
 
-  if (name === 'gaps')    renderGaps();
   if (name === 'weekly')  renderWeekly();
   if (name === 'comply')  renderCompliance();
   if (name === 'missing') renderMissing();
