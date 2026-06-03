@@ -54,8 +54,13 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
 /* ── GAP TABLE ── */
 .gap-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:6px;margin-bottom:1.5rem}
 .gap-table{width:100%;border-collapse:collapse;min-width:700px;font-size:.82rem}
-.gap-table thead th{background:var(--red);color:#fff;padding:8px 12px;text-align:left;font-size:.75rem;font-weight:700;letter-spacing:.3px;white-space:nowrap;cursor:pointer;user-select:none}
+.gap-table thead th{background:var(--red);color:#fff;padding:8px 12px;text-align:left;font-size:.75rem;font-weight:700;letter-spacing:.3px;white-space:nowrap;cursor:pointer;user-select:none;position:relative}
 .gap-table thead th:hover{background:var(--red-h)}
+.gap-table thead th .sort-arrow{opacity:.45;margin-left:4px;font-size:10px;transition:opacity .15s}
+.gap-table thead th.sort-asc .sort-arrow,.gap-table thead th.sort-desc .sort-arrow{opacity:1}
+.gap-table thead th.sort-asc .sort-arrow::after{content:'▲'}
+.gap-table thead th.sort-desc .sort-arrow::after{content:'▼'}
+.gap-table thead th:not(.sort-asc):not(.sort-desc) .sort-arrow::after{content:'⇅'}
 .gap-table tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
 .gap-table tbody tr:last-child{border-bottom:none}
 .gap-table tbody tr:nth-child(even) td{background:var(--lgray)}
@@ -814,8 +819,14 @@ function renderGapPanel() {
       <div class="gap-table-wrap" style="border-radius:0 0 6px 6px;margin-bottom:0">
         <table class="gap-table">
           <thead><tr>
-            <th>Status</th><th>Class</th><th>Subject</th><th>Chapters</th>
-            <th>Oldest Planned CWA</th><th>Actual CWA Date</th><th>Days</th><th>Teacher</th>
+            <th onclick="sortTable(this)">Status<span class="sort-arrow"></span></th>
+            <th onclick="sortTable(this)">Class<span class="sort-arrow"></span></th>
+            <th onclick="sortTable(this)">Subject<span class="sort-arrow"></span></th>
+            <th>Chapters</th>
+            <th onclick="sortTable(this)">Oldest Planned CWA<span class="sort-arrow"></span></th>
+            <th onclick="sortTable(this)">Actual CWA Date<span class="sort-arrow"></span></th>
+            <th onclick="sortTable(this)" data-num="1">Days<span class="sort-arrow"></span></th>
+            <th onclick="sortTable(this)">Teacher<span class="sort-arrow"></span></th>
           </tr></thead>
           <tbody>`;
 
@@ -854,21 +865,72 @@ function renderGapPanel() {
         actualCell  = fmtDate(g.actualDate);
         chCell = g.chapterName ? `<span class="ch-chip">${esc(g.chapterName)}</span>` : '—';
       }
+      // Compute sortable values
+      const statusOrder = {overdue:'0',late:'1',unmapped:'2',ontime:'3'};
+      const sortPlanned = g.plannedDate ? g.plannedDate.toISOString().slice(0,10) : '';
+      const sortActual  = g.actualDate  ? g.actualDate.toISOString().slice(0,10)  : '';
+      const sortDays    = g.type==='overdue' ? -(g.maxDaysOverdue||0)
+                        : g.type==='late'    ? -(g.daysLate||0)
+                        : g.type==='ontime'  ? (g.daysEarly||0)
+                        : 0;
+
       html += `<tr${rowStyle}>
-        <td>${statusBadge}</td>
-        <td><span class="class-badge">${esc(g.cls)}</span></td>
-        <td><span class="subj-chip">${esc(g.subject)}</span></td>
+        <td data-val="${statusOrder[g.type]||'9'}">${statusBadge}</td>
+        <td data-val="${esc(g.cls)}"><span class="class-badge">${esc(g.cls)}</span></td>
+        <td data-val="${esc(g.subject)}"><span class="subj-chip">${esc(g.subject)}</span></td>
         <td>${chCell}</td>
-        <td class="date-range">${plannedCell}</td>
-        <td class="date-range">${actualCell}</td>
-        <td style="text-align:center;white-space:nowrap">${daysCell}</td>
-        <td class="teacher-cell">${esc(g.teacher||'—')}</td>
+        <td class="date-range" data-val="${sortPlanned}">${plannedCell}</td>
+        <td class="date-range" data-val="${sortActual}">${actualCell}</td>
+        <td style="text-align:center;white-space:nowrap" data-val="${sortDays}">${daysCell}</td>
+        <td class="teacher-cell" data-val="${esc(g.teacher||'')}">${esc(g.teacher||'—')}</td>
       </tr>`;
     });
     html += `</tbody></table></div></div>`;
   });
 
   panel.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PER-TABLE COLUMN SORT
+   Sorts the <tbody> rows of the table containing the clicked <th>
+   by the data-val attribute on that column's <td>.
+   Numeric sort when data-num attribute is present on the <th>.
+   Toggles asc → desc → asc on repeated clicks of the same header.
+═══════════════════════════════════════════════════════════ */
+function sortTable(th) {
+  const table  = th.closest('table');
+  const tbody  = table.querySelector('tbody');
+  const colIdx = [...th.parentElement.children].indexOf(th);
+  const isNum  = th.dataset.num === '1';
+
+  // Determine new direction
+  const wasAsc = th.classList.contains('sort-asc');
+  const asc    = !wasAsc;
+
+  // Reset all headers in this table
+  table.querySelectorAll('thead th').forEach(t => t.classList.remove('sort-asc','sort-desc'));
+  th.classList.add(asc ? 'sort-asc' : 'sort-desc');
+
+  // Sort rows
+  const rows = [...tbody.querySelectorAll('tr')];
+  rows.sort((a, b) => {
+    const av = a.children[colIdx]?.dataset?.val ?? '';
+    const bv = b.children[colIdx]?.dataset?.val ?? '';
+    let cmp;
+    if (isNum) {
+      cmp = (parseFloat(av) || 0) - (parseFloat(bv) || 0);
+    } else {
+      cmp = av.localeCompare(bv, 'en', {numeric: true, sensitivity: 'base'});
+    }
+    return asc ? cmp : -cmp;
+  });
+
+  // Re-append in sorted order and restore even/odd striping
+  rows.forEach((r, i) => {
+    r.querySelectorAll('td').forEach(td => td.style.background = '');
+    tbody.appendChild(r);
+  });
 }
 
 /* ═══════════════════════════════════════════════════════════
