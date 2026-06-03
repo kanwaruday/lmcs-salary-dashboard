@@ -683,22 +683,26 @@ function renderGapPanel() {
     return v * gapSortDir;
   });
 
-  const overdueGrpCt  = Object.keys(overdueGroups).length;
-  const lateCt        = visible.filter(g=>g.type==='late').length;
-  const unmappedCt    = visible.filter(g=>g.type==='unmapped').length;
-  const maxDaysLate   = Math.max(0,...visible.filter(g=>g.type==='late').map(g=>g.daysLate));
-  const maxDaysOver   = Math.max(0,...Object.values(overdueGroups).map(g=>g.maxDaysOverdue));
-  const totalOvChs    = visible.filter(g=>g.type==='overdue').length;
-  const schoolsHit    = new Set(visible.map(g=>g.lmsIdx));
-  const allClasses    = [...new Set(visible.map(g=>g.cls))].sort();
-  const allSubjects   = [...new Set(visible.map(g=>g.subject))].sort();
+  // Dropdown option sources — use full visible set so options don't collapse when a filter is active
+  const schoolsHit = new Set(visible.map(g=>g.lmsIdx));
+  const allClasses = [...new Set(visible.map(g=>g.cls))].sort();
+  const allSubjects= [...new Set(visible.map(g=>g.subject))].sort();
 
-  // Update top chips
+  // ── Counts derived from the FULLY FILTERED rows (reflect every active filter) ──
+  const overdueGrpCt = rows.filter(g=>g.type==='overdue').length;
+  const lateCt       = rows.filter(g=>g.type==='late').length;
+  const unmappedCt   = rows.filter(g=>g.type==='unmapped').length;
+  const filtOntimeCt = rows.filter(g=>g.type==='ontime').length;
+  const maxDaysLate  = Math.max(0,...rows.filter(g=>g.type==='late').map(g=>g.daysLate||0));
+  const maxDaysOver  = Math.max(0,...rows.filter(g=>g.type==='overdue').map(g=>g.maxDaysOverdue||0));
+  const totalOvChs   = rows.filter(g=>g.type==='overdue').reduce((s,g)=>(s+(g.chapters?.length||1)),0);
+
+  // Update top-strip chips to match filtered view
   document.getElementById('cOverdue').textContent  = overdueGrpCt;
   document.getElementById('cLate').textContent     = lateCt;
   document.getElementById('cUnmapped').textContent = unmappedCt;
-  document.getElementById('cOnTime').textContent   = ontimeCt;
-  document.getElementById('cSchools').textContent  = new Set(gapData.filter(g=>g.type!=='ontime').map(g=>g.lmsIdx)).size;
+  document.getElementById('cOnTime').textContent   = filtOntimeCt;
+  document.getElementById('cSchools').textContent  = new Set(rows.filter(g=>g.type!=='ontime').map(g=>g.lmsIdx)).size;
 
   let html = `
   <div class="legend">
@@ -723,10 +727,10 @@ function renderGapPanel() {
       <select onchange="gapFiltType=this.value;renderGapPanel()">
         <option value="gaps"${gapFiltType==='gaps'?' selected':''}>⚠ Gaps only (overdue + late)</option>
         <option value="all"${gapFiltType==='all'?' selected':''}>All (gaps + on time)</option>
-        <option value="ontime"${gapFiltType==='ontime'?' selected':''}>✅ On Time only (${ontimeCt})</option>
-        <option value="overdue"${gapFiltType==='overdue'?' selected':''}>🔴 Overdue only (${overdueGrpCt} groups)</option>
-        <option value="late"${gapFiltType==='late'?' selected':''}>🟠 Late only (${lateCt})</option>
-        <option value="unmapped"${gapFiltType==='unmapped'?' selected':''}>⚪ Not in Mapping (${unmappedCt})</option>
+        <option value="ontime"${gapFiltType==='ontime'?' selected':''}>✅ On Time only</option>
+        <option value="overdue"${gapFiltType==='overdue'?' selected':''}>🔴 Overdue only</option>
+        <option value="late"${gapFiltType==='late'?' selected':''}>🟠 Late only</option>
+        <option value="unmapped"${gapFiltType==='unmapped'?' selected':''}>⚪ Not in Mapping</option>
       </select>
     </label>
     <label>🏫 School
@@ -764,18 +768,18 @@ function renderGapPanel() {
   <div class="gap-chips">
     <div class="gap-chip ok">
       <div class="gap-chip-lbl">✅ On Time</div>
-      <div class="gap-chip-val" style="color:#15803d">${ontimeCt}</div>
+      <div class="gap-chip-val" style="color:#15803d">${filtOntimeCt}</div>
       <div style="font-size:.7rem;color:#9ca3af">taken on or before planned date</div>
     </div>
     <div class="gap-chip${lateCt?' warn':''}">
       <div class="gap-chip-lbl">🟠 Taken Late</div>
       <div class="gap-chip-val" style="color:#c2410c">${lateCt}</div>
-      <div style="font-size:.7rem;color:#9ca3af">max ${maxDaysLate}d late</div>
+      <div style="font-size:.7rem;color:#9ca3af">${maxDaysLate?`max ${maxDaysLate}d late`:'—'}</div>
     </div>
     <div class="gap-chip${overdueGrpCt?' alert':''}">
       <div class="gap-chip-lbl">🔴 Overdue Groups</div>
       <div class="gap-chip-val" style="color:var(--red)">${overdueGrpCt}</div>
-      <div style="font-size:.7rem;color:#9ca3af">${totalOvChs} chapters · max ${maxDaysOver}d</div>
+      <div style="font-size:.7rem;color:#9ca3af">${totalOvChs} chapters · ${maxDaysOver?`max ${maxDaysOver}d`:'—'}</div>
     </div>
     <div class="gap-chip">
       <div class="gap-chip-lbl">⚪ Not Mapped</div>
