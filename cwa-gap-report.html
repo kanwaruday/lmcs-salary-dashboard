@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMCS — CWA Gap Report</title>
+<style>
+:root{--red:#CE0000;--red-h:#a50000;--red-lt:rgba(206,0,0,.07);--dark:#1a1a1a;--gray:#555;--lgray:#f5f5f5;--border:#ddd;--white:#fff}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(--dark);min-height:100vh;font-size:13px;line-height:1.6;display:flex;flex-direction:column}
+
+/* ── HEADER ── */
+.hdr{background:var(--red);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;border-bottom:1px solid var(--red-h)}
+.hdr-brand{display:flex;align-items:center;gap:10px}
+.hdr-logo{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:4px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;flex-shrink:0}
+.hdr h1{font-size:14px;font-weight:700;letter-spacing:.3px}
+.hdr p{font-size:9.5px;opacity:.75;margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.hdr-ts{font-size:10px;opacity:.65}
+.hdr-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.92);padding:5px 12px;border-radius:4px;font-size:11px;font-weight:600;text-decoration:none;cursor:pointer;transition:background .15s;white-space:nowrap}
+.hdr-btn:hover{background:rgba(255,255,255,.22)}
+.hdr-btn svg{width:11px;height:11px}
+
+/* ── PROGRESS BAR ── */
+.load-bar-wrap{background:#b91c1c;height:3px;width:100%;flex-shrink:0}
+.load-bar{height:3px;background:#fff;width:0%;transition:width .3s ease;border-radius:0 2px 2px 0}
+
+/* ── SUMMARY CHIPS ── */
+.chips-strip{background:var(--lgray);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;gap:8px;overflow-x:auto;align-items:stretch;flex-shrink:0}
+.chip{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:6px 14px;display:flex;flex-direction:column;gap:1px;min-width:110px;flex-shrink:0}
+.chip.alert{border-color:#fecaca;background:#fff8f8}.chip.warn{border-color:#fde68a;background:#fffbeb}.chip.ok{border-color:#bbf7d0;background:#f0fdf4}
+.chip-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:var(--gray);font-weight:700}
+.chip-val{font-size:18px;font-weight:700;line-height:1.1}
+.chip-val.red{color:var(--red)}.chip-val.amber{color:#d97706}.chip-val.blue{color:#1d4ed8}.chip-val.green{color:#15803d}.chip-val.muted{color:#9ca3af}
+.chip-sub{font-size:9px;color:#9ca3af;margin-top:1px}
+
+/* ── MAIN CONTENT ── */
+#appBody{flex:1;overflow:auto;padding:20px 24px;max-width:1440px;margin:0 auto;width:100%}
+
+/* ── LOADING ── */
+.loading-state{text-align:center;padding:60px 20px;color:var(--gray)}
+.loading-state .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-state p{font-size:13px;color:var(--gray);margin-bottom:6px}
+.load-detail{font-size:11px;color:#9ca3af}
+.load-progress{width:280px;height:6px;background:#e5e7eb;border-radius:3px;margin:14px auto 0;overflow:hidden}
+.load-progress-bar{height:6px;background:var(--red);border-radius:3px;transition:width .25s}
+
+/* ── SECTION ── */
+.sec-hdr{font-size:.95rem;font-weight:700;color:var(--red);border-bottom:2px solid var(--red);padding-bottom:.3rem;margin:1.5rem 0 .75rem}
+.sec-hdr:first-child{margin-top:0}
+.sec-sub{font-size:.82rem;color:var(--gray);margin-bottom:1rem}
+
+/* ── GAP TABLE ── */
+.gap-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:6px;margin-bottom:1.5rem}
+.gap-table{width:100%;border-collapse:collapse;min-width:700px;font-size:.82rem}
+.gap-table thead th{background:var(--red);color:#fff;padding:8px 12px;text-align:left;font-size:.75rem;font-weight:700;letter-spacing:.3px;white-space:nowrap;cursor:pointer;user-select:none}
+.gap-table thead th:hover{background:var(--red-h)}
+.gap-table tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+.gap-table tbody tr:last-child{border-bottom:none}
+.gap-table tbody tr:nth-child(even) td{background:var(--lgray)}
+.gap-table tbody tr:hover td{background:rgba(206,0,0,.03)}
+.gap-table td{padding:7px 12px;vertical-align:middle}
+
+/* Gap severity badges */
+.gap-sev{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;min-width:28px;text-align:center}
+.gap-sev.sev-low{background:#fef3c7;color:#b45309;border:1px solid #fde68a}
+.gap-sev.sev-mid{background:#fed7aa;color:#c2410c;border:1px solid #fdba74}
+.gap-sev.sev-high{background:#fee2e2;color:var(--red);border:1px solid #fecaca}
+
+/* Chapter chips */
+.chapter-chips{display:flex;flex-wrap:wrap;gap:3px}
+.ch-chip{background:#f5f5f5;border:1px solid #e0e0e0;border-radius:3px;font-size:.7rem;padding:1px 6px;color:var(--dark);white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis}
+.class-badge{display:inline-block;background:#fee2e2;color:var(--red);border:1px solid #fecaca;padding:1px 8px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap}
+.subj-chip{display:inline-block;background:var(--lgray);border:1px solid var(--border);padding:1px 7px;border-radius:3px;font-size:10px;font-weight:600;color:var(--gray)}
+.teacher-cell{font-size:.8rem;color:var(--gray)}
+.date-range{font-size:.72rem;color:var(--gray);white-space:nowrap}
+
+/* Gap filter bar */
+.gap-filter-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 0 14px;border-bottom:1px solid var(--border);margin-bottom:14px}
+.gap-filter-bar label{font-size:11px;font-weight:700;color:var(--gray);display:flex;align-items:center;gap:5px}
+.gap-filter-bar select{background:var(--white);border:1.5px solid var(--border);border-radius:4px;padding:4px 8px;font-size:11px;font-family:inherit;color:var(--dark);outline:none;transition:border-color .13s}
+.gap-filter-bar select:focus{border-color:var(--red)}
+.filt-btn{background:var(--lgray);border:1.5px solid var(--border);border-radius:4px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--gray);cursor:pointer;transition:all .13s;white-space:nowrap}
+.filt-btn:hover{background:var(--red-lt);border-color:var(--red);color:var(--red)}
+
+/* Gap summary chips */
+.gap-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.gap-chip{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:6px 14px;display:flex;flex-direction:column;gap:1px;min-width:100px}
+.gap-chip.alert{border-color:#fecaca;background:#fff8f8}
+.gap-chip.warn{border-color:#fde68a;background:#fffbeb}
+.gap-chip-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:var(--gray);font-weight:700}
+.gap-chip-val{font-size:18px;font-weight:700;line-height:1.1}
+
+/* Gap school group */
+.gap-school-grp{margin-bottom:18px}
+.gap-school-hdr{display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--lgray);border:1px solid var(--border);border-radius:6px 6px 0 0;border-bottom:none}
+.gap-school-hdr-name{font-size:12px;font-weight:700;color:var(--dark)}
+.gap-school-hdr-meta{margin-left:auto;font-size:10px}
+
+/* Empty/error */
+.empty-state{text-align:center;padding:48px 20px;color:var(--gray)}
+.empty-state .icon{font-size:36px;margin-bottom:10px}
+.empty-state h3{font-size:14px;font-weight:700;color:var(--dark);margin-bottom:6px}
+.empty-state p{font-size:12px;line-height:1.6}
+.notice{background:#fff3cd;border:1px solid #ffc107;color:#92400e;padding:10px 16px;font-size:11px;border-radius:4px;margin-bottom:14px}
+
+/* ── LEGEND ── */
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;padding:10px 14px;background:var(--lgray);border:1px solid var(--border);border-radius:6px;font-size:11px}
+.legend-item{display:flex;align-items:center;gap:6px;color:var(--gray)}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--lgray)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+@media(max-width:640px){#appBody{padding:12px 14px}.chips-strip{padding:8px 14px}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-logo">LM</div>
+    <div>
+      <h1>LMCS — CWA Gap Report</h1>
+      <p id="hdrCtx">Cross-references CWA tags in Classwork column against planned CWA dates in Course Mapping</p>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <span class="hdr-ts" id="lastUpdated"></span>
+    <a href="daily-progress.html" class="hdr-btn">📋 Daily Progress</a>
+    <a href="course-mapping-progress.html" class="hdr-btn">📊 Course Mapping</a>
+    <a href="index.html" class="hdr-btn">← Back</a>
+    <button class="hdr-btn" onclick="reloadAll()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Refresh
+    </button>
+  </div>
+</div>
+
+<!-- PROGRESS BAR -->
+<div class="load-bar-wrap"><div class="load-bar" id="loadBar"></div></div>
+
+<!-- CHIPS STRIP -->
+<div class="chips-strip">
+  <div class="chip alert"><div class="chip-lbl">🔴 Overdue Groups</div><div class="chip-val red" id="cOverdue">—</div><div class="chip-sub">planned date passed, no CWA logged</div></div>
+  <div class="chip warn"><div class="chip-lbl">🟠 Taken Late</div><div class="chip-val amber" id="cLate">—</div><div class="chip-sub">CWA after planned date</div></div>
+  <div class="chip"><div class="chip-lbl">⚪ Not in Mapping</div><div class="chip-val muted" id="cUnmapped">—</div><div class="chip-sub">CWA logged, no CM entry</div></div>
+  <div class="chip ok"><div class="chip-lbl">✅ CWA Events Logged</div><div class="chip-val green" id="cCWATotal">—</div><div class="chip-sub">from classwork column (CW tag)</div></div>
+  <div class="chip"><div class="chip-lbl">Schools Affected</div><div class="chip-val blue" id="cSchools">—</div><div class="chip-sub">with at least one gap</div></div>
+  <div class="chip"><div class="chip-lbl">Academic Year</div><div class="chip-val muted" style="font-size:13px" id="cAcYear">—</div><div class="chip-sub" id="cAcYearSub">—</div></div>
+</div>
+
+<!-- APP BODY -->
+<div id="appBody">
+  <div class="loading-state" id="mainLoading">
+    <div class="spinner"></div>
+    <p id="loadMsg">Loading daily classwork data…</p>
+    <p class="load-detail" id="loadDetail"></p>
+    <div class="load-progress"><div class="load-progress-bar" id="loadProgressBar" style="width:0%"></div></div>
+  </div>
+  <div id="gapPanel" style="display:none"></div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   CONFIGURATION — mirrors admin settings from localStorage
+═══════════════════════════════════════════════════════════ */
+const CONFIG_KEY = 'lmcs_cmp_config';
+function loadCfg() {
+  try { const s = localStorage.getItem(CONFIG_KEY); return s ? JSON.parse(s) : null; } catch(e) { return null; }
+}
+const savedCfg = loadCfg();
+
+const DAILY_SHEET_ID = savedCfg?.dailySheetId ?? '1z5hzpMRHMru6ulpYs2lsGZr7quAywwpQ_zySa3rvGUA';
+
+const CM_SCHOOLS = savedCfg?.schools ?? [
+  {name:'LMS 1 — Kullu',        id:'1BorpCdePG7O6iZiwgGwNpWZBl7I1IGAT-OAh0fw2yMs'},
+  {name:'LMS 2 — Kelheli',      id:'1ejXKsnK3a2kNGEboTs-yQ2d3Tpk3xG5JRtm9DAmiYXs'},
+  {name:'LMS 3 — Dunkhra',      id:'1MYTOPH_zFIK8xnQk3SsKIgsX5eT5mZgHaJpMgyoJhL8'},
+  {name:'LMS 4 — NerChowk',     id:'1nwPLQprQoQJ35xKDWSi2Y4YDzbvUPZ688u5QwOYmSxU'},
+  {name:'LMS 5 — Sayoli',       id:'172YKw1cMMcG5UZ0jjI8RzO2tGxnVWG3QVCEsDY6CZHg'},
+  {name:'LMS 6 — Jogindernagar',id:'1PkZYbeVCdKeqCbbX2eXAwk7c8w7NAHUOSQKmO6nDZtE'},
+];
+
+const CM_CLASSES = savedCfg?.classes ?? [
+  {tab:'M-I',cwaApplicable:false},{tab:'M-II',cwaApplicable:false},{tab:'M-III',cwaApplicable:false},
+  {tab:'Class 1',cwaApplicable:true},{tab:'Class 2',cwaApplicable:true},{tab:'Class 3',cwaApplicable:true},
+  {tab:'Class 4',cwaApplicable:true},{tab:'Class 5',cwaApplicable:true},{tab:'Class 6',cwaApplicable:true},
+  {tab:'Class 7',cwaApplicable:true},{tab:'Class 8',cwaApplicable:true},{tab:'Class 9',cwaApplicable:true},
+  {tab:'Class 10',cwaApplicable:true},{tab:'Class 11',cwaApplicable:true},{tab:'Class 12',cwaApplicable:true},
+];
+
+const CWA_EXEMPT = (savedCfg?.cwaExemptSubjects ?? ['General Knowledge','Computer'])
+  .map(s => s.toLowerCase());
+
+const CM_CACHE_KEY = 'lmcs_cm_store_v2';
+const CM_CACHE_TTL = ((savedCfg?.cacheTtlMinutes) || 30) * 60 * 1000;
+
+// School name → LMS index mapping (matches daily sheet "School Name" column)
+const DAILY_SCHOOL_NAMES = [
+  'La Montessori School Kullu',
+  'La Montessori School Kelheli',
+  'La Montessori School Dunkhra',
+  'La Montessori School NerChowk',
+  'La Montessori School Sayoli',
+  'La Montessori School Jogindernagar',
+];
+const DAILY_SCHOOL_ALIASES = [
+  { pattern: 'guru international', idx: 5 },
+];
+
+/* ═══════════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════════ */
+const ROMAN = {I:1,II:2,III:3,IV:4,V:5,VI:6,VII:7,VIII:8,IX:9,X:10,XI:11,XII:12};
+
+function esc(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+}
+
+function lmsName(idx) { return CM_SCHOOLS[idx]?.name || `LMS ${idx+1}`; }
+
+function isSubjectCwaExempt(subj) {
+  const sl = String(subj||'').toLowerCase();
+  return CWA_EXEMPT.some(e => sl === e || sl.includes(e) || e.includes(sl));
+}
+
+/**
+ * hasCWA — checks ONLY the Classwork tag column (cwTag).
+ * Homework tags are intentionally NOT checked here.
+ * Returns true if the cwTag string contains "CWA" as a tag
+ * AND the subject is not in the CWA-exempt list.
+ */
+function hasCWA(cwTag, subject) {
+  if (isSubjectCwaExempt(subject)) return false;
+  return String(cwTag||'').split(',').map(t=>t.trim()).some(t => t.toUpperCase() === 'CWA');
+}
+
+function normalizeSubject(s) {
+  return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,12);
+}
+
+function mapDailyClass(classStr, sectionStr) {
+  const c = String(classStr||'').trim().toUpperCase();
+  const s = String(sectionStr||'').trim().toUpperCase();
+  if (c === 'M' || c === 'MONTESSORI' || c === 'MONT') {
+    if (ROMAN[s]===1||s==='1'||s==='I')   return 'M-I';
+    if (ROMAN[s]===2||s==='2'||s==='II')  return 'M-II';
+    if (ROMAN[s]===3||s==='3'||s==='III') return 'M-III';
+    return 'M-I';
+  }
+  if (ROMAN[c]) return `Class ${ROMAN[c]}`;
+  const n = parseInt(c);
+  if (!isNaN(n) && n >= 1 && n <= 12) return `Class ${n}`;
+  return null;
+}
+
+function dailySchoolToLMS(schoolName) {
+  const nl = String(schoolName||'').trim().toLowerCase();
+  const idx = DAILY_SCHOOL_NAMES.findIndex(s =>
+    s.toLowerCase() === nl ||
+    nl.includes(s.toLowerCase().split(' ').slice(-1)[0].toLowerCase())
+  );
+  if (idx >= 0) return idx;
+  for (const alias of DAILY_SCHOOL_ALIASES) {
+    if (nl.includes(alias.pattern)) return alias.idx;
+  }
+  return null;
+}
+
+function parseDateStr(str) {
+  if (!str) return null;
+  const gm = str.match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)/);
+  if (gm) return new Date(+gm[1],+gm[2],+gm[3],+(gm[4]||0),+(gm[5]||0),+(gm[6]||0));
+  const m12 = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[,\s]+(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)$/i);
+  if (m12) {
+    let [,mo,da,yr,hr,mi,se,ap] = m12;
+    mo=+mo;da=+da;yr=+yr;hr=+hr;mi=+mi;se=+se;
+    if (ap.toUpperCase()==='PM'&&hr!==12) hr+=12;
+    if (ap.toUpperCase()==='AM'&&hr===12) hr=0;
+    return new Date(yr,mo-1,da,hr,mi,se);
+  }
+  const m24 = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[,\s]+(\d{1,2}):(\d{2}):(\d{2})$/);
+  if (m24) return new Date(+m24[3],+m24[1]-1,+m24[2],+m24[4],+m24[5],+m24[6]);
+  const md = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (md) return new Date(+md[3],+md[1]-1,+md[2]);
+  const d = new Date(str); return isNaN(d.getTime()) ? null : d;
+}
+
+function parseGvizDate(cell) {
+  if (!cell||cell.v==null) return null;
+  const m = String(cell.v).match(/Date\((\d+),(\d+),(\d+)/);
+  if (m) return new Date(+m[1],+m[2],+m[3]);
+  if (cell.f) { const d=new Date(cell.f); if (!isNaN(d.getTime())) return d; }
+  return null;
+}
+
+/* Progress bar helpers */
+function setProgress(pct, msg, detail) {
+  document.getElementById('loadBar').style.width = pct + '%';
+  document.getElementById('loadProgressBar').style.width = pct + '%';
+  if (msg)    document.getElementById('loadMsg').textContent    = msg;
+  if (detail !== undefined) document.getElementById('loadDetail').textContent = detail;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FETCH — DAILY SHEET
+   Fetches all CW entries for the current year.
+   Only the cwTag column (col 9) is checked for CWA — never hwTag.
+═══════════════════════════════════════════════════════════ */
+async function fetchDailySheet() {
+  const year = new Date().getFullYear();
+  async function tryQuery(tq) {
+    const url = `https://docs.google.com/spreadsheets/d/${DAILY_SHEET_ID}/gviz/tq?tqx=out:json&tq=${encodeURIComponent(tq)}&_=${Date.now()}`;
+    const res = await fetch(url, {cache:'no-store'});
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    const s = text.indexOf('{'), e = text.lastIndexOf('}');
+    const data = JSON.parse(text.slice(s, e+1));
+    if (data.status === 'error') return null;
+    return data.table;
+  }
+  let table = await tryQuery(`SELECT * WHERE year(B) = ${year} LIMIT 100000`);
+  if (!table || !table.rows?.length)
+    table = await tryQuery(`SELECT * WHERE B CONTAINS '/${year}' LIMIT 100000`);
+  if (!table) throw new Error('Could not fetch daily sheet');
+  return table;
+}
+
+function parseDailyTable(table) {
+  if (!table?.rows) return [];
+  const rows = [];
+  for (const row of table.rows) {
+    const cell = (i) => {
+      const c = row.c?.[i];
+      return (!c||c.v==null) ? '' : String(c.f??c.v).trim();
+    };
+    const school  = cell(0);
+    const lmsIdx  = dailySchoolToLMS(school);
+    if (lmsIdx === null) continue;
+
+    // Parse date directly from gviz Date() in c.v (locale-independent)
+    const dateCell = row.c?.[1];
+    let dateObj = null;
+    if (dateCell?.v != null) {
+      const gm = String(dateCell.v).match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)/);
+      if (gm) dateObj = new Date(+gm[1],+gm[2],+gm[3],+(gm[4]||0),+(gm[5]||0),+(gm[6]||0));
+    }
+    if (!dateObj) dateObj = parseDateStr(String(dateCell?.f??dateCell?.v??'').trim());
+    if (!dateObj) continue;
+
+    const classStr    = cell(3);
+    const classMapped = mapDailyClass(classStr, cell(4));
+
+    rows.push({
+      lmsIdx, dateObj,
+      dateStr: `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`,
+      teacher:    cell(2),
+      classMapped,
+      subject:    cell(5),
+      cwTag:      cell(9),  // ← Classwork tag — ONLY this is checked for CWA
+      cwChapter:  cell(7),
+      // hwTag (col 13) is intentionally NOT stored; it is never used for CWA detection
+    });
+  }
+  return rows;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FETCH — COURSE MAPPING
+═══════════════════════════════════════════════════════════ */
+async function fetchCMTab(sheetId, tab) {
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(tab)}&_=${Date.now()}`;
+  const res = await fetch(url, {cache:'no-store'});
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  const s = text.indexOf('{'), e = text.lastIndexOf('}');
+  const data = JSON.parse(text.slice(s, e+1));
+  if (data.status === 'error') return null;
+  return data.table;
+}
+
+function detectCMColumns(table) {
+  const map = {SUBJECT:1,CHAPTER_NO:3,CHAPTER_NAME:4,TERM:5,START_DATE:7,CWA_DATE:10};
+  if (!table?.cols) return map;
+  table.cols.forEach((col,i) => {
+    const lbl = (col.label||col.id||'').toLowerCase().trim();
+    if (lbl==='subject')              map.SUBJECT      = i;
+    else if (lbl==='chapter no.')     map.CHAPTER_NO   = i;
+    else if (lbl==='chapter name')    map.CHAPTER_NAME = i;
+    else if (lbl==='term')            map.TERM         = i;
+    else if (lbl==='chapter start date') map.START_DATE = i;
+    else if (lbl==='cwa date')        map.CWA_DATE     = i;
+  });
+  return map;
+}
+
+function parseCMTab(table) {
+  if (!table?.rows) return [];
+  const cm = detectCMColumns(table);
+  return table.rows.flatMap(row => {
+    const raw = (i) => row.c?.[i]||null;
+    const str = (i) => { const c=raw(i); return (!c||c.v==null)?'':String(c.f??c.v).trim(); };
+    const subject = str(cm.SUBJECT);
+    if (!subject||subject.toLowerCase()==='subject') return [];
+    return [{
+      subject,
+      chapterNo:   raw(cm.CHAPTER_NO)?.v??null,
+      chapterName: str(cm.CHAPTER_NAME),
+      term:        str(cm.TERM),
+      startDate:   parseGvizDate(raw(cm.START_DATE)),
+      cwaDate:     parseGvizDate(raw(cm.CWA_DATE)),
+    }];
+  });
+}
+
+/* ── CM Cache ── */
+let cmStore = {};
+let cmLoaded = false;
+
+function saveCMCache() {
+  try {
+    const ser = {};
+    Object.entries(cmStore).forEach(([li,tabs]) => {
+      ser[li]={};
+      Object.entries(tabs).forEach(([tab,chs]) => {
+        if (!Array.isArray(chs)) { ser[li][tab]=chs; return; }
+        ser[li][tab]=chs.map(ch=>({...ch,startDate:ch.startDate?.toISOString()||null,cwaDate:ch.cwaDate?.toISOString()||null}));
+      });
+    });
+    localStorage.setItem(CM_CACHE_KEY, JSON.stringify({ts:Date.now(),data:ser}));
+  } catch(e){}
+}
+
+function loadCMCache() {
+  try {
+    const raw = localStorage.getItem(CM_CACHE_KEY);
+    if (!raw) return false;
+    const {ts,data} = JSON.parse(raw);
+    Object.entries(data).forEach(([li,tabs]) => {
+      cmStore[+li]={};
+      Object.entries(tabs).forEach(([tab,chs]) => {
+        if (!Array.isArray(chs)) { cmStore[+li][tab]=chs; return; }
+        cmStore[+li][tab]=chs.map(ch=>({...ch,startDate:ch.startDate?new Date(ch.startDate):null,cwaDate:ch.cwaDate?new Date(ch.cwaDate):null}));
+      });
+    });
+    return (Date.now()-ts) > CM_CACHE_TTL ? 'stale' : 'fresh';
+  } catch(e) { return false; }
+}
+
+async function fetchAndStoreCM(onProgress) {
+  const cwaTabs = CM_CLASSES.filter(c=>c.cwaApplicable).map(c=>c.tab);
+  const jobs = CM_SCHOOLS.flatMap((school,idx) => cwaTabs.map(tab=>({idx,tab,id:school.id})));
+  let done = 0;
+  const results = await Promise.allSettled(jobs.map(j =>
+    fetchCMTab(j.id, j.tab).then(r => { done++; onProgress && onProgress(done, jobs.length); return r; })
+  ));
+  results.forEach((r,i) => {
+    const {idx,tab} = jobs[i];
+    if (!cmStore[idx]) cmStore[idx]={};
+    cmStore[idx][tab] = r.status==='fulfilled' && r.value ? parseCMTab(r.value) : null;
+  });
+  saveCMCache();
+  cmLoaded = true;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════ */
+let allRecords  = [];
+let gapData     = [];
+let gapSortKey  = 'days';
+let gapSortDir  = -1;
+let gapFiltSchool  = '';
+let gapFiltClass   = '';
+let gapFiltSubject = '';
+let gapFiltType    = '';
+let gapMinDays     = 7;
+
+/* ═══════════════════════════════════════════════════════════
+   BUILD GAP DATA
+   Sources:
+   - dailyCWA index: records where cwTag (col 9) contains "CWA"
+     (hwTag is never used here)
+   - cmStore: planned CWA dates from each school's Course Mapping
+═══════════════════════════════════════════════════════════ */
+function buildGapData() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const ayStartYear = today.getMonth()>=3 ? today.getFullYear() : today.getFullYear()-1;
+  const ayStart = new Date(ayStartYear,3,1);
+  const ayEnd   = new Date(ayStartYear+1,2,31,23,59,59);
+
+  // ── Build CWA event index from daily sheet ────────────────
+  // ONLY cwTag is checked — homework tag is not a CWA signal
+  const dailyCWA = {};
+  allRecords
+    .filter(r => hasCWA(r.cwTag, r.subject) && r.dateObj >= ayStart && r.dateObj <= ayEnd)
+    .forEach(r => {
+      if (r.lmsIdx===null || !r.classMapped) return;
+      const ns = normalizeSubject(r.subject);
+      if (!dailyCWA[r.lmsIdx])                    dailyCWA[r.lmsIdx]={};
+      if (!dailyCWA[r.lmsIdx][r.classMapped])     dailyCWA[r.lmsIdx][r.classMapped]={};
+      if (!dailyCWA[r.lmsIdx][r.classMapped][ns]) dailyCWA[r.lmsIdx][r.classMapped][ns]=[];
+      dailyCWA[r.lmsIdx][r.classMapped][ns].push({
+        dateObj:r.dateObj, dateStr:r.dateStr,
+        chapter:r.cwChapter, teacher:r.teacher,
+      });
+    });
+  // sort each list oldest-first for chronological pairing
+  Object.values(dailyCWA).forEach(byC =>
+    Object.values(byC).forEach(byS =>
+      Object.values(byS).forEach(arr => arr.sort((a,b)=>a.dateObj-b.dateObj))
+    )
+  );
+
+  // ── Teacher index (all records, for overdue entries with no CWA yet) ──
+  const teacherIdx = {};
+  allRecords.filter(r => r.dateObj>=ayStart && r.dateObj<=ayEnd).forEach(r => {
+    if (r.lmsIdx===null || !r.classMapped || !r.teacher) return;
+    const key = `${r.lmsIdx}|${r.classMapped}|${normalizeSubject(r.subject)}`;
+    if (!teacherIdx[key]) teacherIdx[key]={teachers:new Set(),lastDate:''};
+    teacherIdx[key].teachers.add(r.teacher);
+    if (r.dateStr > teacherIdx[key].lastDate) teacherIdx[key].lastDate = r.dateStr;
+  });
+  function lookupTeachers(lmsIdx,cls,subj) {
+    const ns = normalizeSubject(subj);
+    const key = `${lmsIdx}|${cls}|${ns}`;
+    if (teacherIdx[key]) return [...teacherIdx[key].teachers].join(', ');
+    const fKey = Object.keys(teacherIdx).find(k => {
+      const [li,cl,ks] = k.split('|');
+      return +li===lmsIdx && cl===cls && (ks===ns||ks.includes(ns)||ns.includes(ks));
+    });
+    return fKey ? [...teacherIdx[fKey].teachers].join(', ') : '—';
+  }
+
+  function getDailyArr(lmsIdx,cls,subj) {
+    const byS = dailyCWA[lmsIdx]?.[cls];
+    if (!byS) return [];
+    const ns = normalizeSubject(subj);
+    if (byS[ns]) return byS[ns];
+    const key = Object.keys(byS).find(k=>k===ns||k.includes(ns)||ns.includes(k));
+    return key ? byS[key] : [];
+  }
+
+  // ── Cross-reference CM planned CWA dates vs actual CWA events ──
+  const gaps = [];
+  Object.entries(cmStore).forEach(([lmsIdxStr,tabs]) => {
+    const lmsIdx = +lmsIdxStr;
+    Object.entries(tabs).forEach(([tab,chapters]) => {
+      if (!Array.isArray(chapters)) return;
+      const bySubj = {};
+      chapters.forEach(ch => {
+        const ns = normalizeSubject(ch.subject);
+        if (!bySubj[ns]) bySubj[ns]=[];
+        bySubj[ns].push(ch);
+      });
+      Object.entries(bySubj).forEach(([ns,chList]) => {
+        // Only chapters with a planned CWA date within this academic year
+        const planned = chList
+          .filter(ch => ch.cwaDate && ch.cwaDate>=ayStart && ch.cwaDate<=ayEnd)
+          .sort((a,b)=>a.cwaDate-b.cwaDate);
+        if (!planned.length) return;
+
+        const actual = getDailyArr(lmsIdx, tab, chList[0].subject).slice();
+
+        planned.forEach((ch, i) => {
+          const actualEv = actual[i] || null;
+          if (actualEv) {
+            const daysLate = Math.round((actualEv.dateObj - ch.cwaDate) / 86400000);
+            if (daysLate > 0) gaps.push({
+              type:'late', daysLate,
+              lmsIdx, cls:tab, subject:ch.subject,
+              chapterNo:ch.chapterNo, chapterName:ch.chapterName,
+              plannedDate:ch.cwaDate, actualDate:actualEv.dateObj,
+              actualDateStr:actualEv.dateStr, teacher:actualEv.teacher,
+            });
+            // on-time: no gap entry
+          } else if (ch.cwaDate < today) {
+            const daysOverdue = Math.round((today - ch.cwaDate) / 86400000);
+            gaps.push({
+              type:'overdue', daysOverdue,
+              lmsIdx, cls:tab, subject:ch.subject,
+              chapterNo:ch.chapterNo, chapterName:ch.chapterName,
+              plannedDate:ch.cwaDate, actualDate:null,
+              teacher:lookupTeachers(lmsIdx, tab, ch.subject),
+            });
+          }
+        });
+
+        // Extra actual CWAs beyond planned count → unmapped
+        actual.slice(planned.length).forEach(ev => {
+          gaps.push({
+            type:'unmapped',
+            lmsIdx, cls:tab, subject:chList[0].subject,
+            chapterName:ev.chapter||'', plannedDate:null,
+            actualDate:ev.dateObj, actualDateStr:ev.dateStr,
+            teacher:ev.teacher, daysLate:0,
+          });
+        });
+      });
+    });
+  });
+
+  return { gaps, ayStart, ayEnd, ayLabel:`${ayStartYear}-${String(ayStartYear+1).slice(2)}` };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════════════════════ */
+function renderGapPanel() {
+  const panel = document.getElementById('gapPanel');
+
+  // Apply min-days threshold
+  const visible = gapData.filter(g => {
+    if (g.type==='overdue') return g.daysOverdue >= gapMinDays;
+    if (g.type==='late')    return g.daysLate    >= gapMinDays;
+    return true;
+  });
+
+  // Collapse overdue into school+class+subject groups
+  const overdueGroups = {};
+  visible.filter(g=>g.type==='overdue').forEach(g => {
+    const key = `${g.lmsIdx}|${g.cls}|${g.subject}`;
+    if (!overdueGroups[key]) overdueGroups[key]={
+      lmsIdx:g.lmsIdx, cls:g.cls, subject:g.subject,
+      teacher:g.teacher, chapters:[], maxDaysOverdue:0, oldestPlanned:g.plannedDate,
+    };
+    overdueGroups[key].chapters.push({name:g.chapterName,no:g.chapterNo,planned:g.plannedDate,daysOverdue:g.daysOverdue});
+    if (g.daysOverdue > overdueGroups[key].maxDaysOverdue) overdueGroups[key].maxDaysOverdue = g.daysOverdue;
+    if (g.plannedDate < overdueGroups[key].oldestPlanned)  overdueGroups[key].oldestPlanned  = g.plannedDate;
+  });
+
+  let rows = [
+    ...Object.values(overdueGroups).map(g=>({...g,type:'overdue',days:g.maxDaysOverdue})),
+    ...visible.filter(g=>g.type==='late').map(g=>({...g,days:g.daysLate})),
+    ...visible.filter(g=>g.type==='unmapped').map(g=>({...g,days:0})),
+  ];
+
+  if (gapFiltType)    rows = rows.filter(g=>g.type===gapFiltType);
+  if (gapFiltSchool)  rows = rows.filter(g=>g.lmsIdx===parseInt(gapFiltSchool));
+  if (gapFiltClass)   rows = rows.filter(g=>g.cls===gapFiltClass);
+  if (gapFiltSubject) rows = rows.filter(g=>g.subject===gapFiltSubject);
+
+  rows = [...rows].sort((a,b) => {
+    let v=0;
+    if      (gapSortKey==='days')   v=(a.days||0)-(b.days||0);
+    else if (gapSortKey==='date')   v=(a.oldestPlanned||a.plannedDate||a.actualDate||0)-(b.oldestPlanned||b.plannedDate||b.actualDate||0);
+    else if (gapSortKey==='class')  v=a.cls.localeCompare(b.cls);
+    else if (gapSortKey==='school') v=a.lmsIdx-b.lmsIdx;
+    return v * gapSortDir;
+  });
+
+  const overdueGrpCt  = Object.keys(overdueGroups).length;
+  const lateCt        = visible.filter(g=>g.type==='late').length;
+  const unmappedCt    = visible.filter(g=>g.type==='unmapped').length;
+  const maxDaysLate   = Math.max(0,...visible.filter(g=>g.type==='late').map(g=>g.daysLate));
+  const maxDaysOver   = Math.max(0,...Object.values(overdueGroups).map(g=>g.maxDaysOverdue));
+  const totalOvChs    = visible.filter(g=>g.type==='overdue').length;
+  const schoolsHit    = new Set(visible.map(g=>g.lmsIdx));
+  const allClasses    = [...new Set(visible.map(g=>g.cls))].sort();
+  const allSubjects   = [...new Set(visible.map(g=>g.subject))].sort();
+
+  // Update top chips
+  document.getElementById('cOverdue').textContent  = overdueGrpCt;
+  document.getElementById('cLate').textContent     = lateCt;
+  document.getElementById('cUnmapped').textContent = unmappedCt;
+  document.getElementById('cSchools').textContent  = new Set(gapData.map(g=>g.lmsIdx)).size;
+
+  let html = `
+  <div class="legend">
+    <span style="font-size:11px;font-weight:700;color:var(--dark);margin-right:4px">How to read:</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#fee2e2;border:1px solid #fecaca"></span>🔴 <strong>Overdue</strong> — planned CWA date passed, no CWA entry found in the classwork column</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#fffbeb;border:1px solid #fde68a"></span>🟠 <strong>Late</strong> — CWA was logged but after the planned date</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#f5f5f5;border:1px solid #e0e0e0"></span>⚪ <strong>Not in mapping</strong> — CWA logged in classwork but no matching entry in Course Mapping</span>
+    <span style="margin-left:auto;color:#9ca3af;font-size:10px">Source: CW Tag column only (col 9). HW tags are not used.</span>
+  </div>
+
+  <div class="gap-filter-bar">
+    <label>Min days
+      <select onchange="gapMinDays=+this.value;renderGapPanel()">
+        <option value="1"${gapMinDays===1?' selected':''}>≥ 1 day</option>
+        <option value="7"${gapMinDays===7?' selected':''}>≥ 7 days</option>
+        <option value="14"${gapMinDays===14?' selected':''}>≥ 14 days</option>
+        <option value="30"${gapMinDays===30?' selected':''}>≥ 30 days</option>
+      </select>
+    </label>
+    <label>Type
+      <select onchange="gapFiltType=this.value;renderGapPanel()">
+        <option value=""${!gapFiltType?' selected':''}>All types</option>
+        <option value="overdue"${gapFiltType==='overdue'?' selected':''}>🔴 Overdue (${overdueGrpCt} groups)</option>
+        <option value="late"${gapFiltType==='late'?' selected':''}>🟠 Late (${lateCt})</option>
+        <option value="unmapped"${gapFiltType==='unmapped'?' selected':''}>⚪ Not in Mapping (${unmappedCt})</option>
+      </select>
+    </label>
+    <label>🏫 School
+      <select onchange="gapFiltSchool=this.value;renderGapPanel()">
+        <option value="">All Schools</option>
+        ${CM_SCHOOLS.map((s,i)=>schoolsHit.has(i)?`<option value="${i}"${gapFiltSchool==i?' selected':''}>${esc(s.name)}</option>`:'').join('')}
+      </select>
+    </label>
+    <label>📚 Class
+      <select onchange="gapFiltClass=this.value;renderGapPanel()">
+        <option value="">All Classes</option>
+        ${allClasses.map(c=>`<option value="${esc(c)}"${gapFiltClass===c?' selected':''}>${esc(c)}</option>`).join('')}
+      </select>
+    </label>
+    <label>📖 Subject
+      <select onchange="gapFiltSubject=this.value;renderGapPanel()">
+        <option value="">All Subjects</option>
+        ${allSubjects.map(s=>`<option value="${esc(s)}"${gapFiltSubject===s?' selected':''}>${esc(s)}</option>`).join('')}
+      </select>
+    </label>
+    <label style="margin-left:auto">Sort by
+      <select onchange="const p=this.value.split('|');gapSortKey=p[0];gapSortDir=+p[1];renderGapPanel()">
+        <option value="days|-1">Days (most first)</option>
+        <option value="date|1">Planned Date (oldest first)</option>
+        <option value="date|-1">Planned Date (newest first)</option>
+        <option value="class|1">Class (A→Z)</option>
+        <option value="school|1">School</option>
+      </select>
+    </label>
+    ${(gapFiltType||gapFiltSchool||gapFiltClass||gapFiltSubject)?
+      `<button class="filt-btn" onclick="gapFiltType='';gapFiltSchool='';gapFiltClass='';gapFiltSubject='';renderGapPanel()">✕ Clear filters</button>`:''}
+    <button class="filt-btn" onclick="reloadAll()" title="Re-fetch all data from Google Sheets">↺ Refresh all</button>
+  </div>
+
+  <div class="gap-chips">
+    <div class="gap-chip${overdueGrpCt?' alert':''}">
+      <div class="gap-chip-lbl">🔴 Overdue Groups</div>
+      <div class="gap-chip-val" style="color:var(--red)">${overdueGrpCt}</div>
+      <div style="font-size:.7rem;color:#9ca3af">${totalOvChs} chapters · max ${maxDaysOver}d</div>
+    </div>
+    <div class="gap-chip${lateCt?' warn':''}">
+      <div class="gap-chip-lbl">🟠 Taken Late</div>
+      <div class="gap-chip-val" style="color:#c2410c">${lateCt}</div>
+      <div style="font-size:.7rem;color:#9ca3af">max ${maxDaysLate}d late</div>
+    </div>
+    <div class="gap-chip">
+      <div class="gap-chip-lbl">⚪ Not Mapped</div>
+      <div class="gap-chip-val" style="color:var(--gray)">${unmappedCt}</div>
+      <div style="font-size:.7rem;color:#9ca3af">no CM entry found</div>
+    </div>
+    <div class="gap-chip">
+      <div class="gap-chip-lbl">Schools Affected</div>
+      <div class="gap-chip-val" style="color:#1d4ed8">${new Set(rows.map(g=>g.lmsIdx)).size}</div>
+    </div>
+  </div>`;
+
+  if (!rows.length) {
+    html += `<div class="empty-state"><div class="icon">✅</div>
+      <h3>No gaps match the current filters</h3>
+      <p>Try reducing the minimum days threshold or clearing filters.</p></div>`;
+    panel.innerHTML = html;
+    return;
+  }
+
+  const bySchool = {};
+  rows.forEach(g => { if(!bySchool[g.lmsIdx]) bySchool[g.lmsIdx]=[]; bySchool[g.lmsIdx].push(g); });
+
+  Object.keys(bySchool).sort((a,b)=>+a-+b).forEach(lmsIdx => {
+    const sRows  = bySchool[lmsIdx];
+    const sOver  = sRows.filter(g=>g.type==='overdue').length;
+    const sLate  = sRows.filter(g=>g.type==='late').length;
+    const sheetUrl = CM_SCHOOLS[+lmsIdx]?.id
+      ? `https://docs.google.com/spreadsheets/d/${CM_SCHOOLS[+lmsIdx].id}/edit` : '#';
+
+    html += `<div class="gap-school-grp">
+      <div class="gap-school-hdr">
+        <span class="gap-school-hdr-name">🏫 ${lmsName(+lmsIdx)}</span>
+        <span class="gap-school-hdr-meta">
+          ${sOver?`<span style="color:var(--red);font-weight:700">🔴 ${sOver} overdue group${sOver!==1?'s':''}</span>&nbsp;·&nbsp;`:''}
+          ${sLate?`<span style="color:#c2410c;font-weight:700">🟠 ${sLate} late</span>&nbsp;·&nbsp;`:''}
+          <a href="${sheetUrl}" target="_blank" rel="noopener"
+             style="color:var(--red);font-weight:600;text-decoration:none;font-size:10px">↗ Open Course Mapping</a>
+        </span>
+      </div>
+      <div class="gap-table-wrap" style="border-radius:0 0 6px 6px;margin-bottom:0">
+        <table class="gap-table">
+          <thead><tr>
+            <th>Status</th><th>Class</th><th>Subject</th><th>Chapters</th>
+            <th>Oldest Planned CWA</th><th>Actual CWA Date</th><th>Days</th><th>Teacher</th>
+          </tr></thead>
+          <tbody>`;
+
+    sRows.forEach(g => {
+      let statusBadge, daysCell, chCell, plannedCell, actualCell, rowStyle='';
+      if (g.type==='overdue') {
+        const sc = g.maxDaysOverdue>=30?'sev-high':g.maxDaysOverdue>=14?'sev-mid':'sev-low';
+        statusBadge = `<span class="gap-sev ${sc}">🔴 Overdue</span>`;
+        daysCell    = `<span style="color:var(--red);font-weight:700">${g.maxDaysOverdue}d past due</span>`;
+        rowStyle    = ' style="background:#fff8f8"';
+        plannedCell = fmtDate(g.oldestPlanned);
+        actualCell  = `<span style="color:#9ca3af">Not yet taken</span>`;
+        const sorted = [...g.chapters].sort((a,b)=>a.planned-b.planned);
+        chCell = `<div class="chapter-chips">${sorted.map(c=>`<span class="ch-chip" title="${esc(c.name)} · planned ${fmtDate(c.planned)}">${c.no?'Ch '+c.no+': ':''}${esc(c.name||'—')}</span>`).join('')}</div>`;
+      } else if (g.type==='late') {
+        const sc = g.daysLate>=14?'sev-high':g.daysLate>=7?'sev-mid':'sev-low';
+        statusBadge = `<span class="gap-sev ${sc}">🟠 Late</span>`;
+        daysCell    = `<span style="color:#c2410c;font-weight:700">+${g.daysLate}d</span>`;
+        rowStyle    = ' style="background:#fffbeb"';
+        plannedCell = fmtDate(g.plannedDate);
+        actualCell  = fmtDate(g.actualDate);
+        chCell = `<span class="ch-chip">${esc(g.chapterNo?`Ch ${g.chapterNo}: ${g.chapterName||''}`:g.chapterName||'—')}</span>`;
+      } else {
+        statusBadge = `<span class="gap-sev" style="background:#f5f5f5;color:#9ca3af;border-color:#e0e0e0">⚪ No mapping</span>`;
+        daysCell    = `<span style="color:#9ca3af">—</span>`;
+        plannedCell = `<span style="color:#9ca3af">—</span>`;
+        actualCell  = fmtDate(g.actualDate);
+        chCell = g.chapterName ? `<span class="ch-chip">${esc(g.chapterName)}</span>` : '—';
+      }
+      html += `<tr${rowStyle}>
+        <td>${statusBadge}</td>
+        <td><span class="class-badge">${esc(g.cls)}</span></td>
+        <td><span class="subj-chip">${esc(g.subject)}</span></td>
+        <td>${chCell}</td>
+        <td class="date-range">${plannedCell}</td>
+        <td class="date-range">${actualCell}</td>
+        <td style="text-align:center;white-space:nowrap">${daysCell}</td>
+        <td class="teacher-cell">${esc(g.teacher||'—')}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div></div>`;
+  });
+
+  panel.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INIT — loads both data sources in parallel
+═══════════════════════════════════════════════════════════ */
+async function init() {
+  document.getElementById('lastUpdated').textContent =
+    new Date().toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'});
+  document.getElementById('mainLoading').style.display = 'block';
+  document.getElementById('gapPanel').style.display    = 'none';
+
+  setProgress(5, 'Loading daily classwork & Course Mapping data…', 'Starting parallel fetch…');
+
+  // ── Phase 1: Daily sheet ──────────────────────────────────
+  let dailyDone = false;
+  let cmDone    = 0;
+  const cwaTabs = CM_CLASSES.filter(c=>c.cwaApplicable).length;
+  const cmTotal = CM_SCHOOLS.length * cwaTabs;
+
+  function updateProgress() {
+    const dailyPct = dailyDone ? 40 : 0;
+    const cmPct    = (cmDone / cmTotal) * 55;
+    setProgress(5 + dailyPct + cmPct,
+      dailyDone && cmDone===cmTotal ? 'Building gap report…' : 'Loading data…',
+      `Daily sheet: ${dailyDone?'✓ done':'loading…'}  ·  Course Mapping: ${cmDone}/${cmTotal} tabs`
+    );
+  }
+
+  try {
+    // Check CM cache — use it immediately so CM loads fast
+    const cacheStatus = loadCMCache();
+    let cmPromise;
+    if (cacheStatus === 'fresh') {
+      cmLoaded = true;
+      cmDone   = cmTotal;
+      cmPromise = Promise.resolve();
+    } else {
+      cmPromise = fetchAndStoreCM((done) => { cmDone = done; updateProgress(); });
+    }
+
+    const [dailyTable] = await Promise.all([
+      fetchDailySheet().then(t => { dailyDone = true; updateProgress(); return t; }),
+      cmPromise,
+    ]);
+
+    allRecords = parseDailyTable(dailyTable);
+
+    // If cache was stale, refresh CM silently after render
+    if (cacheStatus === 'stale') {
+      cmDone = 0; cmLoaded = false;
+      fetchAndStoreCM((done) => { cmDone = done; }).then(() => { buildAndRender(); });
+    }
+
+  } catch(e) {
+    document.getElementById('mainLoading').innerHTML =
+      `<div class="notice">⚠ Failed to load data: ${e.message}<br>
+       Check that both sheets are shared as "Anyone with the link → Viewer".</div>`;
+    return;
+  }
+
+  buildAndRender();
+}
+
+function buildAndRender() {
+  setProgress(95, 'Building gap report…', '');
+
+  const { gaps, ayLabel, ayStart, ayEnd } = buildGapData();
+  gapData = gaps;
+
+  // Total CWA events logged (from cwTag only)
+  const today = new Date(); today.setHours(0,0,0,0);
+  const ayStartYear = today.getMonth()>=3 ? today.getFullYear() : today.getFullYear()-1;
+  const _ayStart = new Date(ayStartYear,3,1);
+  const _ayEnd   = new Date(ayStartYear+1,2,31,23,59,59);
+  const totalCWA = allRecords.filter(r => hasCWA(r.cwTag, r.subject) && r.dateObj>=_ayStart && r.dateObj<=_ayEnd).length;
+
+  document.getElementById('cCWATotal').textContent = totalCWA;
+  document.getElementById('cAcYear').textContent   = ayLabel;
+  document.getElementById('cAcYearSub').textContent= `1 Apr – 31 Mar`;
+  document.getElementById('hdrCtx').textContent    =
+    `Academic Year ${ayLabel} · ${allRecords.length.toLocaleString()} daily entries loaded · ${totalCWA} CWA events (CW column only)`;
+
+  setProgress(100, '', '');
+  document.getElementById('mainLoading').style.display = 'none';
+  document.getElementById('gapPanel').style.display    = 'block';
+
+  renderGapPanel();
+}
+
+async function reloadAll() {
+  localStorage.removeItem(CM_CACHE_KEY);
+  cmLoaded = false; cmStore = {}; allRecords = []; gapData = [];
+  gapFiltType=''; gapFiltSchool=''; gapFiltClass=''; gapFiltSubject='';
+  init();
+}
+
+init();
+</script>
+</body>
+</html>
