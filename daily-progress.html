@@ -1855,7 +1855,7 @@ function _renderMissingFromAllocation(panel, checkDate, allocation) {
   let html = `<div class="miss-lookback">
     <span>📅 Checking date: <strong>${checkDate}</strong></span>
     <span style="color:var(--border)">|</span>
-    <span>Source: <strong>Teacher Allocation Sheet</strong> · ${allocFiltered.length} expected daily submissions</span>
+    <span>Source: <a href="https://docs.google.com/spreadsheets/d/${ALLOCATION_SHEET_ID}/edit" target="_blank" rel="noopener" style="color:var(--red);font-weight:700;text-decoration:none">Teacher Allocation Sheet ↗</a> · ${allocFiltered.length} expected daily submissions</span>
     <span style="color:var(--border)">|</span>
     <span style="color:var(--red);font-weight:700">Missing: ${missing.length}</span>
     <span style="margin-left:auto">
