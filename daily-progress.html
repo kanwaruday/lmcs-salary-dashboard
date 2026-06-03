@@ -848,8 +848,12 @@ async function loadCourseMapping(forceRefresh = false) {
 /* ═══════════════════════════════════════════════════════════
    ANALYSIS HELPERS
 ═══════════════════════════════════════════════════════════ */
+/* Use local calendar date, not UTC — avoids off-by-one for IST (UTC+5:30) */
+function localDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 function todayStr() {
-  return new Date().toISOString().slice(0,10);
+  return localDateStr(new Date());
 }
 
 function filtered(records) {
@@ -1469,7 +1473,7 @@ function renderWeekly() {
     const d = new Date(anchor); d.setDate(d.getDate()-i);
     days.push({
       date:d,
-      dateStr:d.toISOString().slice(0,10),
+      dateStr:localDateStr(d),
       label:d.toLocaleDateString('en-IN',{weekday:'short'}),
       dayNum:d.getDate(),
       month:d.toLocaleDateString('en-IN',{month:'short'}),
@@ -1568,7 +1572,7 @@ function renderCompliance() {
   // Anchor to most recent date in data, not today's calendar date
   const dateDates = [...new Set(allRecords.map(r => r.dateStr))].sort().reverse();
   const today = dateDates[0] || todayStr();
-  const yesterday = dateDates[1] || new Date(Date.now()-86400000).toISOString().slice(0,10);
+  const yesterday = dateDates[1] || localDateStr(new Date(Date.now()-86400000));
 
   const cards = CM_SCHOOLS.map((school, idx) => {
     const schoolRecs = allRecords.filter(r => r.lmsIdx === idx);
@@ -1590,7 +1594,7 @@ function renderCompliance() {
       : `⚠ ${daysDiff} days since last upload`;
 
     const todayCount  = schoolRecs.filter(r=>r.dateStr===today).length;
-    const weekCount   = schoolRecs.filter(r=>r.dateStr>=new Date(Date.now()-7*86400000).toISOString().slice(0,10)).length;
+    const weekCount   = schoolRecs.filter(r=>r.dateStr>=localDateStr(new Date(Date.now()-7*86400000))).length;
     const teachers    = [...new Set(schoolRecs.filter(r=>r.dateStr===lastDate).map(r=>r.teacher))];
 
     return `<div class="comp-card ${cls}">
@@ -1614,7 +1618,7 @@ function renderUploaderTable() {
   // 7-day window anchored to most recent data date
   const latestDates = [...new Set(allRecords.map(r => r.dateStr))].sort().reverse();
   const anchor = latestDates[0] || todayStr();
-  const weekStart = new Date(new Date(anchor) - 6*86400000).toISOString().slice(0,10);
+  const weekStart = localDateStr(new Date(new Date(anchor) - 6*86400000));
   const weekRecs  = allRecords.filter(r => r.dateStr >= weekStart);
 
   // Group by teacher+school+class
@@ -1658,7 +1662,7 @@ function renderMissing() {
   const checkDate = activeDateTo || activeDateFrom || [...new Set(allRecords.map(r => r.dateStr))].sort().reverse()[0] || todayStr();
 
   // Look-back window: 30 calendar days before checkDate (school days only)
-  const lookbackStart = new Date(new Date(checkDate) - 30 * 86400000).toISOString().slice(0, 10);
+  const lookbackStart = localDateStr(new Date(new Date(checkDate) - 30 * 86400000));
   const lookbackRecs  = allRecords.filter(r => r.dateStr >= lookbackStart && r.dateStr < checkDate);
 
   if (!lookbackRecs.length) {
@@ -1860,13 +1864,13 @@ function setQuickDate(which) {
     document.getElementById('qToday').classList.add('active');
   } else if (which === 'yesterday') {
     const y = new Date(today); y.setDate(y.getDate() - 1);
-    activeDateFrom = activeDateTo = y.toISOString().slice(0, 10);
+    activeDateFrom = activeDateTo = localDateStr(y);
     document.getElementById('qYest').classList.add('active');
   } else if (which === 'week') {
     // Monday of current week → today
     const dow = today.getDay(); // 0=Sun
     const mon = new Date(today); mon.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
-    activeDateFrom = mon.toISOString().slice(0, 10);
+    activeDateFrom = localDateStr(mon);
     activeDateTo   = todayStr();
     document.getElementById('qWeek').classList.add('active');
   }
