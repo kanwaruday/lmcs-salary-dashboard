@@ -152,14 +152,16 @@ footer{text-align:center;font-size:.78rem;color:var(--gray);padding:2rem;border-
   <div class="topbar-left">
     <div class="topbar-logo">LM</div>
     <div>
-      <div class="topbar-title">Course Mapping — Admin Panel</div>
-      <div class="topbar-sub">Configure schools, class targets, and progress thresholds · Session 2026-27</div>
+      <div class="topbar-title">LMCS — Admin Panel</div>
+      <div class="topbar-sub">Configure schools, course mapping, daily tracking, allocation &amp; thresholds · Session 2026-27</div>
     </div>
   </div>
   <div class="topbar-right">
     <span class="last-saved" id="lastSavedLabel"></span>
     <span class="unsaved-dot" id="unsavedDot" title="Unsaved changes"></span>
-    <a href="course-mapping-progress.html" class="btn-back">← Dashboard</a>
+    <a href="daily-progress.html" class="btn-back">📋 Daily</a>
+    <a href="cwa-gap-report.html" class="btn-back">⚠ CWA Gaps</a>
+    <a href="course-mapping-progress.html" class="btn-back">📊 CM Progress</a>
     <button class="btn-save" onclick="saveAll()" id="saveBtn">💾 Save All Changes</button>
   </div>
 </div>
@@ -181,6 +183,7 @@ footer{text-align:center;font-size:.78rem;color:var(--gray);padding:2rem;border-
       <li><a href="#thresholds" class="nav-link">⚙ Progress Thresholds</a></li>
       <li><a href="#cwa-subjects" class="nav-link">🚫 CWA-Exempt Subjects</a></li>
       <li><a href="#daily-proxy" class="nav-link">🔗 Daily Sheet &amp; Proxy</a></li>
+      <li><a href="#allocation" class="nav-link">👩‍🏫 Teacher Allocation</a></li>
     </ul>
     <div class="section-label">Tools</div>
     <ul>
@@ -337,6 +340,57 @@ footer{text-align:center;font-size:.78rem;color:var(--gray);padding:2rem;border-
       </div>
     </section>
 
+    <!-- ── TEACHER ALLOCATION ── -->
+    <section id="allocation">
+      <h2>Teacher Allocation Sheet</h2>
+      <p class="section-desc">
+        The allocation sheet is the <strong>source of truth</strong> for the Missing Uploads report.
+        It defines which teacher is expected to upload for each school × class × subject combination daily.
+        Rows with <code>Daily Submission = N</code> or <code>Active = N</code> are ignored.
+        Rows with no teacher name are still flagged — they represent subjects with no assigned teacher yet.
+      </p>
+      <div class="callout callout-blue">
+        <strong>Sheet requirements</strong>
+        The sheet must have a tab named <strong>Allocation</strong> with columns in this order:
+        School · School Code (LMS 1–6) · Class · Subject · Teacher · Active (Y/N) · Daily Submission (Y/N).
+        Share the sheet as "Anyone with the link → Viewer".
+        The portal caches the allocation for 1 hour — click <strong>Clear Cache</strong> after making changes to the sheet.
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="inp-alloc-sheet">Allocation Google Sheet ID</label>
+        <div class="field-row">
+          <input type="text" id="inp-alloc-sheet" class="mono" placeholder="Google Sheet ID"
+            style="max-width:520px" oninput="updateAllocLink();markDirty()">
+          <a id="alloc-sheet-link" href="#" target="_blank" rel="noopener" class="open-link" style="display:none">↗ Open Sheet</a>
+        </div>
+        <p class="field-note">Found in the sheet URL: docs.google.com/spreadsheets/d/<strong>SHEET_ID</strong>/edit</p>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Allocation Cache</label>
+        <div class="field-row" style="gap:10px;flex-wrap:wrap;align-items:center">
+          <button class="btn btn-outline btn-sm" onclick="testAllocSheet()">🔍 Test Connection</button>
+          <button class="btn btn-outline btn-sm" onclick="clearAllocCache()">🗑 Clear Cache</button>
+          <span id="alloc-status" style="font-size:.8rem;color:var(--gray)"></span>
+        </div>
+        <p class="field-note">
+          The allocation data is cached in the browser for 1 hour. Clear the cache after editing the sheet to see changes immediately in the portal.
+        </p>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Other Caches</label>
+        <div class="field-row" style="gap:10px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick="clearCmCache()">🗑 Clear Course Mapping Cache</button>
+          <button class="btn btn-outline btn-sm" onclick="clearAllCaches()">🗑 Clear All Caches</button>
+        </div>
+        <p class="field-note">
+          Course Mapping data is cached separately (TTL set above). Clear it if you've updated a school's Course Mapping sheet and want the portal to reflect changes immediately.
+        </p>
+      </div>
+    </section>
+
     <!-- ── IMPORT / EXPORT ── -->
     <section id="import-export">
       <h2>Import / Export</h2>
@@ -421,6 +475,7 @@ const DEFAULT_CONFIG = {
   dailySheetId: '1z5hzpMRHMru6ulpYs2lsGZr7quAywwpQ_zySa3rvGUA',
   proxyUrl: 'https://script.google.com/macros/s/AKfycbyYk0uDnp-PHdUDdOh5-KfD2xK1ahYCQ_vt7SJigQMhSA3DSs5t5v_q4tnseoZKw3_L/exec',
   cacheTtlMinutes: 30,
+  allocationSheetId: '1Z4-tAwHePJfOQygOA948RyB75mA9TUE9S_VUfoydla4',
 };
 
 /* ════════════════════════════════════════════════════
@@ -440,6 +495,7 @@ function loadConfig() {
         dailySheetId:      p.dailySheetId      || DEFAULT_CONFIG.dailySheetId,
         proxyUrl:          p.proxyUrl          ?? DEFAULT_CONFIG.proxyUrl,
         cacheTtlMinutes:   p.cacheTtlMinutes   || DEFAULT_CONFIG.cacheTtlMinutes,
+        allocationSheetId: p.allocationSheetId || DEFAULT_CONFIG.allocationSheetId,
       };
     }
   } catch(e) {}
@@ -489,11 +545,12 @@ function collectConfig() {
   };
 
   const cwaExemptSubjects = [...document.querySelectorAll('.exempt-chip')].map(c => c.dataset.subject);
-  const dailySheetId    = document.getElementById('inp-daily-sheet')?.value.trim() || DEFAULT_CONFIG.dailySheetId;
-  const proxyUrl        = document.getElementById('inp-proxy-url')?.value.trim()   || '';
-  const cacheTtlMinutes = parseInt(document.getElementById('inp-cache-ttl')?.value) || 30;
+  const dailySheetId      = document.getElementById('inp-daily-sheet')?.value.trim()      || DEFAULT_CONFIG.dailySheetId;
+  const proxyUrl          = document.getElementById('inp-proxy-url')?.value.trim()         || '';
+  const cacheTtlMinutes   = parseInt(document.getElementById('inp-cache-ttl')?.value)      || 30;
+  const allocationSheetId = document.getElementById('inp-alloc-sheet')?.value.trim()       || DEFAULT_CONFIG.allocationSheetId;
 
-  return { version:1, schools, classes, thresholds, cwaExemptSubjects, dailySheetId, proxyUrl, cacheTtlMinutes };
+  return { version:1, schools, classes, thresholds, cwaExemptSubjects, dailySheetId, proxyUrl, cacheTtlMinutes, allocationSheetId };
 }
 
 function validate(config) {
@@ -790,6 +847,84 @@ function updateProxyLink() {
 }
 
 /* ════════════════════════════════════════════════════
+   RENDER — Teacher Allocation
+════════════════════════════════════════════════════ */
+function buildAllocation() {
+  const id = cfg.allocationSheetId || '';
+  const inp = document.getElementById('inp-alloc-sheet');
+  if (inp) inp.value = id;
+  updateAllocLink();
+  updateAllocCacheStatus();
+}
+
+function updateAllocLink() {
+  const id   = document.getElementById('inp-alloc-sheet')?.value.trim();
+  const link = document.getElementById('alloc-sheet-link');
+  if (!link) return;
+  if (id) { link.href = `https://docs.google.com/spreadsheets/d/${id}/edit`; link.style.display = ''; }
+  else      link.style.display = 'none';
+}
+
+function updateAllocCacheStatus() {
+  const statusEl = document.getElementById('alloc-status');
+  if (!statusEl) return;
+  try {
+    const cached = localStorage.getItem('lmcs_allocation_v1');
+    if (cached) {
+      const { ts, data } = JSON.parse(cached);
+      const ageMin = Math.round((Date.now() - ts) / 60000);
+      const fresh  = ageMin < 60;
+      statusEl.textContent = `Cache: ${data?.length || 0} rows · ${fresh ? `fresh (${ageMin}m ago)` : `stale (${ageMin}m ago)`}`;
+      statusEl.style.color = fresh ? '#15803d' : '#d97706';
+    } else {
+      statusEl.textContent = 'No cache — will be loaded fresh when the portal opens';
+      statusEl.style.color = '#9ca3af';
+    }
+  } catch(e) {
+    statusEl.textContent = 'Cache unreadable';
+    statusEl.style.color = '#d97706';
+  }
+}
+
+async function testAllocSheet() {
+  const id  = document.getElementById('inp-alloc-sheet')?.value.trim();
+  const statusEl = document.getElementById('alloc-status');
+  if (!id) { showToast('Enter a Sheet ID first', 'error'); return; }
+  if (statusEl) { statusEl.textContent = 'Testing…'; statusEl.style.color = '#9ca3af'; }
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:json&sheet=Allocation&range=A2:G5&_=${Date.now()}`;
+    const res = await fetch(url, {cache:'no-store'});
+    const text = await res.text();
+    const d = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}')+1));
+    if (d.status === 'error') throw new Error(d.errors?.[0]?.detailed_message || 'Sheet error');
+    const rows = (d.table?.rows?.length || 0) - 1; // subtract header row
+    showToast(`✓ Sheet reachable — Allocation tab found`, 'success');
+    if (statusEl) { statusEl.textContent = `✓ Connected (${rows} sample rows visible)`; statusEl.style.color = '#15803d'; }
+  } catch(e) {
+    showToast(`✗ Could not reach sheet: ${e.message}`, 'error');
+    if (statusEl) { statusEl.textContent = `✗ ${e.message}`; statusEl.style.color = '#CE0000'; }
+  }
+}
+
+function clearAllocCache() {
+  localStorage.removeItem('lmcs_allocation_v1');
+  updateAllocCacheStatus();
+  showToast('✓ Allocation cache cleared — next portal load will fetch fresh data', 'success');
+}
+
+function clearCmCache() {
+  localStorage.removeItem('lmcs_cm_store_v2');
+  showToast('✓ Course Mapping cache cleared', 'success');
+}
+
+function clearAllCaches() {
+  localStorage.removeItem('lmcs_allocation_v1');
+  localStorage.removeItem('lmcs_cm_store_v2');
+  showToast('✓ All caches cleared — portal will fetch fresh data on next load', 'success');
+  updateAllocCacheStatus();
+}
+
+/* ════════════════════════════════════════════════════
    IMPORT / EXPORT
 ════════════════════════════════════════════════════ */
 function doExport() {
@@ -881,6 +1016,7 @@ function buildForms() {
   buildThresholds();
   buildCwaSubjects();
   buildDailyProxy();
+  buildAllocation();
 }
 
 buildForms();

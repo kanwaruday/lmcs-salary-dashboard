@@ -390,9 +390,10 @@ const DAILY_SHEET_ID = _earlyCfg?.dailySheetId
   ?? '1z5hzpMRHMru6ulpYs2lsGZr7quAywwpQ_zySa3rvGUA';
 
 // Teacher Allocation Sheet — source of truth for Missing Uploads
-const ALLOCATION_SHEET_ID = '1Z4-tAwHePJfOQygOA948RyB75mA9TUE9S_VUfoydla4';
+// ID is configurable via Admin Panel; falls back to the default sheet
+const ALLOCATION_SHEET_ID = _earlyCfg?.allocationSheetId ?? '1Z4-tAwHePJfOQygOA948RyB75mA9TUE9S_VUfoydla4';
 const ALLOC_CACHE_KEY = 'lmcs_allocation_v1';
-const ALLOC_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+const ALLOC_CACHE_TTL = 60 * 60 * 1000; // 1 hour (independent of CM cache TTL)
 
 const CM_CACHE_TTL = ((_earlyCfg?.cacheTtlMinutes) || 30) * 60 * 1000;
 
