@@ -552,16 +552,30 @@ let activeSubject = '';
 ═══════════════════════════════════════════════════════════ */
 function parseDateStr(str) {
   if (!str) return null;
-  // Explicit parser for "M/D/YYYY H:MM:SS AM/PM" (Google Sheets export format)
-  const m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)$/i);
-  if (m) {
-    let [, mo, da, yr, hr, mi, se, ap] = m;
+
+  // gviz Date() format — also handled in parseDailyTable directly, but kept here as safety net
+  const gm = str.match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)/);
+  if (gm) return new Date(+gm[1], +gm[2], +gm[3], +(gm[4]||0), +(gm[5]||0), +(gm[6]||0));
+
+  // "M/D/YYYY H:MM:SS AM/PM" — original Google Sheets 12-hour format
+  const m12 = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[,\s]+(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)$/i);
+  if (m12) {
+    let [, mo, da, yr, hr, mi, se, ap] = m12;
     mo=+mo; da=+da; yr=+yr; hr=+hr; mi=+mi; se=+se;
     if (ap.toUpperCase() === 'PM' && hr !== 12) hr += 12;
     if (ap.toUpperCase() === 'AM' && hr === 12) hr = 0;
     return new Date(yr, mo - 1, da, hr, mi, se);
   }
-  // Fallback
+
+  // "M/D/YYYY H:MM:SS" — 24-hour format
+  const m24 = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[,\s]+(\d{1,2}):(\d{2}):(\d{2})$/);
+  if (m24) return new Date(+m24[3], +m24[1]-1, +m24[2], +m24[4], +m24[5], +m24[6]);
+
+  // "M/D/YYYY" — date only
+  const md = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (md) return new Date(+md[3], +md[1]-1, +md[2]);
+
+  // JavaScript Date fallback
   const d = new Date(str);
   return isNaN(d.getTime()) ? null : d;
 }
@@ -573,19 +587,28 @@ function parseDateStr(str) {
 ═══════════════════════════════════════════════════════════ */
 async function fetchDailySheet() {
   const year = new Date().getFullYear();
-  // Filter for entries containing the current year in the date column (text match).
-  // LIMIT 100000 covers a full academic year at 256 entries/day (~200 school days = ~51200 rows).
-  // We do NOT use ORDER BY here because the date is stored as text and
-  // lexicographic sorting ("9/…" > "6/…") would return wrong rows.
-  const query = encodeURIComponent(`SELECT * WHERE B CONTAINS '/${year}' LIMIT 100000`);
-  const url = `https://docs.google.com/spreadsheets/d/${DAILY_SHEET_ID}/gviz/tq?tqx=out:json&tq=${query}`;
-  const res  = await fetch(url, {cache:'no-cache'});
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const text = await res.text();
-  const s = text.indexOf('{'), e = text.lastIndexOf('}');
-  const data = JSON.parse(text.slice(s, e+1));
-  if (data.status === 'error') throw new Error(data.errors?.[0]?.detailed_message || 'Error');
-  return data.table;
+
+  // Try gviz year() function first — works correctly for datetime columns regardless of locale.
+  // Fall back to CONTAINS (for text-typed date columns) if year() errors or returns 0 rows.
+  // We avoid ORDER BY because lexicographic sort on M/D/YYYY text causes wrong row ordering.
+  async function tryQuery(tq) {
+    const url = `https://docs.google.com/spreadsheets/d/${DAILY_SHEET_ID}/gviz/tq?tqx=out:json&tq=${encodeURIComponent(tq)}`;
+    const res = await fetch(url, {cache:'no-cache'});
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    const s = text.indexOf('{'), e = text.lastIndexOf('}');
+    const data = JSON.parse(text.slice(s, e+1));
+    if (data.status === 'error') return null; // signal to fall back
+    return data.table;
+  }
+
+  let table = await tryQuery(`SELECT * WHERE year(B) = ${year} LIMIT 100000`);
+  if (!table || !table.rows?.length) {
+    // Fall back: text-based date column (e.g. "6/1/2026 10:30:00 AM")
+    table = await tryQuery(`SELECT * WHERE B CONTAINS '/${year}' LIMIT 100000`);
+  }
+  if (!table) throw new Error('Could not fetch daily sheet data');
+  return table;
 }
 
 function parseDailyTable(table) {
@@ -599,13 +622,23 @@ function parseDailyTable(table) {
       const c = row.c?.[i];
       return (!c || c.v == null) ? '' : String(c.f ?? c.v).trim();
     };
-    const school  = cell(0);
-    const dateRaw = cell(1);
-    const lmsIdx  = dailySchoolToLMS(school);
+    const school = cell(0);
+    const lmsIdx = dailySchoolToLMS(school);
     if (lmsIdx === null) continue; // skip demo/unknown schools
 
-    // Use explicit parser for M/D/YYYY H:MM:SS AM/PM format
-    const dateObj = parseDateStr(dateRaw);
+    // Parse date from c.v first (gviz Date format: "Date(year,month0,day,h,m,s)").
+    // This is locale-independent and avoids DD/MM vs MM/DD ambiguity in c.f.
+    const dateCell = row.c?.[1];
+    let dateObj = null;
+    if (dateCell?.v != null) {
+      const gm = String(dateCell.v).match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)/);
+      if (gm) {
+        // gviz month is 0-indexed
+        dateObj = new Date(+gm[1], +gm[2], +gm[3], +(gm[4]||0), +(gm[5]||0), +(gm[6]||0));
+      }
+    }
+    // Fall back to formatted string (handles text-typed date columns)
+    if (!dateObj) dateObj = parseDateStr(String(dateCell?.f ?? dateCell?.v ?? '').trim());
     if (!dateObj) continue;
 
     const classStr    = cell(3);
