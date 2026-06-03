@@ -895,35 +895,65 @@ function renderFeed() {
     return;
   }
 
+  const NO_CLASS_KEY = '__no_class__'; // sentinel — shown last with amber badge
+
   // Group: lmsIdx → classMapped → records
   const bySchool = {};
   recs.forEach(r => {
     const k = r.lmsIdx;
-    const c = r.classMapped || r.classRaw || '?';
+    const c = r.classMapped || (r.classRaw ? r.classRaw : NO_CLASS_KEY);
     if (!bySchool[k]) bySchool[k] = {};
     if (!bySchool[k][c]) bySchool[k][c] = [];
     bySchool[k][c].push(r);
   });
 
+  // Count total entries with no class across entire filtered set
+  const noClassTotal = recs.filter(r => !r.classMapped && !r.classRaw).length;
+
   let html = '';
+
+  // Warning banner if any entries are missing class info
+  if (noClassTotal > 0) {
+    const teachers = [...new Set(recs.filter(r=>!r.classMapped&&!r.classRaw).map(r=>r.teacher))].slice(0,5).join(', ');
+    html += `<div style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:8px 14px;font-size:11px;border-radius:6px;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span style="font-size:15px">⚠️</span>
+      <strong>${noClassTotal} entr${noClassTotal===1?'y':'ies'} are missing Class &amp; Section</strong> — these were submitted without filling in those fields.
+      Teachers: ${esc(teachers)}${recs.filter(r=>!r.classMapped&&!r.classRaw).length > 5 ? '…' : ''}.
+      <span style="color:#b45309">Ask the teachers to re-submit or edit their form entries.</span>
+    </div>`;
+  }
+
   Object.keys(bySchool).sort((a,b)=>+a-+b).forEach(lmsIdx => {
     const classes = bySchool[lmsIdx];
     const total   = Object.values(classes).flat().length;
     const cwaCount= Object.values(classes).flat().filter(r=>hasCWA(r.cwTag, r.subject)).length;
+    const noClassCount = (classes[NO_CLASS_KEY]||[]).length;
 
     html += `<div class="school-group">
       <div class="school-group-hdr">
         <span class="school-group-name">🏫 ${lmsName(+lmsIdx)}</span>
-        <span class="school-group-meta">${total} entries · ${cwaCount > 0 ? `<span style="color:#15803d;font-weight:700">${cwaCount} CWA</span>` : '0 CWA'}</span>
+        <span class="school-group-meta">${total} entries · ${cwaCount > 0 ? `<span style="color:#15803d;font-weight:700">${cwaCount} CWA</span>` : '0 CWA'}${noClassCount ? ` · <span style="color:#d97706;font-weight:700">⚠ ${noClassCount} no class</span>` : ''}</span>
       </div>`;
 
-    Object.keys(classes).sort().forEach(cls => {
+    // Sort classes naturally; push NO_CLASS_KEY to the very end
+    Object.keys(classes)
+      .sort((a,b) => {
+        if (a === NO_CLASS_KEY) return 1;
+        if (b === NO_CLASS_KEY) return -1;
+        return a.localeCompare(b, 'en', {numeric:true});
+      })
+      .forEach(cls => {
+      const isNoClass = cls === NO_CLASS_KEY;
       const entries = classes[cls].sort((a,b)=>b.dateObj-a.dateObj);
-      html += `<div class="class-group">
+      const badgeStyle = isNoClass
+        ? 'background:#fef3c7;color:#b45309;border-color:#fde68a'
+        : 'background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)';
+      const badgeLabel = isNoClass ? '⚠ Class Not Specified' : cls;
+      html += `<div class="class-group"${isNoClass?' style="border-color:#fde68a"':''}>
         <table class="entry-table">
           <thead>
             <tr class="grp-hdr">
-              <th class="th-meta" colspan="4"><span class="class-badge" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)">${cls}</span></th>
+              <th class="th-meta" colspan="4"${isNoClass?' style="background:#d97706"':''}><span class="class-badge" style="${badgeStyle}">${badgeLabel}</span>${isNoClass?` <span style="font-size:9px;color:rgba(255,255,255,.75);font-weight:400;margin-left:6px">Class &amp; Section were not filled in the form</span>`:''}</th>
               <th class="th-cw" colspan="3">📖 Classwork</th>
               <th class="th-hw" colspan="3">📝 Homework</th>
               <th class="th-meta">Time</th>
@@ -960,9 +990,9 @@ function renderFeed() {
         </tr>`;
       });
       html += `</tbody></table></div>`;
-    });
+    }); // end classes forEach
     html += `</div>`;
-  });
+  }); // end schools forEach
 
   panel.innerHTML = html;
 }
