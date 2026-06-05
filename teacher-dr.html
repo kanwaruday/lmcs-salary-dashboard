@@ -42,6 +42,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* Filters */
 .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
 select.f{padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:.85rem;background:#fff;color:#2d3748;cursor:pointer}
+
+/* Principal tabs (scheduler) */
+.ptab-bar{display:flex;gap:0;overflow-x:auto;margin-bottom:20px;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.ptab{flex:1;min-width:120px;padding:14px 12px;border:none;background:#fff;cursor:pointer;text-align:center;border-right:1px solid #e2e8f0;transition:all .18s;position:relative}
+.ptab:last-child{border-right:none}
+.ptab .ptab-school{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#a0aec0;margin-bottom:3px}
+.ptab .ptab-principal{font-size:.88rem;font-weight:700;color:#4a5568}
+.ptab .ptab-counts{font-size:.72rem;color:#a0aec0;margin-top:4px}
+.ptab.active{background:#1e3a5f}
+.ptab.active .ptab-school{color:#90cdf4}
+.ptab.active .ptab-principal{color:#fff}
+.ptab.active .ptab-counts{color:#90cdf4}
+.ptab.active::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:#38bdf8}
+.ptab:hover:not(.active){background:#f7fafc}
 .toggle-grp{display:flex;border:1px solid #1e3a5f;border-radius:20px;overflow:hidden}
 .tgl{padding:6px 16px;border:none;background:#fff;color:#1e3a5f;font-size:.82rem;cursor:pointer;transition:all .15s;font-weight:500}
 .tgl.active{background:#1e3a5f;color:#fff}
@@ -139,15 +153,9 @@ tr:hover td{background:#f7fafc}
 
   <!-- ── VIEW 1: SCHEDULER ─────────────────────────────────── -->
   <div id="view-scheduler" class="view">
-    <div class="filters">
-      <select class="f" id="schFilter" onchange="renderScheduler()">
-        <option value="ALL">All Schools</option>
-        <option value="LMS 1">LMS 1 — Dhalpur (Nidhi Kant)</option>
-        <option value="LMS 2">LMS 2 — Kelheli (Arti Sharma)</option>
-        <option value="LMS 3">LMS 3 — Dunkhra (Suresh Prasher)</option>
-        <option value="LMS 4">LMS 4 — Ner Chowk (Nisha)</option>
-      </select>
-      <span style="font-size:.83rem;color:#718096">Showing requirement for <strong id="schedMonthLbl"></strong></span>
+    <div id="ptabBar" class="ptab-bar"></div>
+    <div style="font-size:.82rem;color:#718096;margin-bottom:16px">
+      Showing evaluations required for <strong id="schedMonthLbl"></strong> &nbsp;·&nbsp; Minimum 2 per teacher
     </div>
     <div class="g3" id="schedulerCols"></div>
   </div>
@@ -408,8 +416,62 @@ function initAllViews() {
 // ════════════════════════════════════════════════════════════
 // VIEW 1 — SCHEDULER
 // ════════════════════════════════════════════════════════════
+let activeSchedSchool = 'LMS 1';
+
+function buildPrincipalTabs() {
+  const now    = new Date();
+  const mStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const mEnd   = new Date(now.getFullYear(), now.getMonth()+1, 0, 23,59,59);
+  const mEvals = DATA.evals.filter(e=>e.date>=mStart&&e.date<=mEnd);
+
+  // Count per school
+  const done={}, total={};
+  const allKeys=new Set();
+  DATA.teachers.forEach(t=>allKeys.add(`${t.school}::${t.teacher}`));
+  DATA.evals.forEach(e=>allKeys.add(`${e.school}::${e.teacher}`));
+  const counts={};
+  mEvals.forEach(e=>{ const k=`${e.school}::${e.teacher}`; counts[k]=(counts[k]||0)+1; });
+
+  Object.keys(CONFIG.SCHOOLS).forEach(s=>{
+    const sk=[...allKeys].filter(k=>k.startsWith(s+'::'));
+    total[s]=sk.length;
+    done[s]=sk.filter(k=>(counts[k]||0)>=2).length;
+  });
+
+  // Tabs: one per school + All
+  const tabs = [
+    { key:'ALL', school:'All Schools', principal:'Overview', color:'#718096' },
+    ...Object.entries(CONFIG.SCHOOLS).map(([k,v])=>({ key:k, school:v.name, principal:v.principal, color:v.color }))
+  ];
+
+  document.getElementById('ptabBar').innerHTML = tabs.map(t=>{
+    const isAll = t.key==='ALL';
+    const d = isAll ? Object.values(done).reduce((a,b)=>a+b,0) : (done[t.key]||0);
+    const tot = isAll ? Object.values(total).reduce((a,b)=>a+b,0) : (total[t.key]||0);
+    const pct = tot ? Math.round(d/tot*100) : 0;
+    const dotColor = pct>=80?'#276749':pct>=50?'#dd6b20':'#c53030';
+    return `
+      <button class="ptab${activeSchedSchool===t.key?' active':''}" onclick="setSchedSchool('${t.key}',this)">
+        <div class="ptab-school">${isAll?'📋 All':'🏫 '+t.key}</div>
+        <div class="ptab-principal">${t.principal}</div>
+        <div class="ptab-counts" style="color:${activeSchedSchool===t.key?'#90cdf4':dotColor}">
+          ${d}/${tot} done · ${pct}%
+        </div>
+      </button>`;
+  }).join('');
+}
+
+function setSchedSchool(school, btn) {
+  activeSchedSchool = school;
+  document.querySelectorAll('.ptab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderScheduler();
+}
+
 function renderScheduler() {
-  const school   = document.getElementById('schFilter').value;
+  buildPrincipalTabs();
+
+  const school   = activeSchedSchool;
   const now      = new Date();
   const mStart   = new Date(now.getFullYear(), now.getMonth(), 1);
   const mEnd     = new Date(now.getFullYear(), now.getMonth()+1, 0, 23,59,59);
@@ -419,7 +481,6 @@ function renderScheduler() {
 
   const monthEvals = DATA.evals.filter(e=>e.date>=mStart&&e.date<=mEnd);
 
-  // Count & last-date per teacher
   const counts={}, lastDt={};
   monthEvals.forEach(e=>{
     const k=`${e.school}::${e.teacher}`;
@@ -430,7 +491,6 @@ function renderScheduler() {
     if(!lastDt[k]||e.date>lastDt[k]) lastDt[k]=e.date;
   });
 
-  // Collect unique teachers
   const keys=new Set();
   DATA.teachers.forEach(t=>{ if(school==='ALL'||t.school===school) keys.add(`${t.school}::${t.teacher}`); });
   DATA.evals.forEach(e=>{   if(school==='ALL'||e.school===school)  keys.add(`${e.school}::${e.teacher}`); });
