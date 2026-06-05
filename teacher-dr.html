@@ -3,226 +3,299 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LMS Teacher Evaluation Dashboard</title>
+<title>LMCS — Teacher DR Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f4f8;color:#2d3748;min-height:100vh}
+:root{--red:#CE0000;--red-h:#a50000;--red-lt:rgba(206,0,0,.07);--dark:#1a1a1a;--gray:#555;--lgray:#f5f5f5;--border:#ddd;--white:#fff}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(--dark);min-height:100vh;font-size:13px;line-height:1.6;display:flex;flex-direction:column}
 
-/* Header */
-.header{background:linear-gradient(135deg,#1e3a5f,#2471a3);color:#fff;padding:14px 24px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
-.logo{width:42px;height:42px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;color:#1e3a5f;font-size:1rem;flex-shrink:0}
-.header h1{font-size:1.25rem;font-weight:700;line-height:1.2}
-.header small{font-size:.78rem;opacity:.75;display:block;margin-top:2px}
+/* ── HEADER ── */
+.hdr{background:var(--red);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;border-bottom:1px solid var(--red-h)}
+.hdr-brand{display:flex;align-items:center;gap:10px}
+.hdr-logo{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:4px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;flex-shrink:0}
+.hdr h1{font-size:14px;font-weight:700;letter-spacing:.3px}
+.hdr p{font-size:9.5px;opacity:.75;margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.hdr-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.92);padding:5px 12px;border-radius:4px;font-size:11px;font-weight:600;text-decoration:none;cursor:pointer;transition:background .15s;white-space:nowrap}
+.hdr-btn:hover{background:rgba(255,255,255,.22)}
 
-/* Nav */
-.nav{background:#fff;border-bottom:1px solid #e2e8f0;display:flex;overflow-x:auto;position:sticky;top:0;z-index:10}
-.nav-btn{padding:13px 18px;border:none;background:none;cursor:pointer;font-size:.85rem;font-weight:500;color:#718096;border-bottom:3px solid transparent;white-space:nowrap;transition:all .15s}
-.nav-btn.active,.nav-btn:hover{color:#1e3a5f}
-.nav-btn.active{border-bottom-color:#1e3a5f}
+/* ── CHIPS STRIP ── */
+.chips-strip{background:var(--lgray);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;gap:8px;overflow-x:auto;align-items:stretch;flex-shrink:0}
+.chip{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:6px 14px;display:flex;flex-direction:column;gap:1px;min-width:110px;flex-shrink:0}
+.chip.alert{border-color:#fecaca;background:#fff8f8}.chip.warn{border-color:#fde68a;background:#fffbeb}.chip.ok{border-color:#bbf7d0;background:#f0fdf4}
+.chip-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:var(--gray);font-weight:700}
+.chip-val{font-size:18px;font-weight:700;line-height:1.1}
+.chip-val.red{color:var(--red)}.chip-val.amber{color:#d97706}.chip-val.green{color:#16a34a}.chip-val.blue{color:#1d4ed8}
+.chip-sub{font-size:9px;color:#9ca3af;margin-top:1px}
 
-/* Content */
-.content{max-width:1200px;margin:0 auto;padding:22px 16px}
+/* ── TABS BAR ── */
+.tabs-bar{background:var(--white);border-bottom:1px solid var(--border);display:flex;padding:0 24px;gap:2px;flex-shrink:0;overflow-x:auto}
+.tab-btn{padding:10px 18px;border:none;background:none;color:var(--gray);cursor:pointer;font-family:'Segoe UI',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;border-bottom:2px solid transparent;transition:all .15s;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.tab-btn:hover{color:var(--red)}.tab-btn.active{color:var(--red);border-bottom-color:var(--red)}
+.tab-badge{font-size:8.5px;font-weight:800;padding:1px 5px;border-radius:20px;background:#fee2e2;color:var(--red)}
+.tab-badge.amber{background:#fef3c7;color:#b45309}
 
-/* Cards */
-.card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:16px}
-.card-title{font-size:.9rem;font-weight:700;color:#1e3a5f;margin-bottom:16px}
+/* ── APP BODY ── */
+#appBody{flex:1;overflow:auto}
+.tab-panel{display:none;padding:20px 24px;max-width:1400px;margin:0 auto}
+.tab-panel.active{display:block}
 
-/* Grid */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-@media(max-width:700px){.g2,.g3,.g4{grid-template-columns:1fr}}
-
-/* Stat cards */
-.stat{background:#fff;border-radius:12px;padding:18px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.stat-val{font-size:2rem;font-weight:800;color:#1e3a5f}
-.stat-lbl{font-size:.76rem;color:#718096;margin-top:4px}
-
-/* Filters */
-.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
-select.f{padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:.85rem;background:#fff;color:#2d3748;cursor:pointer}
-
-/* Principal tabs (scheduler) */
-.ptab-bar{display:flex;gap:0;overflow-x:auto;margin-bottom:20px;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.ptab{flex:1;min-width:120px;padding:14px 12px;border:none;background:#fff;cursor:pointer;text-align:center;border-right:1px solid #e2e8f0;transition:all .18s;position:relative}
-.ptab:last-child{border-right:none}
-.ptab .ptab-school{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#a0aec0;margin-bottom:3px}
-.ptab .ptab-principal{font-size:.88rem;font-weight:700;color:#4a5568}
-.ptab .ptab-counts{font-size:.72rem;color:#a0aec0;margin-top:4px}
-.ptab.active{background:#1e3a5f}
-.ptab.active .ptab-school{color:#90cdf4}
-.ptab.active .ptab-principal{color:#fff}
-.ptab.active .ptab-counts{color:#90cdf4}
-.ptab.active::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:#38bdf8}
-.ptab:hover:not(.active){background:#f7fafc}
-.toggle-grp{display:flex;border:1px solid #1e3a5f;border-radius:20px;overflow:hidden}
-.tgl{padding:6px 16px;border:none;background:#fff;color:#1e3a5f;font-size:.82rem;cursor:pointer;transition:all .15s;font-weight:500}
-.tgl.active{background:#1e3a5f;color:#fff}
-
-/* Score bars */
-.sr{margin-bottom:9px}
-.sr-lbl{font-size:.78rem;display:flex;justify-content:space-between;margin-bottom:3px;color:#4a5568}
-.bar{height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden}
-.fill{height:100%;border-radius:4px;transition:width .5s ease}
-
-/* Teacher items (scheduler) */
-.t-item{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #f7fafc}
-.t-item:last-child{border-bottom:none}
-.avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;color:#fff;flex-shrink:0}
-.t-name{font-weight:600;font-size:.87rem}
-.t-meta{font-size:.73rem;color:#718096;margin-top:1px}
-.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.72rem;font-weight:700}
-.b-urgent{background:#fff5f5;color:#c53030;border:1px solid #feb2b2}
-.b-due{background:#fffaf0;color:#dd6b20;border:1px solid #fbd38d}
-.b-done{background:#f0fff4;color:#276749;border:1px solid #9ae6b4}
-
-/* Compliance */
-.c-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-.c-label{width:120px;font-size:.83rem;font-weight:500;flex-shrink:0}
-.c-bar-wrap{flex:1;height:22px;background:#e2e8f0;border-radius:11px;overflow:hidden}
-.c-fill{height:100%;border-radius:11px;display:flex;align-items:center;padding:0 10px;font-size:.73rem;color:#fff;font-weight:700;transition:width .5s}
-.c-pct{width:44px;text-align:right;font-size:.85rem;font-weight:700;flex-shrink:0}
-
-/* Table */
-.tbl-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:.84rem}
-th{background:#f7fafc;padding:9px 13px;text-align:left;font-weight:600;color:#4a5568;border-bottom:2px solid #e2e8f0;white-space:nowrap}
-td{padding:9px 13px;border-bottom:1px solid #f0f4f8}
-tr:hover td{background:#f7fafc}
-
-/* Alert */
-.alert{padding:11px 15px;border-radius:8px;margin-bottom:14px;font-size:.84rem;line-height:1.5}
-.a-info{background:#ebf8ff;color:#2b6cb0;border-left:4px solid #3182ce}
-.a-warn{background:#fffaf0;color:#744210;border-left:4px solid #dd6b20}
-.a-setup{background:#f0fff4;border:1px solid #9ae6b4;border-radius:10px;padding:18px}
-.a-setup h3{color:#276749;margin-bottom:8px}
-.a-setup code{background:#c6f6d5;padding:2px 6px;border-radius:4px;font-size:.82rem}
-
-/* Loading */
-.loading{text-align:center;padding:60px;color:#718096}
-.spin{width:38px;height:38px;border:3px solid #e2e8f0;border-top-color:#1e3a5f;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px}
+/* ── LOADING ── */
+.loading-state{text-align:center;padding:60px 20px;color:var(--gray)}
+.loading-state .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* Ring chart */
-.ring-wrap{position:relative;width:130px;height:130px;margin:0 auto 10px}
+/* ── SECTION HEADING ── */
+.sec-hdr{font-size:.9rem;font-weight:700;color:var(--red);border-bottom:2px solid var(--red);padding-bottom:.3rem;margin:1.2rem 0 .75rem}
+.sec-hdr:first-child{margin-top:0}
+
+/* ── PRINCIPAL TABS (scheduler) ── */
+.ptab-bar{display:flex;overflow-x:auto;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:16px}
+.ptab{flex:1;min-width:110px;padding:10px 12px;border:none;background:var(--white);cursor:pointer;text-align:center;border-right:1px solid var(--border);transition:background .15s;position:relative}
+.ptab:last-child{border-right:none}
+.ptab .ptab-key{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:2px}
+.ptab .ptab-principal{font-size:12px;font-weight:700;color:var(--dark)}
+.ptab .ptab-counts{font-size:10px;color:#9ca3af;margin-top:3px}
+.ptab.active{background:var(--red-lt)}
+.ptab.active .ptab-key{color:var(--red)}
+.ptab.active .ptab-principal{color:var(--red)}
+.ptab.active::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--red)}
+.ptab:hover:not(.active){background:var(--lgray)}
+.sched-meta{font-size:11px;color:var(--gray);margin-bottom:14px;padding:6px 10px;background:var(--lgray);border:1px solid var(--border);border-radius:4px;display:inline-block}
+
+/* ── SCHEDULER COLUMNS ── */
+.sched-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:700px){.sched-grid{grid-template-columns:1fr}}
+.sched-col{border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.sched-col-hdr{padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;justify-content:space-between}
+.sched-col-hdr.urgent{background:#fff0f0;color:var(--red);border-bottom:1px solid #fecaca}
+.sched-col-hdr.due{background:#fffbeb;color:#b45309;border-bottom:1px solid #fde68a}
+.sched-col-hdr.done{background:#f0fdf4;color:#15803d;border-bottom:1px solid #bbf7d0}
+.sched-col-sub{font-size:10px;font-weight:400;text-transform:none;letter-spacing:0;opacity:.75}
+.sched-count{font-size:11px;font-weight:800;padding:1px 7px;border-radius:20px}
+.sched-count.urgent{background:var(--red);color:#fff}
+.sched-count.due{background:#b45309;color:#fff}
+.sched-count.done{background:#15803d;color:#fff}
+.t-table{width:100%;border-collapse:collapse;font-size:12px}
+.t-table tr{border-bottom:1px solid var(--border);transition:background .1s}
+.t-table tr:last-child{border-bottom:none}
+.t-table tr:hover{background:var(--red-lt)}
+.t-table td{padding:7px 12px;vertical-align:middle}
+.avatar{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;color:#fff;flex-shrink:0}
+.t-name{font-weight:600;font-size:12px;color:var(--dark)}
+.t-meta{font-size:10px;color:#9ca3af}
+.eval-badge{display:inline-block;padding:1px 7px;border-radius:20px;font-size:10px;font-weight:700}
+.eval-badge.urgent{background:#fee2e2;color:var(--red);border:1px solid #fecaca}
+.eval-badge.due{background:#fef3c7;color:#b45309;border:1px solid #fde68a}
+.eval-badge.done{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
+.sched-empty{text-align:center;padding:20px;color:#9ca3af;font-size:11px}
+
+/* ── FILTER BAR ── */
+.filter-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;padding:8px 12px;background:var(--lgray);border:1px solid var(--border);border-radius:6px}
+.filter-bar label{font-size:11px;font-weight:700;color:var(--gray)}
+select.f{background:var(--white);border:1.5px solid var(--border);border-radius:4px;padding:4px 8px;font-size:12px;font-family:inherit;color:var(--dark);outline:none}
+select.f:focus{border-color:var(--red)}
+.period-grp{display:flex;border:1.5px solid var(--border);border-radius:4px;overflow:hidden}
+.period-btn{padding:4px 12px;border:none;background:var(--white);color:var(--gray);font-size:11px;font-weight:600;cursor:pointer;transition:all .13s;font-family:inherit}
+.period-btn.active{background:var(--red);color:#fff;border-color:var(--red)}
+.period-btn:hover:not(.active){background:var(--lgray)}
+
+/* ── CARDS ── */
+.card{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:16px;margin-bottom:14px}
+.card-hdr{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--gray);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+
+/* ── GRID ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media(max-width:700px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+/* ── SCORE BARS ── */
+.sr{margin-bottom:8px}
+.sr-lbl{font-size:11px;display:flex;justify-content:space-between;margin-bottom:3px;color:var(--dark)}
+.bar{height:7px;background:#e5e7eb;border-radius:3px;overflow:hidden}
+.fill{height:100%;border-radius:3px;transition:width .5s ease}
+
+/* ── RING CHART ── */
+.ring-wrap{position:relative;width:120px;height:120px;margin:0 auto 8px}
 .ring-val{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
-.ring-val .big{font-size:1.8rem;font-weight:800;color:#1e3a5f;line-height:1}
-.ring-val .sub{font-size:.7rem;color:#718096;margin-top:2px}
+.ring-big{font-size:1.7rem;font-weight:800;color:var(--dark);line-height:1}
+.ring-sub{font-size:.68rem;color:var(--gray);margin-top:1px}
 
-/* Views */
-.view{display:none}.view.active{display:block}
+/* ── EVAL CHIP ── */
+.eval-chip{display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;margin:2px;font-weight:600;background:var(--lgray);border:1px solid var(--border);color:var(--dark)}
 
-/* Divider label */
-.section-lbl{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#a0aec0;margin:16px 0 6px}
+/* ── SECTION LABEL ── */
+.section-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#9ca3af;margin:10px 0 4px}
 
-/* Trend line in scores */
-.eval-chip{display:inline-block;padding:3px 9px;border-radius:4px;font-size:.75rem;margin:2px;font-weight:600}
+/* ── COMPLIANCE BARS ── */
+.c-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.c-label{width:110px;font-size:11px;font-weight:600;flex-shrink:0;color:var(--dark)}
+.c-bar-wrap{flex:1;height:18px;background:#e5e7eb;border-radius:9px;overflow:hidden}
+.c-fill{height:100%;border-radius:9px;display:flex;align-items:center;padding:0 8px;font-size:10px;color:#fff;font-weight:700;transition:width .5s}
+.c-pct{width:38px;text-align:right;font-size:11px;font-weight:700;flex-shrink:0}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:6px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:var(--red);color:#fff;padding:7px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:nth-child(even) td{background:#fafafa}
+tbody tr:hover td{background:var(--red-lt)}
+td{padding:6px 12px;vertical-align:middle}
+
+/* ── STAT CHIPS (compliance) ── */
+.stat{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:12px 14px;text-align:center}
+.stat-val{font-size:1.8rem;font-weight:800;color:var(--dark)}
+.stat-lbl{font-size:9.5px;color:var(--gray);margin-top:3px;text-transform:uppercase;letter-spacing:.4px}
+
+/* ── ALERT BANNER ── */
+.alert{padding:8px 14px;border-radius:4px;margin-bottom:12px;font-size:11px;line-height:1.5}
+.a-info{background:#eff6ff;color:#1d4ed8;border-left:3px solid #3b82f6}
+.a-warn{background:#fffbeb;color:#92400e;border-left:3px solid #f59e0b}
+.a-setup{background:#fff8f8;border:1px solid #fecaca;border-radius:6px;padding:14px}
+.a-setup strong{color:var(--red)}
+.a-setup code{background:#fee2e2;color:var(--red);padding:1px 5px;border-radius:3px;font-size:11px}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--lgray)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+@media(max-width:640px){.tab-panel{padding:12px 14px}.chips-strip{padding:8px 14px}}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="logo">LMS</div>
-  <div>
-    <h1>La Montessori Schools — Teacher Evaluation Dashboard</h1>
-    <small>Daily Report (DR) Analytics &nbsp;·&nbsp; <span id="ayLabel"></span></small>
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-logo">LM</div>
+    <div>
+      <h1>LMCS — Teacher DR Evaluation Dashboard</h1>
+      <p>Daily Report analytics across all schools &nbsp;·&nbsp; <span id="ayLabel"></span></p>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <a href="daily-progress.html" class="hdr-btn">📋 CW Tracker</a>
+    <a href="course-mapping-progress.html" class="hdr-btn">📊 Course Mapping</a>
+    <a href="index.html" class="hdr-btn">← Back</a>
   </div>
 </div>
 
-<nav class="nav">
-  <button class="nav-btn active" onclick="switchView('scheduler',this)">📅 Scheduler</button>
-  <button class="nav-btn" onclick="switchView('scores',this)">📊 Teacher Scores</button>
-  <button class="nav-btn" onclick="switchView('comparison',this)">⚖️ School Comparison</button>
-  <button class="nav-btn" onclick="switchView('analytics',this)">🔍 Analytics</button>
-  <button class="nav-btn" onclick="switchView('compliance',this)">✅ Compliance</button>
-</nav>
+<!-- CHIPS STRIP -->
+<div class="chips-strip" id="chipsStrip">
+  <div class="chip alert"><div class="chip-lbl">Urgent (0 evals)</div><div class="chip-val red" id="cUrgent">—</div><div class="chip-sub">teachers this month</div></div>
+  <div class="chip warn"><div class="chip-lbl">Due (1 eval)</div><div class="chip-val amber" id="cDue">—</div><div class="chip-sub">need 1 more</div></div>
+  <div class="chip ok"><div class="chip-lbl">Done (2+ evals)</div><div class="chip-val green" id="cDone">—</div><div class="chip-sub">fully evaluated</div></div>
+  <div class="chip"><div class="chip-lbl">Total Teachers</div><div class="chip-val blue" id="cTotal">—</div><div class="chip-sub">across 4 schools</div></div>
+  <div class="chip"><div class="chip-lbl">Compliance</div><div class="chip-val" id="cPct" style="color:var(--gray)">—</div><div class="chip-sub">this month</div></div>
+  <div class="chip"><div class="chip-lbl">Evals This Month</div><div class="chip-val blue" id="cMonthEvals">—</div><div class="chip-sub" id="cMonthLabel">—</div></div>
+</div>
 
-<div class="content">
+<!-- TABS -->
+<div class="tabs-bar">
+  <button class="tab-btn active" id="tab-scheduler"  onclick="switchView('scheduler',this)">📅 Scheduler</button>
+  <button class="tab-btn"        id="tab-scores"     onclick="switchView('scores',this)">📊 Teacher Scores</button>
+  <button class="tab-btn"        id="tab-comparison" onclick="switchView('comparison',this)">⚖ School Comparison</button>
+  <button class="tab-btn"        id="tab-analytics"  onclick="switchView('analytics',this)">🔍 Analytics</button>
+  <button class="tab-btn"        id="tab-compliance" onclick="switchView('compliance',this)">✅ Compliance</button>
+</div>
 
-  <!-- Setup banner (shown when GAS_URL is empty) -->
-  <div id="setupBanner" class="a-setup" style="display:none">
-    <h3>⚙️ One-time Setup Required</h3>
-    <p style="margin-bottom:8px">Open <code>index.html</code>, find <code>CONFIG.GAS_URL</code> at the top of the &lt;script&gt; and paste your deployed Apps Script URL.</p>
-    <p>See <strong>README.md</strong> for step-by-step instructions.</p>
-  </div>
+<!-- APP BODY -->
+<div id="appBody">
 
-  <div id="loadingState" class="loading">
-    <div class="spin"></div><p>Loading evaluation data…</p>
-  </div>
-
-  <!-- ── VIEW 1: SCHEDULER ─────────────────────────────────── -->
-  <div id="view-scheduler" class="view">
-    <div id="ptabBar" class="ptab-bar"></div>
-    <div style="font-size:.82rem;color:#718096;margin-bottom:16px">
-      Showing evaluations required for <strong id="schedMonthLbl"></strong> &nbsp;·&nbsp; Minimum 2 per teacher
+  <!-- Loading -->
+  <div class="tab-panel active" id="view-loading">
+    <div id="setupBanner" class="a-setup" style="display:none;margin-bottom:12px">
+      <strong>⚙ Setup Required</strong><br>
+      Open this file, find <code>CONFIG.GAS_URL</code> in the script and paste your deployed Apps Script URL.
     </div>
-    <div class="g3" id="schedulerCols"></div>
+    <div class="loading-state" id="loadingState">
+      <div class="spinner"></div>
+      <p>Loading evaluation data…</p>
+    </div>
   </div>
 
-  <!-- ── VIEW 2: TEACHER SCORES ────────────────────────────── -->
-  <div id="view-scores" class="view">
-    <div class="filters">
+  <!-- ── VIEW 1: SCHEDULER ── -->
+  <div class="tab-panel" id="view-scheduler">
+    <div id="ptabBar" class="ptab-bar"></div>
+    <div class="sched-meta">
+      Showing evaluation requirements for <strong id="schedMonthLbl"></strong> &nbsp;·&nbsp; Minimum 2 evaluations per teacher per month
+    </div>
+    <div class="sched-grid" id="schedulerCols"></div>
+  </div>
+
+  <!-- ── VIEW 2: TEACHER SCORES ── -->
+  <div class="tab-panel" id="view-scores">
+    <div class="filter-bar">
+      <label>School</label>
       <select class="f" id="scoreSchool" onchange="onScoreSchoolChange()">
         <option value="LMS 1">LMS 1 — Dhalpur</option>
         <option value="LMS 2">LMS 2 — Kelheli</option>
         <option value="LMS 3">LMS 3 — Dunkhra</option>
         <option value="LMS 4">LMS 4 — Ner Chowk</option>
       </select>
+      <label>Teacher</label>
       <select class="f" id="scoreTeacher" onchange="renderScoreCard()"></select>
-      <div class="toggle-grp">
-        <button class="tgl active" id="tglBlock" onclick="setPeriod('block',this)">📦 Current Block</button>
-        <button class="tgl" id="tglMonth" onclick="setPeriod('month',this)">📅 This Month</button>
+      <label>Period</label>
+      <div class="period-grp">
+        <button class="period-btn active" id="tglBlock" onclick="setPeriod('block',this)">Current Block</button>
+        <button class="period-btn" id="tglMonth" onclick="setPeriod('month',this)">This Month</button>
       </div>
     </div>
     <div id="scorePeriodAlert" class="alert a-info"></div>
     <div id="scoreCardContent"></div>
   </div>
 
-  <!-- ── VIEW 3: SCHOOL COMPARISON ────────────────────────── -->
-  <div id="view-comparison" class="view">
+  <!-- ── VIEW 3: SCHOOL COMPARISON ── -->
+  <div class="tab-panel" id="view-comparison">
     <div class="g2">
       <div class="card">
-        <div class="card-title">Category Averages by School (Current Block)</div>
+        <div class="card-hdr">Category Averages by School — Current Block</div>
         <canvas id="compChart" height="290"></canvas>
       </div>
       <div class="card">
-        <div class="card-title">🏆 School Rankings</div>
+        <div class="card-hdr">School Rankings</div>
         <div id="rankList"></div>
       </div>
     </div>
     <div class="card">
-      <div class="card-title">Score Distribution Across Schools</div>
+      <div class="card-hdr">Score Distribution Across Schools</div>
       <canvas id="distChart" height="200"></canvas>
     </div>
   </div>
 
-  <!-- ── VIEW 4: ANALYTICS ─────────────────────────────────── -->
-  <div id="view-analytics" class="view">
+  <!-- ── VIEW 4: ANALYTICS ── -->
+  <div class="tab-panel" id="view-analytics">
     <div class="g2">
       <div class="card">
-        <div class="card-title">⚠️ 5 Weakest Parameters</div>
+        <div class="card-hdr">5 Weakest Parameters (Current Block)</div>
         <div id="weakParams"></div>
       </div>
       <div class="card">
-        <div class="card-title">💪 5 Strongest Parameters</div>
+        <div class="card-hdr">5 Strongest Parameters (Current Block)</div>
         <div id="strongParams"></div>
       </div>
     </div>
     <div class="card">
-      <div class="card-title">📅 Evaluation Activity — Monthly</div>
+      <div class="card-hdr">Evaluation Activity — Monthly Timeline</div>
       <canvas id="timelineChart" height="180"></canvas>
     </div>
     <div class="card">
-      <div class="card-title">Subject-wise Average Scores (Current Block)</div>
+      <div class="card-hdr">Subject-wise Average Scores (Current Block)</div>
       <div class="tbl-wrap" id="subjTable"></div>
     </div>
   </div>
 
-  <!-- ── VIEW 5: COMPLIANCE ────────────────────────────────── -->
-  <div id="view-compliance" class="view">
-    <div class="filters">
+  <!-- ── VIEW 5: COMPLIANCE ── -->
+  <div class="tab-panel" id="view-compliance">
+    <div class="filter-bar">
+      <label>Month</label>
       <select class="f" id="compMonth" onchange="renderCompliance()"></select>
+      <label>School</label>
       <select class="f" id="compSchFilter" onchange="renderComplianceTable()">
         <option value="ALL">All Schools</option>
         <option value="LMS 1">LMS 1 — Dhalpur</option>
@@ -231,72 +304,58 @@ tr:hover td{background:#f7fafc}
         <option value="LMS 4">LMS 4 — Ner Chowk</option>
       </select>
     </div>
-    <div class="g4" id="compStats" style="margin-bottom:16px"></div>
+    <div class="g4" id="compStats" style="margin-bottom:14px"></div>
     <div class="card">
-      <div class="card-title">Compliance by School (2 evals = Done)</div>
+      <div class="card-hdr">Compliance by School (2 evaluations = done)</div>
       <div id="compBars"></div>
     </div>
     <div class="card">
-      <div class="card-title">Teacher-wise Evaluation Count</div>
+      <div class="card-hdr">Teacher-wise Evaluation Count</div>
       <div class="tbl-wrap" id="compTable"></div>
     </div>
   </div>
 
-</div><!-- /content -->
+</div><!-- /appBody -->
 
 <script>
 // ════════════════════════════════════════════════════════════
-// CONFIGURATION — paste your Apps Script URL below
+// CONFIGURATION
 // ════════════════════════════════════════════════════════════
 const CONFIG = {
   GAS_URL: 'https://script.google.com/macros/s/AKfycbyuJ0DeWwbqb3s6ormAKjv_5eiGBQ4k1Wh4GiIBw8St0x3EkcgMyAL3iPGOvb72Wenqsg/exec',
 
   SCHOOLS: {
-    'LMS 1': { name: 'LMS Dhalpur',    principal: 'Nidhi Kant',     color: '#3182ce' },
-    'LMS 2': { name: 'LMS Kelheli',    principal: 'Arti Sharma',    color: '#805ad5' },
-    'LMS 3': { name: 'LMS Dunkhra',    principal: 'Suresh Prasher', color: '#276749' },
-    'LMS 4': { name: 'LMS Ner Chowk', principal: 'Nisha',          color: '#dd6b20' }
+    'LMS 1': { name: 'LMS Dhalpur',    principal: 'Nidhi Kant',     color: '#1d4ed8' },
+    'LMS 2': { name: 'LMS Kelheli',    principal: 'Arti Sharma',    color: '#7c3aed' },
+    'LMS 3': { name: 'LMS Dunkhra',    principal: 'Suresh Prasher', color: '#15803d' },
+    'LMS 4': { name: 'LMS Ner Chowk', principal: 'Nisha',          color: '#b45309' }
   },
 
   PARAMS: [
-    'Syllabus Progress & Planning',   // 0
-    'Pedagogy',                        // 1
-    'Teacher Content',                 // 2
-    'Student Response',               // 3
-    'Activity Based Approach',        // 4
-    'Quality of Questions',           // 5
-    'Notebook Checking',              // 6
-    'Remediation',                    // 7
-    'BUTCHER Scheme',                 // 8
-    'Regular Updation',               // 9
-    'Aerobics & Assembly',            // 10
-    'Teaching Periods',               // 11
-    'English Speaking',               // 12
-    'Extra Curriculars',              // 13
-    'Co Curriculars',                 // 14
-    'Soft Skills & PR',               // 15
-    'Collaborative & Resourcefulness',// 16
-    'Attitude Towards School',        // 17
-    'Dedication Towards Class',       // 18
-    'Out of the Box Approach'         // 19
+    'Syllabus Progress & Planning','Pedagogy','Teacher Content','Student Response',
+    'Activity Based Approach','Quality of Questions','Notebook Checking','Remediation',
+    'BUTCHER Scheme','Regular Updation','Aerobics & Assembly','Teaching Periods',
+    'English Speaking','Extra Curriculars','Co Curriculars','Soft Skills & PR',
+    'Collaborative & Resourcefulness','Attitude Towards School','Dedication Towards Class',
+    'Out of the Box Approach'
   ],
 
   CATEGORIES: [
-    { name: 'Teaching',             max: 25, indices: [0,1,2,3,4],       color: '#3182ce' },
-    { name: 'Assessment',           max: 15, indices: [5,6,7],            color: '#805ad5' },
-    { name: 'TPR',                  max: 10, indices: [8,9],              color: '#dd6b20' },
-    { name: 'Punctuality & Duty',   max: 15, indices: [10,11,12],         color: '#276749' },
-    { name: 'Teacher Initiative',   max: 10, indices: [13,14],            color: '#c53030' },
-    { name: "Teacher's Attributes", max: 25, indices: [15,16,17,18,19],  color: '#2c7a7b' }
+    { name: 'Teaching',             max: 25, indices: [0,1,2,3,4],      color: '#1d4ed8' },
+    { name: 'Assessment',           max: 15, indices: [5,6,7],           color: '#7c3aed' },
+    { name: 'TPR',                  max: 10, indices: [8,9],             color: '#b45309' },
+    { name: 'Punctuality & Duty',   max: 15, indices: [10,11,12],        color: '#15803d' },
+    { name: 'Teacher Initiative',   max: 10, indices: [13,14],           color: '#CE0000' },
+    { name: "Teacher's Attributes", max: 25, indices: [15,16,17,18,19], color: '#0f766e' }
   ]
 };
 
 // ════════════════════════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════════════════════════
-let DATA    = { evals: [], teachers: [] };
-let PERIOD  = 'block';  // 'block' | 'month'
-let charts  = {};
+let DATA   = { evals: [], teachers: [] };
+let PERIOD = 'block';
+let charts = {};
 
 // ════════════════════════════════════════════════════════════
 // BOOT
@@ -304,12 +363,11 @@ let charts  = {};
 document.addEventListener('DOMContentLoaded', () => {
   const now = new Date();
   document.getElementById('ayLabel').textContent =
-    `Academic Year ${now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear()-1}–${String((now.getMonth() >= 3 ? now.getFullYear()+1 : now.getFullYear())).slice(2)}`;
+    `Session ${now.getMonth()>=3?now.getFullYear():now.getFullYear()-1}–${String(now.getMonth()>=3?now.getFullYear()+1:now.getFullYear()).slice(2)}`;
 
   if (!CONFIG.GAS_URL) {
     document.getElementById('setupBanner').style.display = 'block';
-    document.getElementById('loadingState').innerHTML =
-      '<div class="alert a-warn">⚠️ Configure <strong>CONFIG.GAS_URL</strong> in this file to load live data.</div>';
+    document.getElementById('loadingState').style.display = 'none';
     return;
   }
   fetchData();
@@ -317,39 +375,64 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function fetchData() {
   try {
-    const res  = await fetch(CONFIG.GAS_URL);
-    const raw  = await res.json();
+    const res = await fetch(CONFIG.GAS_URL);
+    const raw = await res.json();
     if (raw.error) throw new Error(raw.error);
 
-    DATA.evals = raw.evals
-      .filter(r => r.school && r.ts)
-      .map(r => {
-        const date    = new Date(r.ts);
-        const teacher = teacherName(r);
-        if (!teacher) return null;
-        const scores  = r.scores.map(v => parseFloat(v) || 0);
-        const cats    = CONFIG.CATEGORIES.map(c => ({
-          name:  c.name,
-          score: c.indices.reduce((s, i) => s + scores[i], 0),
-          max:   c.max,
-          color: c.color
-        }));
-        return { date, school: r.school, teacher, cls: r.cls, subj: r.subj, scores, cats,
-                 total: scores.reduce((a,b)=>a+b,0) };
-      })
-      .filter(Boolean);
+    DATA.evals = raw.evals.filter(r=>r.school&&r.ts).map(r=>{
+      const date    = new Date(r.ts);
+      const teacher = teacherName(r);
+      if (!teacher) return null;
+      const scores  = r.scores.map(v=>parseFloat(v)||0);
+      const cats    = CONFIG.CATEGORIES.map(c=>({
+        name:c.name, score:c.indices.reduce((s,i)=>s+scores[i],0), max:c.max, color:c.color
+      }));
+      return { date, school:r.school, teacher, cls:r.cls, subj:r.subj, scores, cats,
+               total:scores.reduce((a,b)=>a+b,0) };
+    }).filter(Boolean);
 
-    DATA.teachers = (raw.teachers || [])
-      .map(t => ({ ...t, teacher: t.teacher.trim() }))
-      .filter(t => t.teacher);
+    DATA.teachers = (raw.teachers||[]).map(t=>({...t,teacher:t.teacher.trim()})).filter(t=>t.teacher);
 
-    document.getElementById('loadingState').style.display = 'none';
+    buildChips();
+    document.getElementById('view-loading').style.display = 'none';
+    document.getElementById('view-loading').classList.remove('active');
     initAllViews();
 
   } catch(err) {
     document.getElementById('loadingState').innerHTML =
       `<div class="alert a-warn">❌ ${err.message}<br><small>Ensure the Apps Script is deployed as a Web App (Anyone can access).</small></div>`;
   }
+}
+
+// ════════════════════════════════════════════════════════════
+// CHIPS
+// ════════════════════════════════════════════════════════════
+function buildChips() {
+  const now = new Date();
+  const mStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const mEnd   = new Date(now.getFullYear(), now.getMonth()+1, 0, 23,59,59);
+  const mEvals = DATA.evals.filter(e=>e.date>=mStart&&e.date<=mEnd);
+
+  const allKeys = new Set();
+  DATA.teachers.forEach(t=>allKeys.add(`${t.school}::${t.teacher}`));
+  DATA.evals.forEach(e=>allKeys.add(`${e.school}::${e.teacher}`));
+  const counts = {};
+  mEvals.forEach(e=>{ const k=`${e.school}::${e.teacher}`; counts[k]=(counts[k]||0)+1; });
+
+  const total   = allKeys.size;
+  const done    = [...allKeys].filter(k=>(counts[k]||0)>=2).length;
+  const partial = [...allKeys].filter(k=>(counts[k]||0)===1).length;
+  const urgent  = total - done - partial;
+  const pct     = total ? Math.round(done/total*100) : 0;
+
+  document.getElementById('cUrgent').textContent    = urgent;
+  document.getElementById('cDue').textContent       = partial;
+  document.getElementById('cDone').textContent      = done;
+  document.getElementById('cTotal').textContent     = total;
+  document.getElementById('cPct').textContent       = pct + '%';
+  document.getElementById('cPct').className         = 'chip-val ' + (pct>=80?'green':pct>=50?'amber':'red');
+  document.getElementById('cMonthEvals').textContent = mEvals.length;
+  document.getElementById('cMonthLabel').textContent  = now.toLocaleString('en-IN',{month:'long',year:'numeric'});
 }
 
 // ════════════════════════════════════════════════════════════
@@ -362,45 +445,33 @@ function teacherName(r) {
   if (r.school==='LMS 4') return r.t4;
   return '';
 }
-
 function avg(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
-
-function initials(name) {
-  return (name||'').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
-}
-
-function sc(s) { return (CONFIG.SCHOOLS[s]||{}).color||'#718096'; }
+function initials(name) { return (name||'').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase(); }
+function sc(s) { return (CONFIG.SCHOOLS[s]||{}).color||'#555'; }
 function sn(s) { return (CONFIG.SCHOOLS[s]||{}).name||s; }
 
 function currentBlock() {
   const d=new Date(), m=d.getMonth()+1, y=d.getFullYear();
-  if (m>=4&&m<=9) return { label:`Apr–Sep ${y}`, start:new Date(y,3,1), end:new Date(y,8,30,23,59,59) };
+  if (m>=4&&m<=9) return {label:`Apr–Sep ${y}`, start:new Date(y,3,1), end:new Date(y,8,30,23,59,59)};
   const by=m>=10?y:y-1;
-  return { label:`Oct ${by}–Mar ${by+1}`, start:new Date(by,9,1), end:new Date(by+1,2,31,23,59,59) };
+  return {label:`Oct ${by}–Mar ${by+1}`, start:new Date(by,9,1), end:new Date(by+1,2,31,23,59,59)};
 }
-
 function currentMonth() {
   const d=new Date(), y=d.getFullYear(), m=d.getMonth();
-  return {
-    label: d.toLocaleString('en-IN',{month:'long',year:'numeric'}),
-    start: new Date(y,m,1),
-    end:   new Date(y,m+1,0,23,59,59)
-  };
+  return {label:d.toLocaleString('en-IN',{month:'long',year:'numeric'}), start:new Date(y,m,1), end:new Date(y,m+1,0,23,59,59)};
 }
-
 function periodRange() { return PERIOD==='block' ? currentBlock() : currentMonth(); }
-
-function inRange(ev, range) { return ev.date>=range.start && ev.date<=range.end; }
-
+function inRange(ev, r) { return ev.date>=r.start && ev.date<=r.end; }
 function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
 // ════════════════════════════════════════════════════════════
 // NAV
 // ════════════════════════════════════════════════════════════
 function switchView(view, btn) {
-  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
-  document.getElementById('view-'+view).classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
+  const panel = document.getElementById('view-'+view);
+  if (panel) panel.classList.add('active');
   btn.classList.add('active');
 }
 
@@ -411,6 +482,7 @@ function initAllViews() {
   renderAnalytics();
   initCompliance();
   document.getElementById('view-scheduler').classList.add('active');
+  document.getElementById('tab-scheduler').classList.add('active');
 }
 
 // ════════════════════════════════════════════════════════════
@@ -419,45 +491,36 @@ function initAllViews() {
 let activeSchedSchool = 'LMS 1';
 
 function buildPrincipalTabs() {
-  const now    = new Date();
-  const mStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const mEnd   = new Date(now.getFullYear(), now.getMonth()+1, 0, 23,59,59);
-  const mEvals = DATA.evals.filter(e=>e.date>=mStart&&e.date<=mEnd);
-
-  // Count per school
-  const done={}, total={};
+  const now=new Date(), mS=new Date(now.getFullYear(),now.getMonth(),1), mE=new Date(now.getFullYear(),now.getMonth()+1,0,23,59,59);
+  const mEvals=DATA.evals.filter(e=>e.date>=mS&&e.date<=mE);
   const allKeys=new Set();
   DATA.teachers.forEach(t=>allKeys.add(`${t.school}::${t.teacher}`));
   DATA.evals.forEach(e=>allKeys.add(`${e.school}::${e.teacher}`));
   const counts={};
   mEvals.forEach(e=>{ const k=`${e.school}::${e.teacher}`; counts[k]=(counts[k]||0)+1; });
 
+  const done={}, total={};
   Object.keys(CONFIG.SCHOOLS).forEach(s=>{
     const sk=[...allKeys].filter(k=>k.startsWith(s+'::'));
-    total[s]=sk.length;
-    done[s]=sk.filter(k=>(counts[k]||0)>=2).length;
+    total[s]=sk.length; done[s]=sk.filter(k=>(counts[k]||0)>=2).length;
   });
 
-  // Tabs: one per school + All
-  const tabs = [
-    { key:'ALL', school:'All Schools', principal:'Overview', color:'#718096' },
-    ...Object.entries(CONFIG.SCHOOLS).map(([k,v])=>({ key:k, school:v.name, principal:v.principal, color:v.color }))
+  const tabs=[
+    {key:'ALL', label:'All Schools', sub:'Overview'},
+    ...Object.entries(CONFIG.SCHOOLS).map(([k,v])=>({key:k, label:v.name, sub:v.principal}))
   ];
 
   document.getElementById('ptabBar').innerHTML = tabs.map(t=>{
-    const isAll = t.key==='ALL';
-    const d = isAll ? Object.values(done).reduce((a,b)=>a+b,0) : (done[t.key]||0);
-    const tot = isAll ? Object.values(total).reduce((a,b)=>a+b,0) : (total[t.key]||0);
-    const pct = tot ? Math.round(d/tot*100) : 0;
-    const dotColor = pct>=80?'#276749':pct>=50?'#dd6b20':'#c53030';
-    return `
-      <button class="ptab${activeSchedSchool===t.key?' active':''}" onclick="setSchedSchool('${t.key}',this)">
-        <div class="ptab-school">${isAll?'📋 All':'🏫 '+t.key}</div>
-        <div class="ptab-principal">${t.principal}</div>
-        <div class="ptab-counts" style="color:${activeSchedSchool===t.key?'#90cdf4':dotColor}">
-          ${d}/${tot} done · ${pct}%
-        </div>
-      </button>`;
+    const isAll=t.key==='ALL';
+    const d=isAll?Object.values(done).reduce((a,b)=>a+b,0):(done[t.key]||0);
+    const tot=isAll?Object.values(total).reduce((a,b)=>a+b,0):(total[t.key]||0);
+    const pct=tot?Math.round(d/tot*100):0;
+    const clr=pct>=80?'#15803d':pct>=50?'#b45309':'#CE0000';
+    return `<button class="ptab${activeSchedSchool===t.key?' active':''}" onclick="setSchedSchool('${t.key}',this)">
+      <div class="ptab-key">${isAll?'📋 All':'🏫 '+t.key}</div>
+      <div class="ptab-principal">${t.sub}</div>
+      <div class="ptab-counts" style="color:${activeSchedSchool===t.key?'var(--red)':clr}">${d}/${tot} done · ${pct}%</div>
+    </button>`;
   }).join('');
 }
 
@@ -470,26 +533,15 @@ function setSchedSchool(school, btn) {
 
 function renderScheduler() {
   buildPrincipalTabs();
+  const school=activeSchedSchool, now=new Date();
+  const mStart=new Date(now.getFullYear(),now.getMonth(),1);
+  const mEnd=new Date(now.getFullYear(),now.getMonth()+1,0,23,59,59);
+  document.getElementById('schedMonthLbl').textContent=now.toLocaleString('en-IN',{month:'long',year:'numeric'});
 
-  const school   = activeSchedSchool;
-  const now      = new Date();
-  const mStart   = new Date(now.getFullYear(), now.getMonth(), 1);
-  const mEnd     = new Date(now.getFullYear(), now.getMonth()+1, 0, 23,59,59);
-
-  document.getElementById('schedMonthLbl').textContent =
-    now.toLocaleString('en-IN',{month:'long',year:'numeric'});
-
-  const monthEvals = DATA.evals.filter(e=>e.date>=mStart&&e.date<=mEnd);
-
+  const monthEvals=DATA.evals.filter(e=>e.date>=mStart&&e.date<=mEnd);
   const counts={}, lastDt={};
-  monthEvals.forEach(e=>{
-    const k=`${e.school}::${e.teacher}`;
-    counts[k]=(counts[k]||0)+1;
-  });
-  DATA.evals.forEach(e=>{
-    const k=`${e.school}::${e.teacher}`;
-    if(!lastDt[k]||e.date>lastDt[k]) lastDt[k]=e.date;
-  });
+  monthEvals.forEach(e=>{ const k=`${e.school}::${e.teacher}`; counts[k]=(counts[k]||0)+1; });
+  DATA.evals.forEach(e=>{ const k=`${e.school}::${e.teacher}`; if(!lastDt[k]||e.date>lastDt[k]) lastDt[k]=e.date; });
 
   const keys=new Set();
   DATA.teachers.forEach(t=>{ if(school==='ALL'||t.school===school) keys.add(`${t.school}::${t.teacher}`); });
@@ -497,36 +549,41 @@ function renderScheduler() {
 
   const list=[...keys].map(k=>{
     const [sch,tch]=k.split('::');
-    return { school:sch, teacher:tch, count:counts[k]||0, last:lastDt[k]||null };
-  }).sort((a,b)=>a.count-b.count || (a.last||0)-(b.last||0));
+    return {school:sch, teacher:tch, count:counts[k]||0, last:lastDt[k]||null};
+  }).sort((a,b)=>a.count-b.count||(a.last||0)-(b.last||0));
 
   const urgent=list.filter(t=>t.count===0);
   const due   =list.filter(t=>t.count===1);
   const done  =list.filter(t=>t.count>=2);
 
   document.getElementById('schedulerCols').innerHTML =
-    schedCol('🚨 URGENT','0 evaluations this month',urgent,'urgent','#c53030') +
-    schedCol('⏰ DUE',   '1 of 2 done',             due,   'due',   '#dd6b20') +
-    schedCol('✅ DONE',  '2+ evaluations',           done,  'done',  '#276749');
+    schedCol('🚨 Urgent','0 evaluations this month', urgent,'urgent') +
+    schedCol('⏰ Due',   '1 of 2 done',              due,   'due')    +
+    schedCol('✅ Done',  '2+ evaluations complete',  done,  'done');
 }
 
-function schedCol(title, sub, list, type, color) {
-  const items = list.map(t=>`
-    <div class="t-item">
-      <div class="avatar" style="background:${sc(t.school)}">${initials(t.teacher)}</div>
-      <div style="flex:1">
+function schedCol(title, sub, list, type) {
+  const rows = list.map(t=>`
+    <tr>
+      <td style="width:34px">
+        <span class="avatar" style="background:${sc(t.school)}">${initials(t.teacher)}</span>
+      </td>
+      <td>
         <div class="t-name">${t.teacher}</div>
-        <div class="t-meta">${sn(t.school)} · Last: ${t.last?t.last.toLocaleDateString('en-IN'):'Never'}</div>
-      </div>
-      <span class="badge b-${type}">${t.count}/2</span>
-    </div>`).join('');
+        <div class="t-meta">${sn(t.school)} · Last: ${t.last?t.last.toLocaleDateString('en-IN',{day:'numeric',month:'short'}):'Never'}</div>
+      </td>
+      <td style="text-align:right;white-space:nowrap">
+        <span class="eval-badge ${type}">${t.count}/2</span>
+      </td>
+    </tr>`).join('');
   return `
-    <div class="card">
-      <div class="card-title" style="color:${color}">
-        ${title} <span style="background:${color};color:#fff;padding:1px 8px;border-radius:20px;font-size:.72rem;">${list.length}</span>
+    <div class="sched-col">
+      <div class="sched-col-hdr ${type}">
+        <span>${title} <span class="sched-col-sub">${sub}</span></span>
+        <span class="sched-count ${type}">${list.length}</span>
       </div>
-      <div style="font-size:.75rem;color:#a0aec0;margin-bottom:10px">${sub}</div>
-      ${items||'<p style="text-align:center;color:#a0aec0;padding:16px 0;font-size:.83rem;">None</p>'}
+      ${rows ? `<table class="t-table"><tbody>${rows}</tbody></table>` :
+        `<div class="sched-empty">None</div>`}
     </div>`;
 }
 
@@ -536,142 +593,104 @@ function schedCol(title, sub, list, type, color) {
 function initScores() { onScoreSchoolChange(); }
 
 function onScoreSchoolChange() {
-  const school = document.getElementById('scoreSchool').value;
-  const teachers = [...new Set(DATA.evals.filter(e=>e.school===school).map(e=>e.teacher))].sort();
-  document.getElementById('scoreTeacher').innerHTML =
-    teachers.map(t=>`<option>${t}</option>`).join('');
+  const school=document.getElementById('scoreSchool').value;
+  const teachers=[...new Set(DATA.evals.filter(e=>e.school===school).map(e=>e.teacher))].sort();
+  document.getElementById('scoreTeacher').innerHTML=teachers.map(t=>`<option>${t}</option>`).join('');
   renderScoreCard();
 }
 
 function setPeriod(p, btn) {
-  PERIOD = p;
-  document.querySelectorAll('.tgl').forEach(b=>b.classList.remove('active'));
+  PERIOD=p;
+  document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   renderScoreCard();
 }
 
 function renderScoreCard() {
-  const school  = document.getElementById('scoreSchool').value;
-  const teacher = document.getElementById('scoreTeacher').value;
+  const school=document.getElementById('scoreSchool').value;
+  const teacher=document.getElementById('scoreTeacher').value;
   if (!teacher) return;
 
-  const range = periodRange();
-  document.getElementById('scorePeriodAlert').textContent =
-    `📅 Period: ${range.label}`;
+  const range=periodRange();
+  document.getElementById('scorePeriodAlert').textContent=`Period: ${range.label}`;
 
-  const filtered = DATA.evals.filter(e=>e.school===school&&e.teacher===teacher&&inRange(e,range));
-  const allTime  = DATA.evals.filter(e=>e.school===school&&e.teacher===teacher)
-                              .sort((a,b)=>a.date-b.date);
+  const filtered=DATA.evals.filter(e=>e.school===school&&e.teacher===teacher&&inRange(e,range));
+  const allTime =DATA.evals.filter(e=>e.school===school&&e.teacher===teacher).sort((a,b)=>a.date-b.date);
 
   if (!filtered.length) {
-    document.getElementById('scoreCardContent').innerHTML =
+    document.getElementById('scoreCardContent').innerHTML=
       `<div class="alert a-warn">No evaluations for <strong>${teacher}</strong> in this period.</div>`;
     return;
   }
 
-  const totalAvg = avg(filtered.map(e=>e.total));
-  const catAvgs  = CONFIG.CATEGORIES.map(c=>({
-    ...c, avg: avg(filtered.map(e=>e.cats.find(x=>x.name===c.name).score))
-  }));
-  const paramAvgs = CONFIG.PARAMS.map((p,i)=>({
-    name:p, avg:avg(filtered.map(e=>e.scores[i])),
-    color: CONFIG.CATEGORIES.find(c=>c.indices.includes(i))?.color||'#718096'
-  }));
+  const totalAvg=avg(filtered.map(e=>e.total));
+  const catAvgs =CONFIG.CATEGORIES.map(c=>({...c, avg:avg(filtered.map(e=>e.cats.find(x=>x.name===c.name).score))}));
+  const paramAvgs=CONFIG.PARAMS.map((p,i)=>({name:p, avg:avg(filtered.map(e=>e.scores[i])),
+    color:CONFIG.CATEGORIES.find(c=>c.indices.includes(i))?.color||'#555'}));
+  const ringColor=sc(school);
 
-  const ringColor = sc(school);
-  const ringPct   = totalAvg; // out of 100
-
-  document.getElementById('scoreCardContent').innerHTML = `
+  document.getElementById('scoreCardContent').innerHTML=`
     <div class="g2">
-
-      <!-- Overall ring -->
       <div class="card" style="text-align:center">
-        <div class="card-title">Overall Score</div>
+        <div class="card-hdr">Overall Score</div>
         <div class="ring-wrap">
-          <svg width="130" height="130" viewBox="0 0 130 130">
-            <circle cx="65" cy="65" r="54" fill="none" stroke="#e2e8f0" stroke-width="12"/>
-            <circle cx="65" cy="65" r="54" fill="none" stroke="${ringColor}" stroke-width="12"
-              stroke-dasharray="${2*Math.PI*54}"
-              stroke-dashoffset="${2*Math.PI*54*(1-ringPct/100)}"
-              transform="rotate(-90 65 65)" stroke-linecap="round"/>
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#e5e7eb" stroke-width="10"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="${ringColor}" stroke-width="10"
+              stroke-dasharray="${2*Math.PI*50}"
+              stroke-dashoffset="${2*Math.PI*50*(1-totalAvg/100)}"
+              transform="rotate(-90 60 60)" stroke-linecap="round"/>
           </svg>
           <div class="ring-val">
-            <div class="big">${totalAvg.toFixed(1)}</div>
-            <div class="sub">/100</div>
+            <div class="ring-big">${totalAvg.toFixed(1)}</div>
+            <div class="ring-sub">/100</div>
           </div>
         </div>
-        <div style="font-size:.82rem;color:#718096;margin-top:4px">
-          <strong>${teacher}</strong><br>
-          ${sn(school)} · ${filtered.length} evaluation${filtered.length>1?'s':''}
+        <div style="font-size:11px;color:var(--gray);margin-top:4px">
+          <strong>${teacher}</strong><br>${sn(school)} · ${filtered.length} evaluation${filtered.length>1?'s':''}
         </div>
-
-        <!-- Mini eval chips -->
-        <div style="margin-top:14px">
-          <div class="section-lbl">All evaluations (this period)</div>
+        <div style="margin-top:12px;text-align:left">
+          <div class="section-lbl">Evaluations this period</div>
           ${filtered.sort((a,b)=>a.date-b.date).map(e=>`
-            <span class="eval-chip" style="background:${ringColor}18;color:${ringColor}">
-              ${e.date.toLocaleDateString('en-IN',{day:'numeric',month:'short'})} · ${e.total.toFixed(0)}
-            </span>`).join('')}
+            <span class="eval-chip">${e.date.toLocaleDateString('en-IN',{day:'numeric',month:'short'})} &nbsp; ${e.total.toFixed(0)}/100</span>
+          `).join('')}
         </div>
       </div>
-
-      <!-- Category breakdown -->
       <div class="card">
-        <div class="card-title">Category Breakdown</div>
+        <div class="card-hdr">Category Breakdown</div>
         ${catAvgs.map(c=>`
           <div class="sr">
-            <div class="sr-lbl">
-              <span style="color:${c.color};font-weight:600">${c.name}</span>
-              <span>${c.avg.toFixed(1)} / ${c.max}</span>
-            </div>
+            <div class="sr-lbl"><span style="color:${c.color};font-weight:700">${c.name}</span><span>${c.avg.toFixed(1)} / ${c.max}</span></div>
             <div class="bar"><div class="fill" style="width:${c.avg/c.max*100}%;background:${c.color}"></div></div>
           </div>`).join('')}
       </div>
     </div>
-
-    <!-- Parameter breakdown -->
     <div class="card">
-      <div class="card-title">Parameter-wise Averages (out of 5)</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px">
+      <div class="card-hdr">Parameter-wise Averages (out of 5)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 28px">
         ${paramAvgs.map(p=>`
           <div class="sr">
-            <div class="sr-lbl">
-              <span>${p.name}</span>
-              <span style="font-weight:600">${p.avg.toFixed(2)}</span>
-            </div>
+            <div class="sr-lbl"><span>${p.name}</span><span style="font-weight:700">${p.avg.toFixed(2)}</span></div>
             <div class="bar"><div class="fill" style="width:${p.avg/5*100}%;background:${p.color}"></div></div>
           </div>`).join('')}
       </div>
     </div>
-
-    <!-- Trend chart (all time) -->
     ${allTime.length>1?`
     <div class="card">
-      <div class="card-title">Score Trend — All Time (${allTime.length} evaluations)</div>
-      <canvas id="trendChart" height="150"></canvas>
-    </div>`:''}
-  `;
+      <div class="card-hdr">Score Trend — All Time (${allTime.length} evaluations)</div>
+      <canvas id="trendChart" height="140"></canvas>
+    </div>`:''}`;
 
-  // Draw trend chart
-  if (allTime.length > 1) {
+  if (allTime.length>1) {
     destroyChart('trend');
-    charts.trend = new Chart(document.getElementById('trendChart'), {
-      type: 'line',
-      data: {
-        labels: allTime.map(e=>e.date.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'2-digit'})),
-        datasets: [{
-          label:'Total Score',
-          data: allTime.map(e=>e.total),
-          borderColor: ringColor,
-          backgroundColor: ringColor+'22',
-          fill:true, tension:.35, pointRadius:5, pointHoverRadius:7
-        }]
+    charts.trend=new Chart(document.getElementById('trendChart'),{
+      type:'line',
+      data:{
+        labels:allTime.map(e=>e.date.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'2-digit'})),
+        datasets:[{label:'Total Score',data:allTime.map(e=>e.total),borderColor:ringColor,
+          backgroundColor:ringColor+'18',fill:true,tension:.3,pointRadius:4,pointHoverRadius:6}]
       },
-      options:{
-        responsive:true,
-        scales:{ y:{min:0,max:100,grid:{color:'#f0f4f8'}} },
-        plugins:{ legend:{display:false} }
-      }
+      options:{responsive:true,scales:{y:{min:0,max:100,grid:{color:'#f0f0f0'}}},plugins:{legend:{display:false}}}
     });
   }
 }
@@ -680,73 +699,56 @@ function renderScoreCard() {
 // VIEW 3 — SCHOOL COMPARISON
 // ════════════════════════════════════════════════════════════
 function renderComparison() {
-  const block   = currentBlock();
-  const bEvals  = DATA.evals.filter(e=>inRange(e,block));
-  const schools = Object.keys(CONFIG.SCHOOLS);
+  const block=currentBlock(), bEvals=DATA.evals.filter(e=>inRange(e,block));
+  const schools=Object.keys(CONFIG.SCHOOLS);
 
-  // Category bar chart
   destroyChart('comp');
-  charts.comp = new Chart(document.getElementById('compChart'), {
+  charts.comp=new Chart(document.getElementById('compChart'),{
     type:'bar',
     data:{
-      labels: schools.map(sn),
-      datasets: CONFIG.CATEGORIES.map(c=>({
-        label: c.name,
-        data: schools.map(s=>{
-          const ev=bEvals.filter(e=>e.school===s);
-          return ev.length ? +avg(ev.map(e=>e.cats.find(x=>x.name===c.name).score/c.max*100)).toFixed(1) : 0;
-        }),
-        backgroundColor: c.color+'bb',
-        borderColor: c.color, borderWidth:1
+      labels:schools.map(sn),
+      datasets:CONFIG.CATEGORIES.map(c=>({
+        label:c.name,
+        data:schools.map(s=>{ const ev=bEvals.filter(e=>e.school===s);
+          return ev.length?+avg(ev.map(e=>e.cats.find(x=>x.name===c.name).score/c.max*100)).toFixed(1):0; }),
+        backgroundColor:c.color+'99', borderColor:c.color, borderWidth:1
       }))
     },
-    options:{
-      responsive:true,
-      scales:{ y:{min:0,max:100,ticks:{callback:v=>v+'%'},grid:{color:'#f0f4f8'}} },
-      plugins:{ legend:{position:'bottom',labels:{boxWidth:11,font:{size:11}}} }
-    }
+    options:{responsive:true,
+      scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'},grid:{color:'#f0f0f0'}}},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:11,font:{size:10}}}}}
   });
 
-  // Rankings
-  const ranked = schools.map(s=>{
-    const ev=bEvals.filter(e=>e.school===s);
-    return { school:s, avg:ev.length?avg(ev.map(e=>e.total)):0, count:ev.length };
-  }).sort((a,b)=>b.avg-a.avg);
+  const ranked=schools.map(s=>{ const ev=bEvals.filter(e=>e.school===s);
+    return {school:s, avg:ev.length?avg(ev.map(e=>e.total)):0, count:ev.length}; }).sort((a,b)=>b.avg-a.avg);
 
   const medals=['🥇','🥈','🥉','4️⃣'];
-  document.getElementById('rankList').innerHTML = ranked.map((r,i)=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #f0f4f8">
-      <div style="font-size:1.4rem;width:28px;text-align:center">${medals[i]||i+1}</div>
-      <div style="width:8px;height:40px;border-radius:4px;background:${sc(r.school)};flex-shrink:0"></div>
+  document.getElementById('rankList').innerHTML=ranked.map((r,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:1.3rem;width:26px">${medals[i]||i+1}</span>
+      <div style="width:6px;height:36px;border-radius:3px;background:${sc(r.school)};flex-shrink:0"></div>
       <div style="flex:1">
-        <div style="font-weight:600;font-size:.9rem">${sn(r.school)}</div>
-        <div style="font-size:.75rem;color:#718096">${r.count} evals · ${block.label}</div>
+        <div style="font-weight:700;font-size:12px">${sn(r.school)}</div>
+        <div style="font-size:10px;color:var(--gray)">${r.count} evals · ${block.label}</div>
       </div>
-      <div style="font-size:1.5rem;font-weight:800;color:${sc(r.school)}">${r.avg.toFixed(1)}</div>
+      <div style="font-size:1.4rem;font-weight:800;color:${sc(r.school)}">${r.avg.toFixed(1)}</div>
     </div>`).join('');
 
-  // Distribution
-  const buckets=[20,40,60,80,100];
-  const bLabels=['0–20','21–40','41–60','61–80','81–100'];
   destroyChart('dist');
-  charts.dist = new Chart(document.getElementById('distChart'), {
+  charts.dist=new Chart(document.getElementById('distChart'),{
     type:'bar',
     data:{
-      labels: bLabels,
-      datasets: schools.map(s=>({
-        label: sn(s),
-        data: buckets.map((top,i)=>{
-          const bot=i===0?0:buckets[i-1];
-          return bEvals.filter(e=>e.school===s&&e.total>bot&&e.total<=top).length;
-        }),
-        backgroundColor: sc(s)+'bb', borderColor:sc(s), borderWidth:1
+      labels:['0–20','21–40','41–60','61–80','81–100'],
+      datasets:schools.map(s=>({
+        label:sn(s),
+        data:[20,40,60,80,100].map((top,i)=>{
+          const bot=i===0?0:[20,40,60,80][i-1];
+          return bEvals.filter(e=>e.school===s&&e.total>bot&&e.total<=top).length; }),
+        backgroundColor:sc(s)+'99', borderColor:sc(s), borderWidth:1
       }))
     },
-    options:{
-      responsive:true,
-      scales:{ y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:'#f0f4f8'}} },
-      plugins:{ legend:{position:'bottom',labels:{boxWidth:11,font:{size:11}}} }
-    }
+    options:{responsive:true,scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:'#f0f0f0'}}},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:11,font:{size:10}}}}}
   });
 }
 
@@ -754,26 +756,20 @@ function renderComparison() {
 // VIEW 4 — ANALYTICS
 // ════════════════════════════════════════════════════════════
 function renderAnalytics() {
-  const block  = currentBlock();
-  const bEvals = DATA.evals.filter(e=>inRange(e,block));
-
-  // Parameter averages
-  const pAvgs = CONFIG.PARAMS.map((p,i)=>({
-    name:p,
-    avg: bEvals.length ? avg(bEvals.map(e=>e.scores[i])) : 0,
-    color: CONFIG.CATEGORIES.find(c=>c.indices.includes(i))?.color||'#718096'
+  const block=currentBlock(), bEvals=DATA.evals.filter(e=>inRange(e,block));
+  const pAvgs=CONFIG.PARAMS.map((p,i)=>({name:p,
+    avg:bEvals.length?avg(bEvals.map(e=>e.scores[i])):0,
+    color:CONFIG.CATEGORIES.find(c=>c.indices.includes(i))?.color||'#555'
   })).sort((a,b)=>a.avg-b.avg);
 
-  const paramBars = (params) => params.map(p=>`
+  const bars=params=>params.map(p=>`
     <div class="sr">
-      <div class="sr-lbl"><span>${p.name}</span><span style="font-weight:600">${p.avg.toFixed(2)}/5</span></div>
+      <div class="sr-lbl"><span>${p.name}</span><span style="font-weight:700">${p.avg.toFixed(2)}/5</span></div>
       <div class="bar"><div class="fill" style="width:${p.avg/5*100}%;background:${p.color}"></div></div>
     </div>`).join('');
+  document.getElementById('weakParams').innerHTML  =bars(pAvgs.slice(0,5));
+  document.getElementById('strongParams').innerHTML=bars([...pAvgs].reverse().slice(0,5));
 
-  document.getElementById('weakParams').innerHTML   = paramBars(pAvgs.slice(0,5));
-  document.getElementById('strongParams').innerHTML = paramBars([...pAvgs].reverse().slice(0,5));
-
-  // Monthly timeline
   const months={};
   DATA.evals.forEach(e=>{
     const k=`${e.date.getFullYear()}-${String(e.date.getMonth()+1).padStart(2,'0')}`;
@@ -783,53 +779,33 @@ function renderAnalytics() {
   const mKeys=[...Object.keys(months)].sort();
 
   destroyChart('timeline');
-  charts.timeline = new Chart(document.getElementById('timelineChart'), {
+  charts.timeline=new Chart(document.getElementById('timelineChart'),{
     type:'bar',
     data:{
-      labels: mKeys.map(k=>{
-        const [y,m]=k.split('-');
-        return new Date(y,m-1,1).toLocaleString('en-IN',{month:'short',year:'2-digit'});
-      }),
-      datasets: Object.keys(CONFIG.SCHOOLS).map(s=>({
-        label: sn(s),
-        data: mKeys.map(k=>(months[k]||{})[s]||0),
-        backgroundColor: sc(s)+'99', borderColor:sc(s), borderWidth:1
+      labels:mKeys.map(k=>{ const [y,m]=k.split('-'); return new Date(y,m-1,1).toLocaleString('en-IN',{month:'short',year:'2-digit'}); }),
+      datasets:Object.keys(CONFIG.SCHOOLS).map(s=>({
+        label:sn(s), data:mKeys.map(k=>(months[k]||{})[s]||0),
+        backgroundColor:sc(s)+'99', borderColor:sc(s), borderWidth:1
       }))
     },
-    options:{
-      responsive:true,
-      scales:{ x:{stacked:true}, y:{stacked:true,beginAtZero:true,grid:{color:'#f0f4f8'}} },
-      plugins:{ legend:{position:'bottom',labels:{boxWidth:11,font:{size:11}}} }
-    }
+    options:{responsive:true,
+      scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,grid:{color:'#f0f0f0'}}},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:11,font:{size:10}}}}}
   });
 
-  // Subject table
   const subjMap={};
-  bEvals.forEach(e=>{
-    if(!e.subj) return;
-    if(!subjMap[e.subj]) subjMap[e.subj]=[];
-    subjMap[e.subj].push(e.total);
-  });
-  const subjRows=Object.entries(subjMap)
-    .map(([s,totals])=>({s, avg:avg(totals), n:totals.length}))
-    .sort((a,b)=>b.avg-a.avg);
+  bEvals.forEach(e=>{ if(!e.subj) return; if(!subjMap[e.subj]) subjMap[e.subj]=[]; subjMap[e.subj].push(e.total); });
+  const subjRows=Object.entries(subjMap).map(([s,t])=>({s, avg:avg(t), n:t.length})).sort((a,b)=>b.avg-a.avg);
 
-  document.getElementById('subjTable').innerHTML = `
-    <table>
-      <thead><tr><th>Subject</th><th>Avg Score (/100)</th><th>Evaluations</th></tr></thead>
-      <tbody>${subjRows.map(r=>`
-        <tr>
-          <td>${r.s}</td>
-          <td>
-            <div style="display:flex;align-items:center;gap:8px">
-              <div class="bar" style="width:90px"><div class="fill" style="width:${r.avg}%;background:#3182ce"></div></div>
-              <strong>${r.avg.toFixed(1)}</strong>
-            </div>
-          </td>
-          <td>${r.n}</td>
-        </tr>`).join('')}
-      </tbody>
-    </table>`;
+  document.getElementById('subjTable').innerHTML=`<table>
+    <thead><tr><th>Subject</th><th>Avg Score (/100)</th><th>Evaluations</th></tr></thead>
+    <tbody>${subjRows.map(r=>`<tr>
+      <td>${r.s}</td>
+      <td><div style="display:flex;align-items:center;gap:8px">
+        <div class="bar" style="width:90px"><div class="fill" style="width:${r.avg}%;background:#CE0000"></div></div>
+        <strong>${r.avg.toFixed(1)}</strong></div></td>
+      <td>${r.n}</td></tr>`).join('')}
+    </tbody></table>`;
 }
 
 // ════════════════════════════════════════════════════════════
@@ -837,11 +813,8 @@ function renderAnalytics() {
 // ════════════════════════════════════════════════════════════
 function initCompliance() {
   const seen=new Set();
-  DATA.evals.forEach(e=>{
-    seen.add(`${e.date.getFullYear()}-${String(e.date.getMonth()+1).padStart(2,'0')}`);
-  });
-  const mKeys=[...seen].sort().reverse();
-  document.getElementById('compMonth').innerHTML = mKeys.map(k=>{
+  DATA.evals.forEach(e=>seen.add(`${e.date.getFullYear()}-${String(e.date.getMonth()+1).padStart(2,'0')}`));
+  document.getElementById('compMonth').innerHTML=[...seen].sort().reverse().map(k=>{
     const [y,m]=k.split('-');
     return `<option value="${k}">${new Date(y,m-1,1).toLocaleString('en-IN',{month:'long',year:'numeric'})}</option>`;
   }).join('');
@@ -849,95 +822,69 @@ function initCompliance() {
 }
 
 function renderCompliance() {
-  const [y,m] = document.getElementById('compMonth').value.split('-');
-  const mStart = new Date(+y, +m-1, 1);
-  const mEnd   = new Date(+y, +m, 0, 23,59,59);
-  const mEvals = DATA.evals.filter(e=>e.date>=mStart&&e.date<=mEnd);
-
+  const [y,m]=document.getElementById('compMonth').value.split('-');
+  const mStart=new Date(+y,+m-1,1), mEnd=new Date(+y,+m,0,23,59,59);
+  const mEvals=DATA.evals.filter(e=>e.date>=mStart&&e.date<=mEnd);
   const counts={}, dates={};
-  mEvals.forEach(e=>{
-    const k=`${e.school}::${e.teacher}`;
-    counts[k]=(counts[k]||0)+1;
-    (dates[k]=dates[k]||[]).push(e.date.toLocaleDateString('en-IN'));
-  });
+  mEvals.forEach(e=>{ const k=`${e.school}::${e.teacher}`; counts[k]=(counts[k]||0)+1; (dates[k]=dates[k]||[]).push(e.date.toLocaleDateString('en-IN')); });
 
   const allKeys=new Set();
   DATA.teachers.forEach(t=>allKeys.add(`${t.school}::${t.teacher}`));
   DATA.evals.forEach(e=>allKeys.add(`${e.school}::${e.teacher}`));
+  const total=allKeys.size, done=[...allKeys].filter(k=>(counts[k]||0)>=2).length;
 
-  const total=allKeys.size;
-  const done=[...allKeys].filter(k=>(counts[k]||0)>=2).length;
-  const mEvalCount=mEvals.length;
+  document.getElementById('compStats').innerHTML=`
+    <div class="stat"><div class="stat-val">${mEvals.length}</div><div class="stat-lbl">Total Evaluations</div></div>
+    <div class="stat"><div class="stat-val" style="color:#15803d">${done}</div><div class="stat-lbl">Fully Done (2+)</div></div>
+    <div class="stat"><div class="stat-val" style="color:#CE0000">${total-done}</div><div class="stat-lbl">Need More Evals</div></div>
+    <div class="stat"><div class="stat-val" style="color:${done/total>=.8?'#15803d':'#CE0000'}">${Math.round(done/total*100)||0}%</div><div class="stat-lbl">Compliance Rate</div></div>`;
 
-  // Summary stats
-  document.getElementById('compStats').innerHTML = `
-    <div class="stat"><div class="stat-val">${mEvalCount}</div><div class="stat-lbl">Total Evaluations</div></div>
-    <div class="stat"><div class="stat-val" style="color:#276749">${done}</div><div class="stat-lbl">Teachers Fully Done (2+)</div></div>
-    <div class="stat"><div class="stat-val" style="color:#c53030">${total-done}</div><div class="stat-lbl">Teachers Needing More</div></div>
-    <div class="stat"><div class="stat-val" style="color:${done/total>=.8?'#276749':'#c53030'}">${Math.round(done/total*100)||0}%</div><div class="stat-lbl">Compliance Rate</div></div>
-  `;
-
-  // School compliance bars
-  document.getElementById('compBars').innerHTML = Object.keys(CONFIG.SCHOOLS).map(s=>{
+  document.getElementById('compBars').innerHTML=Object.keys(CONFIG.SCHOOLS).map(s=>{
     const sk=[...allKeys].filter(k=>k.startsWith(s+'::'));
-    const d=sk.filter(k=>(counts[k]||0)>=2).length;
-    const p=sk.filter(k=>(counts[k]||0)===1).length;
+    const d=sk.filter(k=>(counts[k]||0)>=2).length, p=sk.filter(k=>(counts[k]||0)===1).length;
     const pct=sk.length?Math.round(d/sk.length*100):0;
-    const color=pct>=80?'#276749':pct>=50?'#dd6b20':'#c53030';
+    const color=pct>=80?'#15803d':pct>=50?'#b45309':'#CE0000';
     return `
       <div class="c-row">
         <div class="c-label">${sn(s)}</div>
-        <div class="c-bar-wrap">
-          <div class="c-fill" style="width:${pct}%;background:${color}">${pct>=12?pct+'%':''}</div>
-        </div>
+        <div class="c-bar-wrap"><div class="c-fill" style="width:${pct}%;background:${color}">${pct>=15?pct+'%':''}</div></div>
         <div class="c-pct" style="color:${color}">${pct}%</div>
       </div>
-      <div style="font-size:.73rem;color:#a0aec0;padding-left:130px;margin-top:-8px;margin-bottom:10px">
+      <div style="font-size:10px;color:#9ca3af;padding-left:120px;margin-top:-6px;margin-bottom:10px">
         ✅ ${d} done &nbsp;·&nbsp; ⏰ ${p} partial &nbsp;·&nbsp; 🚨 ${sk.length-d-p} missing
       </div>`;
   }).join('');
-
   renderComplianceTable();
 }
 
 function renderComplianceTable() {
-  const [y,m] = document.getElementById('compMonth').value.split('-');
-  const mStart = new Date(+y,+m-1,1), mEnd=new Date(+y,+m,0,23,59,59);
-  const school = document.getElementById('compSchFilter').value;
-  const mEvals = DATA.evals.filter(e=>e.date>=mStart&&e.date<=mEnd);
-
+  const [y,m]=document.getElementById('compMonth').value.split('-');
+  const mStart=new Date(+y,+m-1,1), mEnd=new Date(+y,+m,0,23,59,59);
+  const school=document.getElementById('compSchFilter').value;
+  const mEvals=DATA.evals.filter(e=>e.date>=mStart&&e.date<=mEnd);
   const counts={}, dates={};
-  mEvals.forEach(e=>{
-    const k=`${e.school}::${e.teacher}`;
-    counts[k]=(counts[k]||0)+1;
-    (dates[k]=dates[k]||[]).push(e.date.toLocaleDateString('en-IN'));
-  });
+  mEvals.forEach(e=>{ const k=`${e.school}::${e.teacher}`; counts[k]=(counts[k]||0)+1; (dates[k]=dates[k]||[]).push(e.date.toLocaleDateString('en-IN')); });
 
   const allKeys=new Set();
   DATA.teachers.forEach(t=>{ if(school==='ALL'||t.school===school) allKeys.add(`${t.school}::${t.teacher}`); });
   DATA.evals.forEach(e=>{ if(school==='ALL'||e.school===school) allKeys.add(`${e.school}::${e.teacher}`); });
 
-  const rows=[...allKeys].map(k=>{
-    const [sch,tch]=k.split('::');
-    const n=counts[k]||0;
-    const status=n>=2?'✅ Done':n===1?'⏰ Partial':'🚨 Missing';
-    const color =n>=2?'#276749':n===1?'#dd6b20':'#c53030';
+  const rows=[...allKeys].map(k=>{ const [sch,tch]=k.split('::'); const n=counts[k]||0;
+    const status=n>=2?'Done':n===1?'Partial':'Missing';
+    const color=n>=2?'#15803d':n===1?'#b45309':'#CE0000';
     return {sch,tch,n,dates:(dates[k]||[]).join(', ')||'—',status,color};
   }).sort((a,b)=>a.n-b.n||a.tch.localeCompare(b.tch));
 
-  document.getElementById('compTable').innerHTML = `
-    <table>
-      <thead><tr><th>Teacher</th><th>School</th><th style="text-align:center">Evals</th><th>Dates</th><th>Status</th></tr></thead>
-      <tbody>${rows.map(r=>`
-        <tr>
-          <td><strong>${r.tch}</strong></td>
-          <td style="font-size:.8rem">${sn(r.sch)}</td>
-          <td style="text-align:center"><strong style="color:${r.color}">${r.n}</strong></td>
-          <td style="font-size:.78rem;color:#718096">${r.dates}</td>
-          <td><strong style="color:${r.color}">${r.status}</strong></td>
-        </tr>`).join('')}
-      </tbody>
-    </table>`;
+  document.getElementById('compTable').innerHTML=`<table>
+    <thead><tr><th>Teacher</th><th>School</th><th>Evals</th><th>Dates</th><th>Status</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr>
+      <td><strong>${r.tch}</strong></td>
+      <td style="font-size:11px">${sn(r.sch)}</td>
+      <td style="text-align:center"><strong style="color:${r.color}">${r.n}</strong></td>
+      <td style="font-size:10px;color:var(--gray)">${r.dates}</td>
+      <td><strong style="color:${r.color}">${r.status}</strong></td>
+    </tr>`).join('')}
+    </tbody></table>`;
 }
 </script>
 </body>
