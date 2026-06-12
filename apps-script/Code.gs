@@ -31,6 +31,34 @@ const PAYROLL_HEADERS = [
   'Status'
 ];
 
+// ── One-time fix: run once in Apps Script editor to repair misaligned rows ──
+// Affected rows: submitted during a transition when noOfIncrements + missing kid1Grade
+// caused two blank cells at column N, shifting all subsequent data right by 2.
+// Detection: column N (Kid 1 Grade) is blank AND column AJ (36) has data (Status overflowed there).
+function fixMisalignedRows() {
+  const ss  = SpreadsheetApp.openById(PAYROLL_SHEET_ID);
+  const tab = ss.getSheetByName(PAYROLL_TAB);
+  if (!tab) { Logger.log('Tab not found'); return; }
+  const lastRow = tab.getLastRow();
+  let fixed = 0;
+
+  for (let i = 2; i <= lastRow; i++) {
+    const nVal  = tab.getRange(i, 14).getValue(); // Kid 1 Grade (should be "N.A." at minimum)
+    const ajVal = tab.getRange(i, 36).getValue(); // Status overflowed here in broken rows
+
+    if (nVal === '' && ajVal !== '') {
+      // Shift cols P(16)→AJ(36) one position left → O(15)→AI(35)
+      const shifted = tab.getRange(i, 16, 1, 21).getValues()[0];
+      tab.getRange(i, 15, 1, 21).setValues([shifted]);
+      tab.getRange(i, 14).setValue('N.A.'); // restore Kid 1 Grade default
+      tab.getRange(i, 16).setValue('N.A.'); // restore Kid 2 Grade default (was lost)
+      tab.getRange(i, 36).clearContent();   // clear the overflowed Status cell
+      fixed++;
+    }
+  }
+  Logger.log('Fixed ' + fixed + ' row(s).');
+}
+
 // ── Payroll doGet — receives submissions from the hiring dashboard ──
 // Uses GET + query param because browser POST→Apps Script 302 redirect
 // silently converts to GET, so doPost never fires from cross-origin pages.
