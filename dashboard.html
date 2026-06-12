@@ -740,7 +740,7 @@ async function submitToAccounts(){
   btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Submitting…';
 
   try{
-    await fetch(url,{method:'POST',body:JSON.stringify(payload),mode:'no-cors'});
+    await fetch(url+'?data='+encodeURIComponent(JSON.stringify(payload)),{mode:'no-cors'});
     btn.className='btn-submit success';
     btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Submitted to Accounts';
     setTimeout(()=>{

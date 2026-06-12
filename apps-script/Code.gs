@@ -30,10 +30,12 @@ const PAYROLL_HEADERS = [
   'Status'
 ];
 
-// ── Payroll doPost — receives submissions from the hiring dashboard ──
-function doPost(e) {
+// ── Payroll doGet — receives submissions from the hiring dashboard ──
+// Uses GET + query param because browser POST→Apps Script 302 redirect
+// silently converts to GET, so doPost never fires from cross-origin pages.
+function doGet(e) {
   try {
-    const data = JSON.parse(e.postData.contents);
+    const data = JSON.parse(e.parameter.data);
     const ss   = SpreadsheetApp.openById(PAYROLL_SHEET_ID);
     let   tab  = ss.getSheetByName(PAYROLL_TAB);
 
