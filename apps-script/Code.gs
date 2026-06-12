@@ -21,7 +21,7 @@ const PAYROLL_TAB      = 'Employee_Master';
 const PAYROLL_HEADERS = [
   'Timestamp','Employee Name','Employee Type','School','Designation',
   'Working Hours','EPF Enrolled','ESI Applicable','LMS Exp (yrs)','Other Exp (yrs)','Increments',
-  'Pre-Basic','Grade Pay','No. of Increments',
+  'Pre-Basic','Grade Pay',
   'Kid 1 Grade','Kid 1 Fee','Kid 2 Grade','Kid 2 Fee',
   'Basic','DA','Add. Duty Allow.','Net Salary',
   'EPF Employer','PF Employer','ESI Employer','Total EPF','Total ESI',
@@ -53,7 +53,7 @@ function doGet(e) {
       data.timestamp,      data.name,          data.empType,       data.school,
       data.designation,    data.workingHours,   data.epfEnrolled,   data.esiApplicable,
       data.lmsExp,         data.otherExp,       data.increments,
-      data.preBasic,       data.gradePay,       data.noOfIncrements,
+      data.preBasic,       data.gradePay,
       data.kid1Grade,      data.kid1Fee,        data.kid2Grade,     data.kid2Fee,
       data.basic,          data.da,             data.ada,           data.netSalary,
       data.epfEmployer,    data.pfEmployer,     data.esiEmployer,   data.totalEpf,
