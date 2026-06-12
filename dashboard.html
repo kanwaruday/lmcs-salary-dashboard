@@ -701,7 +701,7 @@ async function submitToAccounts(){
   const school=document.getElementById('inp-school').value;
   const desig=document.getElementById('inp-designation').value;
 
-  const url = localStorage.getItem('lmcs_payroll_url') || '';
+  const url = localStorage.getItem('lmcs_payroll_url') || PAYROLL_SHEET_URL;
   if(!url){alert('Payroll Sheet URL is not configured.\n\nPlease go to the LMCS Admin Panel → Integrations tab and paste the Apps Script Web App URL.');return;}
   if(!name){alert('Please enter the employee name before submitting.');return;}
   if(!school||!desig){alert('Please select school and designation before submitting.');return;}
