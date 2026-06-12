@@ -138,6 +138,15 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   .jval{font-size:12px}
 }
 
+/* SUBMIT BUTTON */
+.submit-bar{grid-column:1/-1;padding:8px 0 4px}
+.btn-submit{width:100%;background:#065f46;color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:'Poppins',sans-serif;font-size:11px;font-weight:700;padding:10px 16px;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .15s;letter-spacing:.3px}
+.btn-submit:hover:not(:disabled){background:#047857}
+.btn-submit:disabled{opacity:.6;cursor:not-allowed}
+.btn-submit.success{background:#15803d}
+.btn-submit.error{background:#b91c1c}
+.submit-note{text-align:center;font-size:9px;color:#6b7280;margin-top:4px}
+
 /* ── TABLET: 641–900px ── */
 @media(min-width:641px) and (max-width:900px){
   .main{grid-template-columns:1fr 1fr;padding:8px 12px}
@@ -412,6 +421,15 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
   </div>
 
+  <!-- SUBMIT TO ACCOUNTS — full width -->
+  <div class="submit-bar">
+    <button class="btn-submit" id="btn-submit" onclick="submitToAccounts()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
+      Submit to Accounts
+    </button>
+    <div class="submit-note">Saves all inputs &amp; calculated salary to the Payroll Sheet for accounts</div>
+  </div>
+
 </div><!-- end main -->
 
 <script>
@@ -671,6 +689,74 @@ function renderTuition(school){
   g.innerHTML=keys.map((k,i)=>{const f=tf[k];return f
     ?`<div class="ti"><div class="tc">${cls[i]}</div><div class="tf">₹${f.toLocaleString('en-IN')}</div></div>`
     :`<div class="ti na"><div class="tc">${cls[i]}</div><div class="tf">—</div></div>`;}).join('');
+}
+
+// ── Google Sheet submission ────────────────────────────────────────
+// URL is configured in the LMCS Admin Panel → Integrations tab
+const PAYROLL_SHEET_URL = localStorage.getItem('lmcs_payroll_url') || '';
+
+async function submitToAccounts(){
+  const name=document.getElementById('inp-name').value.trim();
+  const school=document.getElementById('inp-school').value;
+  const desig=document.getElementById('inp-designation').value;
+
+  const url = localStorage.getItem('lmcs_payroll_url') || '';
+  if(!url){alert('Payroll Sheet URL is not configured.\n\nPlease go to the LMCS Admin Panel → Integrations tab and paste the Apps Script Web App URL.');return;}
+  if(!name){alert('Please enter the employee name before submitting.');return;}
+  if(!school||!desig){alert('Please select school and designation before submitting.');return;}
+  if(isDirty){alert('Please click Recalculate before submitting.');return;}
+
+  const hoursV=parseFloat(document.getElementById('inp-hours').value)||null;
+  const kid1=document.getElementById('inp-kid1').value;
+  const kid2=document.getElementById('inp-kid2').value;
+  const empType=document.getElementById('emp-type-toggle').dataset.emptype||'new';
+  const esiApplicable=document.getElementById('inp-esi').value;
+  const epfEnrolled=document.getElementById('inp-epf').value;
+  const fee1=getKidFeeVal(school,kid1);
+  const fee2=getKidFeeVal(school,kid2);
+  const bd=D.base[desig+school];
+  const wh=hoursV||(bd&&bd.ideal_hours);
+  const r=calcSalary(desig,school,apLms,apOther,wh,fee1+fee2,empType,esiApplicable);
+
+  if(!r){alert('Could not calculate salary. Please check your inputs.');return;}
+
+  const payload={
+    timestamp:new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}),
+    name,empType,school,designation:desig,
+    workingHours:wh,epfEnrolled,esiApplicable,
+    lmsExp:apLms,otherExp:apOther,increments:r.inc,
+    kid1Grade:kid1,kid1Fee:fee1,kid2Grade:kid2,kid2Fee:fee2,
+    basic:r.nb,da:r.da,ada:r.ada,netSalary:r.ns,
+    epfEmployer:r.epfE,pfEmployer:r.pfE,esiEmployer:r.esiE,
+    totalEpf:r.totEpf,totalEsi:r.totEsi,tuitionFee:r.tuiFee,
+    costToInstitution:r.cti,
+    rrfY1:r.rrf1,rrfY2:r.rrf2,rrfY3:r.rrf3,
+    netBankY1:r.y1,netBankY2:r.y2,netBankY3:r.y3,
+    status:'Pending'
+  };
+
+  const btn=document.getElementById('btn-submit');
+  btn.disabled=true;
+  btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Submitting…';
+
+  try{
+    await fetch(url,{method:'POST',body:JSON.stringify(payload),mode:'no-cors'});
+    btn.className='btn-submit success';
+    btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Submitted to Accounts';
+    setTimeout(()=>{
+      btn.className='btn-submit';
+      btn.disabled=false;
+      btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg> Submit to Accounts';
+    },3000);
+  }catch(err){
+    btn.className='btn-submit error';
+    btn.innerHTML='&#9888; Submission Failed — Check Connection';
+    btn.disabled=false;
+    setTimeout(()=>{
+      btn.className='btn-submit';
+      btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg> Submit to Accounts';
+    },3000);
+  }
 }
 
 // Init — default to LMS 6 (EPF=No per policy)

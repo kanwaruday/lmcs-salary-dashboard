@@ -13,6 +13,62 @@
 
 const CW_SHEET_ID = '1z5hzpMRHMru6ulpYs2lsGZr7quAywwpQ_zySa3rvGUA';
 
+// ── Payroll Sheet ID ─────────────────────────────────────────────
+// Create a new Google Sheet, paste its ID here
+const PAYROLL_SHEET_ID = '1GlyK5fu4WAwICVj0YWnILmL2U_rL8xmjNb5THPOXRhc';
+const PAYROLL_TAB      = 'Employee_Master';
+
+const PAYROLL_HEADERS = [
+  'Timestamp','Employee Name','Employee Type','School','Designation',
+  'Working Hours','EPF Enrolled','ESI Applicable','LMS Exp (yrs)','Other Exp (yrs)','Increments',
+  'Kid 1 Grade','Kid 1 Fee','Kid 2 Grade','Kid 2 Fee',
+  'Basic','DA','Add. Duty Allow.','Net Salary',
+  'EPF Employer','PF Employer','ESI Employer','Total EPF','Total ESI',
+  'Tuition Fee','Cost to Institution',
+  'RRF Y1','RRF Y2','RRF Y3',
+  'Net Bank Y1','Net Bank Y2','Net Bank Y3',
+  'Status'
+];
+
+// ── Payroll doPost — receives submissions from the hiring dashboard ──
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const ss   = SpreadsheetApp.openById(PAYROLL_SHEET_ID);
+    let   tab  = ss.getSheetByName(PAYROLL_TAB);
+
+    // Create tab + header row on first use
+    if (!tab) {
+      tab = ss.insertSheet(PAYROLL_TAB);
+      tab.appendRow(PAYROLL_HEADERS);
+      tab.setFrozenRows(1);
+      tab.getRange(1, 1, 1, PAYROLL_HEADERS.length)
+         .setBackground('#1e3a5f').setFontColor('#ffffff').setFontWeight('bold');
+    }
+
+    tab.appendRow([
+      data.timestamp,      data.name,          data.empType,       data.school,
+      data.designation,    data.workingHours,   data.epfEnrolled,   data.esiApplicable,
+      data.lmsExp,         data.otherExp,       data.increments,
+      data.kid1Grade,      data.kid1Fee,        data.kid2Grade,     data.kid2Fee,
+      data.basic,          data.da,             data.ada,           data.netSalary,
+      data.epfEmployer,    data.pfEmployer,     data.esiEmployer,   data.totalEpf,
+      data.totalEsi,       data.tuitionFee,     data.costToInstitution,
+      data.rrfY1,          data.rrfY2,          data.rrfY3,
+      data.netBankY1,      data.netBankY2,      data.netBankY3,
+      data.status || 'Pending'
+    ]);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ success: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
 const CM_SCHOOLS = [
   { name: 'LMS 1', id: '1BorpCdePG7O6iZiwgGwNpWZBl7I1IGAT-OAh0fw2yMs' },
   { name: 'LMS 2', id: '1ejXKsnK3a2kNGEboTs-yQ2d3Tpk3xG5JRtm9DAmiYXs' },
