@@ -692,8 +692,9 @@ function renderTuition(school){
 }
 
 // ── Google Sheet submission ────────────────────────────────────────
-// URL is configured in the LMCS Admin Panel → Integrations tab
-const PAYROLL_SHEET_URL = localStorage.getItem('lmcs_payroll_url') || '';
+// Default URL — overridden by Admin Panel → Integrations if set
+const PAYROLL_SHEET_URL = localStorage.getItem('lmcs_payroll_url') ||
+  'https://script.google.com/macros/s/AKfycbygESuG9HhlMWTB8tA2xEcvX5KdXybAwsz7i3r0hIimoCySLBtrCIrB70xVQlBV72OH/exec';
 
 async function submitToAccounts(){
   const name=document.getElementById('inp-name').value.trim();
