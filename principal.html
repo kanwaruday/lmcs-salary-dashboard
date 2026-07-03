@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMCS — Principal Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#0d1117;color:#e2e8f0;min-height:100vh;display:flex;flex-direction:column}
+
+/* BG GRID */
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(99,102,241,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+/* HEADER */
+.hdr{position:relative;z-index:1;padding:40px 28px 0;text-align:center}
+.hdr-logo{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:12px;font-family:'Poppins',sans-serif;font-weight:800;font-size:20px;color:#fff;margin-bottom:16px;box-shadow:0 8px 24px rgba(99,102,241,.35)}
+.hdr h1{font-family:'Poppins',sans-serif;font-size:26px;font-weight:800;color:#f1f5f9;letter-spacing:-.5px}
+.hdr h1 span{color:#818cf8}
+.hdr p{color:#64748b;font-size:13px;margin-top:6px}
+.hdr-meta{display:inline-flex;align-items:center;gap:6px;margin-top:14px;background:#1e293b;border:1px solid #334155;border-radius:20px;padding:4px 12px;font-size:10.5px;color:#64748b}
+.hdr-meta span{width:6px;height:6px;background:#22c55e;border-radius:50%;display:inline-block;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* MAIN */
+.main{position:relative;z-index:1;padding:36px 28px 40px;max-width:900px;margin:0 auto;width:100%;flex:1}
+
+/* SECTION LABEL */
+.sec-lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#475569;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.sec-lbl::after{content:'';flex:1;height:1px;background:#1e293b}
+
+/* CARDS GRID */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:32px}
+
+/* CARD */
+.card{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px;text-decoration:none;color:inherit;transition:border-color .18s,transform .18s,box-shadow .18s;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .18s}
+.card:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(0,0,0,.35)}
+
+.card-blue{border-color:#1e3a5f}.card-blue:hover{border-color:#3b82f6;box-shadow:0 12px 32px rgba(59,130,246,.12)}
+.card-blue::before{background:linear-gradient(135deg,rgba(59,130,246,.06),transparent)}
+.card-blue:hover::before{opacity:1}
+
+.card-green{border-color:#14532d}.card-green:hover{border-color:#22c55e;box-shadow:0 12px 32px rgba(34,197,94,.1)}
+.card-green::before{background:linear-gradient(135deg,rgba(34,197,94,.05),transparent)}
+.card-green:hover::before{opacity:1}
+
+.card-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px}
+.ci-blue{background:rgba(59,130,246,.15)}
+.ci-green{background:rgba(34,197,94,.12)}
+
+.card-top{display:flex;align-items:center;gap:10px}
+.card-badge{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:2px 7px;border-radius:20px;margin-left:auto;flex-shrink:0}
+.badge-live{background:#052e16;color:#22c55e;border:1px solid #166534}
+
+.card-title{font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;color:#f1f5f9;line-height:1.3}
+.card-desc{font-size:11px;color:#64748b;line-height:1.55;flex:1}
+.card-footer{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #1e293b;padding-top:10px;margin-top:2px}
+.card-url{font-family:'Inter',monospace;font-size:10px;color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px}
+.card-arrow{color:#475569;font-size:14px;transition:transform .15s,color .15s;flex-shrink:0}
+.card:hover .card-arrow{transform:translateX(3px);color:#94a3b8}
+
+/* FOOTER */
+.footer{position:relative;z-index:1;text-align:center;padding:16px 28px;border-top:1px solid #1e293b;color:#334155;font-size:10.5px}
+.footer a{color:#475569;text-decoration:none}.footer a:hover{color:#94a3b8}
+
+/* SIGN-IN GATE */
+.gate{position:relative;z-index:1;max-width:420px;margin:60px auto 0;background:#111827;border:1px solid #1e293b;border-radius:16px;padding:36px 32px;text-align:center}
+.gate p{color:#94a3b8;font-size:13px;line-height:1.6;margin-bottom:24px}
+#g_id_signin{display:flex;justify-content:center}
+.denied{margin-top:20px;background:#3f0c0c;border:1px solid #991b1b;color:#fca5a5;border-radius:10px;padding:14px 16px;font-size:12px;line-height:1.6;text-align:left}
+
+/* WELCOME STRIP */
+.welcome{display:flex;align-items:center;justify-content:space-between;background:#111827;border:1px solid #1e293b;border-radius:10px;padding:14px 18px;margin-bottom:28px;flex-wrap:wrap;gap:10px}
+.welcome-text{font-size:12.5px;color:#94a3b8}
+.welcome-text b{color:#f1f5f9}
+.signout{font-size:11px;color:#475569;text-decoration:none;border:1px solid #1e293b;border-radius:6px;padding:5px 10px}
+.signout:hover{border-color:#6366f1;color:#a5b4fc}
+
+@media(max-width:600px){
+  .hdr{padding:28px 16px 0}
+  .main{padding:28px 16px 32px}
+  .hdr h1{font-size:21px}
+  .cards{grid-template-columns:1fr}
+  .gate{margin:36px 16px 0;padding:28px 20px}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-logo">LM</div>
+  <h1>La Montessori <span>Principal Dashboard</span></h1>
+  <p>Your campus at a glance — Academic Year 2025–26</p>
+  <div class="hdr-meta"><span></span> Confidential &nbsp;&middot;&nbsp; Principals Only</div>
+</div>
+
+<div class="main">
+
+  <!-- SIGN-IN GATE -->
+  <div class="gate" id="gate">
+    <p>Sign in with your LMS Google account to view your campus dashboard.</p>
+    <div id="g_id_signin"></div>
+    <div id="auth-status"></div>
+  </div>
+
+  <!-- DASHBOARD (hidden until signed in) -->
+  <div id="dashboard" style="display:none">
+
+    <div class="welcome">
+      <div class="welcome-text">Signed in as <b id="welcome-name"></b> — <b id="welcome-campus"></b></div>
+      <a href="#" class="signout" id="signout-link">Sign out</a>
+    </div>
+
+    <div class="sec-lbl">Your Tools</div>
+    <div class="cards">
+
+      <a href="dashboard.html" class="card card-blue" data-tool="dashboard.html">
+        <div class="card-top">
+          <div class="card-icon ci-blue">👤</div>
+          <div class="card-badge badge-live">Live</div>
+        </div>
+        <div>
+          <div class="card-title">Hiring Dashboard</div>
+          <div class="card-desc">Salary calculator for new hires at your campus. Select designation, experience and kid details to get a full salary breakdown across Y1–Y3.</div>
+        </div>
+        <div class="card-footer">
+          <span class="card-url">dashboard.html</span>
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+      <a href="teacher-dr.html" class="card card-green" data-tool="teacher-dr.html">
+        <div class="card-top">
+          <div class="card-icon ci-green">📊</div>
+          <div class="card-badge badge-live">Live</div>
+        </div>
+        <div>
+          <div class="card-title">Teacher DR Dashboard</div>
+          <div class="card-desc">Daily Report evaluation analytics for your campus. Which teachers need observation, aggregate scores, and monthly compliance tracking.</div>
+        </div>
+        <div class="card-footer">
+          <span class="card-url">teacher-dr.html</span>
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+      <a href="daily-progress.html" class="card card-blue" data-tool="daily-progress.html">
+        <div class="card-top">
+          <div class="card-icon ci-blue">📋</div>
+          <div class="card-badge badge-live">Live</div>
+        </div>
+        <div>
+          <div class="card-title">Daily Progress &amp; CWA Tracking</div>
+          <div class="card-desc">Activity feed from the daily classwork portal for your campus. 30-day pulse, upload compliance, and missing uploads.</div>
+        </div>
+        <div class="card-footer">
+          <span class="card-url">daily-progress.html</span>
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  La Montessori Chain of Schools &nbsp;&middot;&nbsp; Principal Dashboard &nbsp;&middot;&nbsp; Internal &amp; Confidential
+</div>
+
+<script src="https://accounts.google.com/gsi/client" async defer onload="initGoogleSignIn()"></script>
+<script>
+// TODO: replace with the real OAuth Web Client ID once created — see SETUP guide.
+const GOOGLE_CLIENT_ID = '697999989724-mvi85iobr20g4mm8a8nrjd1rms2o8tf6.apps.googleusercontent.com';
+
+const SESSION_KEY = 'lmcs_principal_session';
+
+const PRINCIPALS = {
+  'nidhi.kant@lms.org.in':     { campusId: 'LMS1', campusName: 'LMS 1 (Dhalpur)',    name: 'Nidhi Sharma' },
+  'arti.sharma@lms.org.in':    { campusId: 'LMS2', campusName: 'LMS 2 (Kelheli)',    name: 'Arti Sharma' },
+  'suresh.prasher@lms.org.in': { campusId: 'LMS3', campusName: 'LMS 3 (Dunkhra)',    name: 'Suresh Prasher' },
+  'nisha.lms@lms.org.in':      { campusId: 'LMS4', campusName: 'LMS 4 (Ner Chowk)',  name: 'Nisha Thakur' },
+};
+
+function decodeJwtPayload(token) {
+  const base64Url = token.split('.')[1];
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  const json = decodeURIComponent(atob(base64).split('').map(c =>
+    '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+  return JSON.parse(json);
+}
+
+function showDashboard(session) {
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('welcome-name').textContent = session.name;
+  document.getElementById('welcome-campus').textContent = session.campusName;
+  document.querySelectorAll('.card[data-tool]').forEach(a => {
+    a.setAttribute('href', a.dataset.tool + '?principal=1');
+  });
+  document.getElementById('dashboard').style.display = '';
+}
+
+function onGoogleSignIn(response) {
+  const payload = decodeJwtPayload(response.credential);
+  const email = (payload.email || '').toLowerCase();
+  const match = PRINCIPALS[email];
+  const statusEl = document.getElementById('auth-status');
+
+  if (!match || !payload.email_verified) {
+    statusEl.innerHTML = '<div class="denied">This dashboard is only available to campus principals. Signed in as <b>' +
+      (payload.email || 'unknown') + '</b>, which is not on the principal list. Contact the admin if this is wrong.</div>';
+    sessionStorage.removeItem(SESSION_KEY);
+    return;
+  }
+
+  const session = { email, campusId: match.campusId, campusName: match.campusName, name: match.name, ts: Date.now() };
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  showDashboard(session);
+}
+
+function initGoogleSignIn() {
+  google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleSignIn });
+  google.accounts.id.renderButton(document.getElementById('g_id_signin'), { theme: 'filled_black', size: 'large', shape: 'pill' });
+}
+
+document.getElementById('signout-link').addEventListener('click', function(e) {
+  e.preventDefault();
+  sessionStorage.removeItem(SESSION_KEY);
+  window.location.reload();
+});
+
+// Restore an existing session within this browser tab without requiring sign-in again.
+(function restoreSession() {
+  try {
+    const existing = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
+    if (existing && PRINCIPALS[existing.email]) showDashboard(existing);
+  } catch (_) {}
+})();
+</script>
+</body>
+</html>

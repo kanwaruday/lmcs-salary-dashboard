@@ -397,6 +397,7 @@ async function fetchData() {
     document.getElementById('view-loading').style.display = 'none';
     document.getElementById('view-loading').classList.remove('active');
     initAllViews();
+    applyPrincipalLock();
 
   } catch(err) {
     document.getElementById('loadingState').innerHTML =
@@ -463,6 +464,37 @@ function currentMonth() {
 function periodRange() { return PERIOD==='block' ? currentBlock() : currentMonth(); }
 function inRange(ev, r) { return ev.date>=r.start && ev.date<=r.end; }
 function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+// ════════════════════════════════════════════════════════════
+// PRINCIPAL MODE — locks this page to one campus when reached via principal.html
+// ════════════════════════════════════════════════════════════
+function getPrincipalSession() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('principal') !== '1') return null;
+  try {
+    const s = JSON.parse(sessionStorage.getItem('lmcs_principal_session') || 'null');
+    return (s && s.campusId) ? s : null;
+  } catch (_) { return null; }
+}
+function applyPrincipalLock() {
+  const session = getPrincipalSession();
+  if (!session) return;
+  const label = 'LMS ' + session.campusId.replace('LMS', '');
+
+  const scoreSel = document.getElementById('scoreSchool');
+  if ([...scoreSel.options].some(o => o.value === label)) {
+    scoreSel.value = label;
+    scoreSel.disabled = true;
+    onScoreSchoolChange();
+  }
+
+  const compSel = document.getElementById('compSchFilter');
+  if ([...compSel.options].some(o => o.value === label)) {
+    compSel.value = label;
+    compSel.disabled = true;
+    renderComplianceTable();
+  }
+}
 
 // ════════════════════════════════════════════════════════════
 // NAV

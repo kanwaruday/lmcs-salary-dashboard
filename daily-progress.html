@@ -397,6 +397,17 @@ const ALLOC_CACHE_TTL = 60 * 60 * 1000; // 1 hour (independent of CM cache TTL)
 
 const CM_CACHE_TTL = ((_earlyCfg?.cacheTtlMinutes) || 30) * 60 * 1000;
 
+// Principal-mode: locks this page to one campus when reached via principal.html
+function getPrincipalSession() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('principal') !== '1') return null;
+  try {
+    const s = JSON.parse(sessionStorage.getItem('lmcs_principal_session') || 'null');
+    return (s && s.campusId) ? s : null;
+  } catch (_) { return null; }
+}
+const PRINCIPAL_SESSION = getPrincipalSession();
+
 /* ═══════════════════════════════════════════════════════════
    CONFIGURATION
    School name mapping matches the daily classwork sheet's "School Name"
@@ -2215,10 +2226,31 @@ function finishInit() {
   else document.getElementById('qClear')?.classList.add('active');
 
   buildChips();
+  applyPrincipalLock();
   renderFeed();
 
   // Prefetch CM in the background only if not already loaded via proxy
   if (!cmLoaded) _prefetchCM();
+}
+
+// Principal-mode: restricts the school multi-select to one campus and locks it
+function applyPrincipalLock() {
+  if (!PRINCIPAL_SESSION) return;
+  const idx = parseInt(PRINCIPAL_SESSION.campusId.replace('LMS', ''), 10) - 1;
+  if (idx < 0 || idx >= CM_SCHOOLS.length) return;
+
+  activeSchools = [idx];
+
+  const panel = document.getElementById('msSchoolPanel');
+  panel.querySelectorAll('.ms-item-cb').forEach(cb => { cb.checked = (parseInt(cb.value, 10) === idx); });
+  const allCb = panel.querySelector('#msSchoolAll');
+  if (allCb) allCb.checked = false;
+
+  const label = document.getElementById('msSchoolLabel');
+  if (label) label.textContent = CM_SCHOOLS[idx]?.name || `LMS ${idx + 1}`;
+
+  const btn = document.getElementById('msSchoolBtn');
+  if (btn) btn.disabled = true;
 }
 
 let _cmPrefetchPromise = null;

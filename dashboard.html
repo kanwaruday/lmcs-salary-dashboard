@@ -759,11 +759,30 @@ async function submitToAccounts(){
   }
 }
 
-// Init — default to LMS 6 (EPF=No per policy)
+// ── Principal-mode: locks this page to one campus when reached via principal.html ──
+function getPrincipalSession(){
+  const params=new URLSearchParams(window.location.search);
+  if(params.get('principal')!=='1')return null;
+  try{
+    const s=JSON.parse(sessionStorage.getItem('lmcs_principal_session')||'null');
+    return (s&&s.campusId)?s:null;
+  }catch(_){return null;}
+}
+const PRINCIPAL_SESSION=getPrincipalSession();
+
+// Init — default to LMS 6 (EPF=No per policy), unless locked to a principal's campus
 window.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('inp-school').value='LMS 6';
-  onSchoolChange();
-  document.getElementById('inp-designation').value='PRT';
+  const schoolSel=document.getElementById('inp-school');
+  if(PRINCIPAL_SESSION){
+    const label='LMS '+PRINCIPAL_SESSION.campusId.replace('LMS','');
+    schoolSel.value=label;
+    schoolSel.disabled=true;
+    onSchoolChange();
+  }else{
+    schoolSel.value='LMS 6';
+    onSchoolChange();
+    document.getElementById('inp-designation').value='PRT';
+  }
   compute();
 });
 </script>
