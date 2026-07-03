@@ -176,19 +176,54 @@ const GOOGLE_CLIENT_ID = '697999989724-mvi85iobr20g4mm8a8nrjd1rms2o8tf6.apps.goo
 
 const SESSION_KEY = 'lmcs_principal_session';
 
-// campusId 'ALL' = network-wide role, no campus lock applied (same view as normal admin access)
-const PRINCIPALS = {
-  'nidhi.kant@lms.org.in':          { campusId: 'LMS1', campusName: 'LMS 1 (Dhalpur)',    name: 'Nidhi Sharma' },
-  'arti.sharma@lms.org.in':         { campusId: 'LMS2', campusName: 'LMS 2 (Kelheli)',    name: 'Arti Sharma' },
-  'suresh.prasher@lms.org.in':      { campusId: 'LMS3', campusName: 'LMS 3 (Dunkhra)',    name: 'Suresh Prasher' },
-  'nisha.lms@lms.org.in':           { campusId: 'LMS4', campusName: 'LMS 4 (Ner Chowk)',  name: 'Nisha Thakur' },
-  'lalita.kanwar@lms.org.in':       { campusId: 'ALL',  campusName: 'All Campuses (Network-wide)', name: 'Lalita Kanwar' },
-  'urvashi.pandit@lms.org.in':      { campusId: 'ALL',  campusName: 'All Campuses (Network-wide)', name: 'Urvashi Pandit' },
-  'vikas.thakur@lms.org.in':        { campusId: 'ALL',  campusName: 'All Campuses (Network-wide)', name: 'Vikas Thakur' },
-  'deepshikha.mukherjee@lms.org.in':{ campusId: 'ALL',  campusName: 'All Campuses (Network-wide)', name: 'Deepshikha Mukherjee' },
-  'avantikasinghkanwar@lms.org.in': { campusId: 'ALL',  campusName: 'All Campuses (Network-wide)', name: 'Avantika Singh Kanwar' },
-  'uday.kanwar@lms.org.in':         { campusId: 'ALL',  campusName: 'All Campuses (Network-wide)', name: 'Uday Kanwar' },
+// TODO: paste the deployed Apps Script Web App URL here (see setup guide) — same
+// endpoint principal-admin.html writes to. Until then this falls back to the
+// snapshot below, which will not reflect edits made on principal-admin.html.
+const ALLOWLIST_API_URL = 'REPLACE_WITH_APPS_SCRIPT_URL';
+
+const CAMPUS_NAMES = {
+  LMS1: 'LMS 1 (Dhalpur)', LMS2: 'LMS 2 (Kelheli)', LMS3: 'LMS 3 (Dunkhra)',
+  LMS4: 'LMS 4 (Ner Chowk)', ALL: 'All Campuses (Network-wide)',
 };
+
+// Stale snapshot, used only if the live fetch below fails — the Google Sheet
+// behind ALLOWLIST_API_URL is the real source of truth going forward.
+const FALLBACK_PRINCIPALS = {
+  'nidhi.kant@lms.org.in':          { campusId: 'LMS1', name: 'Nidhi Sharma' },
+  'arti.sharma@lms.org.in':         { campusId: 'LMS2', name: 'Arti Sharma' },
+  'suresh.prasher@lms.org.in':      { campusId: 'LMS3', name: 'Suresh Prasher' },
+  'nisha.lms@lms.org.in':           { campusId: 'LMS4', name: 'Nisha Thakur' },
+  'lalita.kanwar@lms.org.in':       { campusId: 'ALL',  name: 'Lalita Kanwar' },
+  'urvashi.pandit@lms.org.in':      { campusId: 'ALL',  name: 'Urvashi Pandit' },
+  'vikas.thakur@lms.org.in':        { campusId: 'ALL',  name: 'Vikas Thakur' },
+  'deepshikha.mukherjee@lms.org.in':{ campusId: 'ALL',  name: 'Deepshikha Mukherjee' },
+  'avantikasinghkanwar@lms.org.in': { campusId: 'ALL',  name: 'Avantika Singh Kanwar' },
+  'uday.kanwar@lms.org.in':         { campusId: 'ALL',  name: 'Uday Kanwar' },
+};
+
+let PRINCIPALS = null;
+
+async function loadPrincipals() {
+  try {
+    const res = await fetch(ALLOWLIST_API_URL + '?action=list', { cache: 'no-store' });
+    const data = await res.json();
+    if (!data.success || !Array.isArray(data.entries)) throw new Error('bad response');
+    const map = {};
+    data.entries.forEach(e => {
+      map[e.email] = { campusId: e.campusId, campusName: CAMPUS_NAMES[e.campusId] || e.campusId, name: e.name };
+    });
+    PRINCIPALS = map;
+  } catch (err) {
+    console.warn('Principal Dashboard: could not load live allowlist, using fallback snapshot.', err);
+    const map = {};
+    Object.keys(FALLBACK_PRINCIPALS).forEach(email => {
+      const { campusId, name } = FALLBACK_PRINCIPALS[email];
+      map[email] = { campusId, campusName: CAMPUS_NAMES[campusId] || campusId, name };
+    });
+    PRINCIPALS = map;
+  }
+}
+const principalsReady = loadPrincipals();
 
 function decodeJwtPayload(token) {
   const base64Url = token.split('.')[1];
@@ -209,7 +244,8 @@ function showDashboard(session) {
   document.getElementById('dashboard').style.display = '';
 }
 
-function onGoogleSignIn(response) {
+async function onGoogleSignIn(response) {
+  await principalsReady;
   const payload = decodeJwtPayload(response.credential);
   const email = (payload.email || '').toLowerCase();
   const match = PRINCIPALS[email];
@@ -239,7 +275,8 @@ document.getElementById('signout-link').addEventListener('click', function(e) {
 });
 
 // Restore an existing session within this browser tab without requiring sign-in again.
-(function restoreSession() {
+(async function restoreSession() {
+  await principalsReady;
   try {
     const existing = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
     if (existing && PRINCIPALS[existing.email]) showDashboard(existing);

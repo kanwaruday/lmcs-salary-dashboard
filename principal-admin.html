@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMCS — Principal Dashboard Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e2e8f0;font-size:12px;min-height:100vh}
+
+.hdr{background:linear-gradient(135deg,#1e1b4b,#312e81);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #312e81;flex-wrap:wrap;gap:10px}
+.hdr-brand{display:flex;align-items:center;gap:10px}
+.hdr-logo{background:#6366f1;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:800;font-size:12px;color:#fff}
+.hdr h1{font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;color:#a5b4fc}
+.hdr p{font-size:9.5px;color:#6366f1;margin-top:1px}
+.hdr-badge{background:#1e1b4b;border:1px solid #4f46e5;color:#a5b4fc;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:600}
+
+.main{padding:16px 20px;max-width:1000px;margin:0 auto}
+
+.auth-strip{border:1px solid #1e293b;border-radius:8px;padding:12px 14px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.auth-strip.signed-in{border-color:#166534;background:#052e1610}
+.auth-strip.denied{border-color:#991b1b}
+.auth-text{color:#94a3b8;font-size:11.5px}
+.auth-text b{color:#f1f5f9}
+#g_id_signin{display:flex}
+
+.section{margin-bottom:20px}
+.section-title{font-family:'Poppins',sans-serif;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.section-title::before{content:'';width:3px;height:14px;background:#6366f1;border-radius:2px;display:inline-block}
+
+.tbl-wrap{border:1px solid #1e293b;border-radius:8px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead th{background:#0d1321;color:#64748b;font-size:9.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid #1e293b}
+tbody tr{border-bottom:1px solid #1a2234}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#111827}
+tbody td{padding:7px 12px;font-size:11.5px;vertical-align:middle}
+.td-val{font-family:'Inter',monospace;font-weight:600;color:#e2e8f0}
+.td-campus{color:#6366f1;font-weight:700;font-size:11px}
+.row-actions{display:flex;gap:6px}
+
+.btn{background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:6px;cursor:pointer;font-size:10.5px;font-weight:600;padding:5px 11px;transition:all .12s}
+.btn:hover{background:#0f172a;color:#e2e8f0}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:#6366f1;color:#fff;border-color:#6366f1;font-family:'Poppins',sans-serif;letter-spacing:.2px}
+.btn-primary:hover{background:#4f46e5}
+.btn-danger:hover{background:#3f0c0c;color:#fca5a5;border-color:#991b1b}
+
+.form-grid{display:grid;grid-template-columns:2fr 1.5fr 1fr auto;gap:8px;align-items:end;border:1px solid #1e293b;border-radius:8px;padding:14px;margin-top:12px}
+.fld label{display:block;font-size:9.5px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:5px}
+.fld input, .fld select{width:100%;background:#1e293b;border:1.5px solid #334155;border-radius:5px;color:#e2e8f0;font-family:'Inter',monospace;font-size:11.5px;font-weight:600;padding:6px 8px;outline:none}
+.fld input:focus, .fld select:focus{border-color:#6366f1}
+
+.status-msg{font-size:11px;margin-top:10px;padding:8px 12px;border-radius:6px}
+.status-ok{background:#052e16;border:1px solid #166534;color:#86efac}
+.status-err{background:#3f0c0c;border:1px solid #991b1b;color:#fca5a5}
+
+.empty-note{color:#64748b;font-size:11px;padding:14px;text-align:center}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-logo">LM</div>
+    <div>
+      <h1>Principal Dashboard — Access List</h1>
+      <p>Add, edit, or remove who can sign in to principal.html</p>
+    </div>
+  </div>
+  <div class="hdr-badge">Admin Only</div>
+</div>
+
+<div class="main">
+
+  <div class="auth-strip" id="auth-strip">
+    <div class="auth-text" id="auth-text">Reads are open to anyone with this URL. Sign in with an admin Google account to add, edit, or remove entries.</div>
+    <div id="g_id_signin"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Current Access List</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Email</th><th>Name</th><th>Campus</th><th></th></tr></thead>
+        <tbody id="rows-body"><tr><td colspan="4" class="empty-note">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Add Entry</div>
+    <div class="form-grid">
+      <div class="fld"><label>Email</label><input type="email" id="add-email" placeholder="name@lms.org.in"></div>
+      <div class="fld"><label>Name</label><input type="text" id="add-name" placeholder="Full name"></div>
+      <div class="fld">
+        <label>Campus</label>
+        <select id="add-campus">
+          <option value="LMS1">LMS1 — Dhalpur</option>
+          <option value="LMS2">LMS2 — Kelheli</option>
+          <option value="LMS3">LMS3 — Dunkhra</option>
+          <option value="LMS4">LMS4 — Ner Chowk</option>
+          <option value="ALL">ALL — Network-wide</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" id="add-btn" onclick="addEntry()" disabled>+ Add</button>
+    </div>
+    <div id="form-status"></div>
+  </div>
+
+</div>
+
+<script src="https://accounts.google.com/gsi/client" async defer onload="initGoogleSignIn()"></script>
+<script>
+// Same OAuth Web Client as principal.html — used here only to obtain a fresh
+// ID token proving identity to the Apps Script endpoint before any write.
+const GOOGLE_CLIENT_ID = '697999989724-mvi85iobr20g4mm8a8nrjd1rms2o8tf6.apps.googleusercontent.com';
+
+// TODO: paste the deployed Apps Script Web App URL here (see setup guide).
+const ALLOWLIST_API_URL = 'REPLACE_WITH_APPS_SCRIPT_URL';
+
+const CAMPUS_LABELS = {
+  LMS1: 'LMS1 — Dhalpur', LMS2: 'LMS2 — Kelheli', LMS3: 'LMS3 — Dunkhra',
+  LMS4: 'LMS4 — Ner Chowk', ALL: 'ALL — Network-wide',
+};
+
+let idToken = null;
+
+function decodeJwtPayload(token) {
+  const base64Url = token.split('.')[1];
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  const json = decodeURIComponent(atob(base64).split('').map(c =>
+    '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+  return JSON.parse(json);
+}
+
+function onGoogleSignIn(response) {
+  idToken = response.credential;
+  const payload = decodeJwtPayload(idToken);
+  const strip = document.getElementById('auth-strip');
+  strip.classList.add('signed-in');
+  document.getElementById('auth-text').innerHTML = 'Signed in as <b>' + payload.email + '</b>. Write attempts are verified server-side — you\'ll see an error here if this account isn\'t an admin.';
+  document.getElementById('add-btn').disabled = false;
+}
+
+function initGoogleSignIn() {
+  google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleSignIn });
+  google.accounts.id.renderButton(document.getElementById('g_id_signin'), { theme: 'outline', size: 'medium' });
+}
+
+async function loadEntries() {
+  const tbody = document.getElementById('rows-body');
+  try {
+    const res = await fetch(ALLOWLIST_API_URL + '?action=list', { cache: 'no-store' });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Failed to load');
+    renderRows(data.entries);
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-note">Could not load the list: ' + esc(err.message) + '</td></tr>';
+  }
+}
+
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function renderRows(entries) {
+  const tbody = document.getElementById('rows-body');
+  if (!entries.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty-note">No entries yet.</td></tr>'; return; }
+  tbody.innerHTML = entries.map(e => `
+    <tr>
+      <td class="td-val">${esc(e.email)}</td>
+      <td>${esc(e.name)}</td>
+      <td class="td-campus">${esc(CAMPUS_LABELS[e.campusId] || e.campusId)}</td>
+      <td class="row-actions">
+        <button class="btn" onclick="editEntry('${esc(e.email)}','${esc(e.name)}','${esc(e.campusId)}')">Edit</button>
+        <button class="btn btn-danger" onclick="deleteEntry('${esc(e.email)}')">Delete</button>
+      </td>
+    </tr>`).join('');
+}
+
+function showStatus(el, ok, msg) {
+  el.innerHTML = `<div class="status-msg ${ok ? 'status-ok' : 'status-err'}">${esc(msg)}</div>`;
+}
+
+async function callApi(action, params) {
+  if (!idToken) { alert('Sign in first.'); return null; }
+  const qs = new URLSearchParams({ action, idToken, ...params });
+  const res = await fetch(ALLOWLIST_API_URL + '?' + qs.toString(), { cache: 'no-store' });
+  return res.json();
+}
+
+async function addEntry() {
+  const email = document.getElementById('add-email').value.trim();
+  const name = document.getElementById('add-name').value.trim();
+  const campusId = document.getElementById('add-campus').value;
+  const statusEl = document.getElementById('form-status');
+  if (!email) { showStatus(statusEl, false, 'Email is required.'); return; }
+
+  const data = await callApi('add', { email, name, campusId });
+  if (!data) return;
+  if (!data.success) { showStatus(statusEl, false, data.error); return; }
+  showStatus(statusEl, true, 'Added ' + email + '.');
+  document.getElementById('add-email').value = '';
+  document.getElementById('add-name').value = '';
+  renderRows(data.entries);
+}
+
+async function editEntry(email, currentName, currentCampus) {
+  const name = prompt('Name for ' + email + ':', currentName);
+  if (name === null) return;
+  const campusId = (prompt('Campus for ' + email + ' (LMS1/LMS2/LMS3/LMS4/ALL):', currentCampus) || '').trim().toUpperCase();
+  if (!campusId) return;
+  const data = await callApi('edit', { email, name, campusId });
+  if (!data) return;
+  if (!data.success) { alert(data.error); return; }
+  renderRows(data.entries);
+}
+
+async function deleteEntry(email) {
+  if (!confirm('Remove ' + email + ' from the Principal Dashboard access list?')) return;
+  const data = await callApi('delete', { email });
+  if (!data) return;
+  if (!data.success) { alert(data.error); return; }
+  renderRows(data.entries);
+}
+
+loadEntries();
+</script>
+</body>
+</html>
