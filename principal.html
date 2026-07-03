@@ -180,6 +180,19 @@ const GOOGLE_CLIENT_ID = '697999989724-mvi85iobr20g4mm8a8nrjd1rms2o8tf6.apps.goo
 
 const SESSION_KEY = 'lmcs_principal_session';
 
+// Sessions persist in localStorage (survives across tabs/page navigation, unlike
+// sessionStorage) until either sign-out or the next 6:00 PM cutoff, whichever
+// comes first.
+function nextSixPM(fromTime) {
+  const d = new Date(fromTime);
+  d.setHours(18, 0, 0, 0);
+  if (d.getTime() <= fromTime) d.setDate(d.getDate() + 1);
+  return d.getTime();
+}
+function isSessionExpired(s) {
+  return !s || !s.expiresAt || Date.now() >= s.expiresAt;
+}
+
 // TODO: paste the deployed Apps Script Web App URL here (see setup guide) — same
 // endpoint principal-admin.html writes to. Until then this falls back to the
 // snapshot below, which will not reflect edits made on principal-admin.html.
@@ -258,12 +271,13 @@ async function onGoogleSignIn(response) {
   if (!match || !payload.email_verified) {
     statusEl.innerHTML = '<div class="denied">This dashboard is only available to campus principals. Signed in as <b>' +
       (payload.email || 'unknown') + '</b>, which is not on the principal list. Contact the admin if this is wrong.</div>';
-    sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_KEY);
     return;
   }
 
-  const session = { email, campusId: match.campusId, campusName: match.campusName, name: match.name, ts: Date.now() };
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  const now = Date.now();
+  const session = { email, campusId: match.campusId, campusName: match.campusName, name: match.name, ts: now, expiresAt: nextSixPM(now) };
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   showDashboard(session);
 }
 
@@ -276,16 +290,18 @@ function initGoogleSignIn() {
 
 document.getElementById('signout-link').addEventListener('click', function(e) {
   e.preventDefault();
-  sessionStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(SESSION_KEY);
   window.location.reload();
 });
 
-// Restore an existing session within this browser tab without requiring sign-in again.
+// Restore an existing session (persists across tabs/reloads until sign-out or
+// the next 6 PM cutoff) without requiring sign-in again.
 (async function restoreSession() {
   await principalsReady;
   try {
-    const existing = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
-    if (existing && PRINCIPALS[existing.email]) showDashboard(existing);
+    const existing = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    if (isSessionExpired(existing)) { localStorage.removeItem(SESSION_KEY); return; }
+    if (PRINCIPALS[existing.email]) showDashboard(existing);
   } catch (_) {}
 })();
 </script>
