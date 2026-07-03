@@ -176,11 +176,17 @@ const GOOGLE_CLIENT_ID = '697999989724-mvi85iobr20g4mm8a8nrjd1rms2o8tf6.apps.goo
 
 const SESSION_KEY = 'lmcs_principal_session';
 
+// campusId 'ALL' = network-wide role, no campus lock applied (same view as normal admin access)
 const PRINCIPALS = {
-  'nidhi.kant@lms.org.in':     { campusId: 'LMS1', campusName: 'LMS 1 (Dhalpur)',    name: 'Nidhi Sharma' },
-  'arti.sharma@lms.org.in':    { campusId: 'LMS2', campusName: 'LMS 2 (Kelheli)',    name: 'Arti Sharma' },
-  'suresh.prasher@lms.org.in': { campusId: 'LMS3', campusName: 'LMS 3 (Dunkhra)',    name: 'Suresh Prasher' },
-  'nisha.lms@lms.org.in':      { campusId: 'LMS4', campusName: 'LMS 4 (Ner Chowk)',  name: 'Nisha Thakur' },
+  'nidhi.kant@lms.org.in':          { campusId: 'LMS1', campusName: 'LMS 1 (Dhalpur)',    name: 'Nidhi Sharma' },
+  'arti.sharma@lms.org.in':         { campusId: 'LMS2', campusName: 'LMS 2 (Kelheli)',    name: 'Arti Sharma' },
+  'suresh.prasher@lms.org.in':      { campusId: 'LMS3', campusName: 'LMS 3 (Dunkhra)',    name: 'Suresh Prasher' },
+  'nisha.lms@lms.org.in':           { campusId: 'LMS4', campusName: 'LMS 4 (Ner Chowk)',  name: 'Nisha Thakur' },
+  'lalita.kanwar@lms.org.in':       { campusId: 'ALL',  campusName: 'All Campuses (Network-wide)', name: 'Lalita Kanwar' },
+  'urvashi.pandit@lms.org.in':      { campusId: 'ALL',  campusName: 'All Campuses (Network-wide)', name: 'Urvashi Pandit' },
+  'vikas.thakur@lms.org.in':        { campusId: 'ALL',  campusName: 'All Campuses (Network-wide)', name: 'Vikas Thakur' },
+  'deepshikha.mukherjee@lms.org.in':{ campusId: 'ALL',  campusName: 'All Campuses (Network-wide)', name: 'Deepshikha Mukherjee' },
+  'avantikasinghkanwar@lms.org.in': { campusId: 'ALL',  campusName: 'All Campuses (Network-wide)', name: 'Avantika Singh Kanwar' },
 };
 
 function decodeJwtPayload(token) {
@@ -195,8 +201,9 @@ function showDashboard(session) {
   document.getElementById('gate').style.display = 'none';
   document.getElementById('welcome-name').textContent = session.name;
   document.getElementById('welcome-campus').textContent = session.campusName;
+  const suffix = session.campusId === 'ALL' ? '' : '?principal=1';
   document.querySelectorAll('.card[data-tool]').forEach(a => {
-    a.setAttribute('href', a.dataset.tool + '?principal=1');
+    a.setAttribute('href', a.dataset.tool + suffix);
   });
   document.getElementById('dashboard').style.display = '';
 }
