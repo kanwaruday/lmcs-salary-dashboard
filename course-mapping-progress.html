@@ -421,8 +421,26 @@ function loadConfig() {
 
 const CFG = loadConfig();
 
+// Principal-mode: locks this page to one campus when reached via principal.html
+function getPrincipalSession() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('principal') !== '1') return null;
+  try {
+    const s = JSON.parse(localStorage.getItem('lmcs_principal_session') || 'null');
+    if (!s || !s.campusId) return null;
+    if (s.expiresAt && Date.now() >= s.expiresAt) { localStorage.removeItem('lmcs_principal_session'); return null; }
+    return s;
+  } catch (_) { return null; }
+}
+const PRINCIPAL_SESSION = getPrincipalSession();
+
 // Derive working constants from config
-const SCHOOLS       = CFG.schools;
+const SCHOOLS = (() => {
+  const all = CFG.schools;
+  if (!PRINCIPAL_SESSION) return all;
+  const idx = parseInt(PRINCIPAL_SESSION.campusId.replace('LMS', ''), 10) - 1;
+  return (idx >= 0 && idx < all.length) ? [all[idx]] : all;
+})();
 const TABS          = CFG.classes.map(c => c.tab);
 const MILESTONE_TABS= new Set(CFG.classes.filter(c => !c.cwaApplicable).map(c => c.tab));
 const TARGET        = (tab) => {
@@ -1595,6 +1613,21 @@ function init() {
   // Render initial view, then start loading
   applyRoute();
   Promise.all(SCHOOLS.map((_,i) => loadSchool(i)));
+  applyPrincipalNavLock();
+}
+
+// Keeps the principal lock intact when navigating via header links: carries
+// ?principal=1 to pages that honor it, and hides the config-only admin tool.
+function applyPrincipalNavLock() {
+  if (!PRINCIPAL_SESSION) return;
+  document.querySelectorAll('.hdr-right a.hdr-btn').forEach(a => {
+    const href = a.getAttribute('href') || '';
+    if (/course-mapping-admin\.html/.test(href)) {
+      a.remove();
+    } else if (/^(daily-progress|teacher-dr|course-mapping-progress|cwa-gap-report)\.html$/.test(href)) {
+      a.setAttribute('href', href + '?principal=1');
+    }
+  });
 }
 
 init();

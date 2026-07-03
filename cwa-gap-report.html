@@ -183,6 +183,19 @@ function loadCfg() {
 }
 const savedCfg = loadCfg();
 
+// Principal-mode: locks this page to one campus when reached via principal.html
+function getPrincipalSession() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('principal') !== '1') return null;
+  try {
+    const s = JSON.parse(localStorage.getItem('lmcs_principal_session') || 'null');
+    if (!s || !s.campusId) return null;
+    if (s.expiresAt && Date.now() >= s.expiresAt) { localStorage.removeItem('lmcs_principal_session'); return null; }
+    return s;
+  } catch (_) { return null; }
+}
+const PRINCIPAL_SESSION = getPrincipalSession();
+
 const DAILY_SHEET_ID = savedCfg?.dailySheetId ?? '1z5hzpMRHMru6ulpYs2lsGZr7quAywwpQ_zySa3rvGUA';
 
 const CM_SCHOOLS = savedCfg?.schools ?? [
@@ -193,6 +206,12 @@ const CM_SCHOOLS = savedCfg?.schools ?? [
   {name:'LMS 5 — Sayoli',       id:'172YKw1cMMcG5UZ0jjI8RzO2tGxnVWG3QVCEsDY6CZHg'},
   {name:'LMS 6 — Jogindernagar',id:'1PkZYbeVCdKeqCbbX2eXAwk7c8w7NAHUOSQKmO6nDZtE'},
 ];
+
+const PRINCIPAL_LOCK_IDX = (() => {
+  if (!PRINCIPAL_SESSION) return -1;
+  const idx = parseInt(PRINCIPAL_SESSION.campusId.replace('LMS', ''), 10) - 1;
+  return (idx >= 0 && idx < CM_SCHOOLS.length) ? idx : -1;
+})();
 
 const CM_CLASSES = savedCfg?.classes ?? [
   {tab:'M-I',cwaApplicable:false},{tab:'M-II',cwaApplicable:false},{tab:'M-III',cwaApplicable:false},
@@ -490,7 +509,7 @@ let allRecords  = [];
 let gapData     = [];
 let gapSortKey  = 'days';
 let gapSortDir  = -1;
-let gapFiltSchool  = '';
+let gapFiltSchool  = PRINCIPAL_LOCK_IDX >= 0 ? String(PRINCIPAL_LOCK_IDX) : '';
 let gapFiltClass   = '';
 let gapFiltSubject = '';
 let gapFiltType    = 'gaps'; // default: show gaps only (overdue+late+unmapped); 'all' shows ontime too
@@ -638,6 +657,7 @@ function buildGapData() {
 ═══════════════════════════════════════════════════════════ */
 function renderGapPanel() {
   const panel = document.getElementById('gapPanel');
+  if (PRINCIPAL_LOCK_IDX >= 0) gapFiltSchool = String(PRINCIPAL_LOCK_IDX);
 
   // Apply min-days threshold (on-time entries are never filtered by min-days)
   const visible = gapData.filter(g => {
@@ -737,9 +757,11 @@ function renderGapPanel() {
       </select>
     </label>
     <label>🏫 School
-      <select onchange="gapFiltSchool=this.value;renderGapPanel()">
-        <option value="">All Schools</option>
-        ${CM_SCHOOLS.map((s,i)=>schoolsHit.has(i)?`<option value="${i}"${gapFiltSchool==i?' selected':''}>${esc(s.name)}</option>`:'').join('')}
+      <select onchange="gapFiltSchool=this.value;renderGapPanel()"${PRINCIPAL_LOCK_IDX>=0?' disabled':''}>
+        ${PRINCIPAL_LOCK_IDX>=0
+          ? `<option value="${PRINCIPAL_LOCK_IDX}" selected>${esc(CM_SCHOOLS[PRINCIPAL_LOCK_IDX].name)}</option>`
+          : `<option value="">All Schools</option>` +
+            CM_SCHOOLS.map((s,i)=>schoolsHit.has(i)?`<option value="${i}"${gapFiltSchool==i?' selected':''}>${esc(s.name)}</option>`:'').join('')}
       </select>
     </label>
     <label>📚 Class
@@ -943,6 +965,21 @@ function sortTable(th) {
 /* ═══════════════════════════════════════════════════════════
    INIT — loads both data sources in parallel
 ═══════════════════════════════════════════════════════════ */
+// Keeps the principal lock intact when navigating via header links: carries
+// ?principal=1 to pages that honor it, and hides the config-only admin tool.
+function applyPrincipalNavLock() {
+  if (!PRINCIPAL_SESSION) return;
+  document.querySelectorAll('.hdr-right a.hdr-btn').forEach(a => {
+    const href = a.getAttribute('href') || '';
+    if (/course-mapping-admin\.html/.test(href)) {
+      a.remove();
+    } else if (/^(daily-progress|teacher-dr|course-mapping-progress|cwa-gap-report)\.html$/.test(href)) {
+      a.setAttribute('href', href + '?principal=1');
+    }
+  });
+}
+applyPrincipalNavLock();
+
 async function init() {
   document.getElementById('lastUpdated').textContent =
     new Date().toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'});

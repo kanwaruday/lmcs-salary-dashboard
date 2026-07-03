@@ -767,8 +767,10 @@ function getPrincipalSession(){
   const params=new URLSearchParams(window.location.search);
   if(params.get('principal')!=='1')return null;
   try{
-    const s=JSON.parse(sessionStorage.getItem('lmcs_principal_session')||'null');
-    return (s&&s.campusId)?s:null;
+    const s=JSON.parse(localStorage.getItem('lmcs_principal_session')||'null');
+    if(!s||!s.campusId)return null;
+    if(s.expiresAt&&Date.now()>=s.expiresAt){localStorage.removeItem('lmcs_principal_session');return null;}
+    return s;
   }catch(_){return null;}
 }
 const PRINCIPAL_SESSION=getPrincipalSession();
