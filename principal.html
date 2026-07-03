@@ -264,7 +264,9 @@ async function onGoogleSignIn(response) {
 }
 
 function initGoogleSignIn() {
-  google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleSignIn });
+  // itp_support fixes a known Safari/iOS issue where Intelligent Tracking Prevention
+  // blocks the sign-in callback, leaving a blank page after choosing an account.
+  google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleSignIn, itp_support: true });
   google.accounts.id.renderButton(document.getElementById('g_id_signin'), { theme: 'filled_black', size: 'large', shape: 'pill' });
 }
 
