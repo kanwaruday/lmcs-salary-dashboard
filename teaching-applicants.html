@@ -60,8 +60,25 @@ input.notes-inp{font-size:11px;padding:4px 6px;border-radius:5px;border:1px soli
 .err-banner{background:#fff0f0;border:1px solid #fecaca;color:var(--red-h);border-radius:8px;padding:12px 14px;font-size:11.5px;margin-bottom:14px}
 
 @media(max-width:700px){
-  .main{padding:14px}
-  .fgrp input,.fgrp select{min-width:110px}
+  .hdr{padding:10px 14px;height:auto}
+  .hdr p{display:none}
+  .main{padding:12px}
+  .welcome{font-size:11px;padding:10px 12px}
+
+  .filters{padding:10px}
+  .fgrp{flex:1 1 45%;min-width:0}
+  .fcount{flex:1 1 100%;text-align:right;margin-left:0}
+
+  /* Card layout: table/thead/tr/td stop being a table and become a
+     stack of cards, one per applicant, with each field's column
+     header re-shown as a small label via ::before. */
+  .tbl-wrap{border:none;background:transparent;overflow:visible}
+  table,tbody,tr,td{display:block;width:100%}
+  thead{display:none}
+  tr{background:var(--white);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;padding:12px}
+  td{padding:6px 0;border-bottom:none}
+  td:not(.name-cell)::before{content:attr(data-label);display:block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--gray);margin-bottom:3px}
+  .name-cell{padding-bottom:10px;margin-bottom:4px;border-bottom:1px solid #eee}
 }
 </style>
 </head>
@@ -302,12 +319,12 @@ function render() {
         <span>${escapeHtml(a.phone || '')} · ${escapeHtml(a.gender || '')}${a.age ? ' · ' + escapeHtml(a.age) : ''}</span>
         ${contactLinks(a.phone)}
       </td>
-      <td>${tagsHtml(splitSubjects(a.subjects), 3)}</td>
-      <td>${tagsHtml(splitBranches(a.branches), 3)}</td>
-      <td>${escapeHtml(a.qualification || '')}<br><span class="muted" style="font-size:10px">${escapeHtml(a.bed || '')}</span></td>
-      <td>${a.cv ? '<a class="cv-link" href="' + escapeHtml(a.cv) + '" target="_blank" rel="noopener">View CV ↗</a>' : '<span class="muted">None</span>'}</td>
-      <td>${statusSelectHtml(a)}</td>
-      <td><input class="notes-inp" data-row="${a.row}" value="${escapeHtml(a.notes || '')}" placeholder="Add a note..."></td>
+      <td data-label="Subjects">${tagsHtml(splitSubjects(a.subjects), 3)}</td>
+      <td data-label="Branches applied">${tagsHtml(splitBranches(a.branches), 3)}</td>
+      <td data-label="Qualification">${escapeHtml(a.qualification || '')}<br><span class="muted" style="font-size:10px">${escapeHtml(a.bed || '')}</span></td>
+      <td data-label="CV">${a.cv ? '<a class="cv-link" href="' + escapeHtml(a.cv) + '" target="_blank" rel="noopener">View CV ↗</a>' : '<span class="muted">None</span>'}</td>
+      <td data-label="Status">${statusSelectHtml(a)}</td>
+      <td data-label="Notes"><input class="notes-inp" data-row="${a.row}" value="${escapeHtml(a.notes || '')}" placeholder="Add a note..."></td>
     </tr>
   `).join('');
 
