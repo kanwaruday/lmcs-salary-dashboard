@@ -175,7 +175,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
 
 <script src="https://accounts.google.com/gsi/client" async defer onload="initGoogleSignIn()"></script>
 <script>
-// TODO: replace with the real OAuth Web Client ID once created — see SETUP guide.
 const GOOGLE_CLIENT_ID = '697999989724-mvi85iobr20g4mm8a8nrjd1rms2o8tf6.apps.googleusercontent.com';
 
 const SESSION_KEY = 'lmcs_principal_session';
@@ -193,9 +192,8 @@ function isSessionExpired(s) {
   return !s || !s.expiresAt || Date.now() >= s.expiresAt;
 }
 
-// TODO: paste the deployed Apps Script Web App URL here (see setup guide) — same
-// endpoint principal-admin.html writes to. Until then this falls back to the
-// snapshot below, which will not reflect edits made on principal-admin.html.
+// Same endpoint principal-admin.html writes to. If unreachable, falls back
+// to the snapshot below, which won't reflect edits made there.
 const ALLOWLIST_API_URL = 'https://script.google.com/a/macros/lms.org.in/s/AKfycbx9Lfe0bI6RgjaF2aJcgqmfbgGHsg65Ed-N4RA2_VpBmSxCMj389D6PYtgJq9K1qDqcqA/exec';
 
 const CAMPUS_NAMES = {
