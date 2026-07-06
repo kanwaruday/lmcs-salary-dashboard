@@ -30,29 +30,30 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--lgray);color:var(-
 .welcome b{color:var(--dark)}
 
 /* FILTER BAR */
-.filters{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
-.fgrp{display:flex;flex-direction:column;gap:4px}
+.filters{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end}
+.fgrp{display:flex;flex-direction:column;gap:4px;flex:1 1 130px;min-width:130px}
 .fgrp label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--gray)}
-.fgrp input,.fgrp select{font-size:11.5px;padding:6px 8px;border-radius:5px;border:1px solid var(--border);font-family:inherit;min-width:140px}
-.fcount{margin-left:auto;font-size:11px;color:var(--gray);align-self:center}
+.fgrp input,.fgrp select{font-size:11.5px;padding:6px 8px;border-radius:5px;border:1px solid var(--border);font-family:inherit;width:100%}
+.fcount{flex:0 0 auto;font-size:11px;color:var(--gray);align-self:center;white-space:nowrap;margin-left:auto}
 
 /* TABLE */
 .tbl-wrap{background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:auto}
-table{width:100%;border-collapse:collapse;font-size:11.5px}
-th{background:var(--lgray);text-align:left;padding:9px 10px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--gray);border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0}
-td{padding:9px 10px;border-bottom:1px solid #eee;vertical-align:top}
+table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:11px}
+th{background:var(--lgray);text-align:left;padding:8px 8px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--gray);border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0}
+td{padding:8px 8px;border-bottom:1px solid #eee;vertical-align:top;overflow-wrap:break-word}
 tr:hover td{background:#fafafa}
-.name-cell b{display:block;color:var(--dark);font-size:12px}
+.name-cell b{display:block;color:var(--dark);font-size:12px;overflow-wrap:break-word}
 .name-cell span{color:#9ca3af;font-size:10px}
-.contact-links{display:flex;gap:6px;margin-top:3px}
-.contact-links a{font-size:10px;text-decoration:none;color:var(--red);border:1px solid var(--red-lt);background:var(--red-lt);padding:2px 6px;border-radius:10px}
+.contact-links{display:flex;gap:6px;margin-top:3px;flex-wrap:wrap}
+.contact-links a{font-size:10px;text-decoration:none;color:var(--red);border:1px solid var(--red-lt);background:var(--red-lt);padding:2px 6px;border-radius:10px;white-space:nowrap}
 .contact-links a:hover{background:var(--red);color:#fff}
-.tag{display:inline-block;background:var(--lgray);border:1px solid var(--border);border-radius:10px;padding:1px 7px;font-size:10px;margin:1px 2px 1px 0;white-space:nowrap}
-.cv-link{color:var(--red);text-decoration:none;font-size:11px}
+.tag{display:inline-block;background:var(--lgray);border:1px solid var(--border);border-radius:10px;padding:1px 7px;font-size:10px;margin:1px 2px 1px 0;white-space:normal}
+.tag-more{background:#eef2ff;border-color:#c7d2fe;color:#4338ca;cursor:default}
+.cv-link{color:var(--red);text-decoration:none;font-size:11px;white-space:nowrap}
 .cv-link:hover{text-decoration:underline}
 .muted{color:#bbb}
 select.status-sel{font-size:11px;padding:4px 6px;border-radius:5px;border:1px solid var(--border);font-family:inherit;width:100%}
-input.notes-inp{font-size:11px;padding:4px 6px;border-radius:5px;border:1px solid var(--border);font-family:inherit;width:100%;min-width:120px}
+input.notes-inp{font-size:11px;padding:4px 6px;border-radius:5px;border:1px solid var(--border);font-family:inherit;width:100%}
 .hired-btn{display:inline-block;margin-top:5px;font-size:10px;font-weight:700;color:var(--green);background:var(--green-lt);border:1px solid #bbf7d0;padding:3px 8px;border-radius:10px;text-decoration:none;white-space:nowrap}
 .hired-btn:hover{opacity:.8}
 .saving{opacity:.5}
@@ -132,14 +133,13 @@ input.notes-inp{font-size:11px;padding:4px 6px;border-radius:5px;border:1px soli
       <table>
         <thead>
           <tr>
-            <th>Applicant</th>
-            <th>Age</th>
-            <th>Subjects</th>
-            <th>Branches applied</th>
-            <th>Qualification</th>
-            <th>CV</th>
-            <th style="width:150px">Status</th>
-            <th style="width:160px">Notes</th>
+            <th style="width:20%">Applicant</th>
+            <th style="width:17%">Subjects</th>
+            <th style="width:21%">Branches applied</th>
+            <th style="width:10%">Qualification</th>
+            <th style="width:8%">CV</th>
+            <th style="width:12%">Status</th>
+            <th style="width:12%">Notes</th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -178,6 +178,27 @@ function campusTag(campusId) {
 function normalizePhone(p) {
   const digits = (p || '').replace(/\D/g, '');
   return digits.length >= 10 ? digits.slice(-10) : digits;
+}
+
+// Branch options can themselves contain a comma (e.g. "LMS-4 Bhangrotu,
+// Nerchowk" is one campus, not two) — a plain comma-split would fragment
+// them. Only split at a comma that's followed by the start of the next
+// "LMS-<digit>" option.
+function splitBranches(str) {
+  return (str || '').split(/,\s*(?=LMS-\d)/).map(s => s.trim()).filter(Boolean);
+}
+
+function splitSubjects(str) {
+  return (str || '').split(',').map(s => s.trim()).filter(Boolean);
+}
+
+// Caps how many pills render per cell so a handful of applicants who typed
+// a paragraph into a "subjects" free-text field don't blow out the row.
+function tagsHtml(items, max) {
+  const shown = items.slice(0, max).map(s => '<span class="tag">' + escapeHtml(s) + '</span>').join('');
+  const rest = items.slice(max);
+  if (!rest.length) return shown;
+  return shown + '<span class="tag tag-more" title="' + escapeHtml(rest.join(', ')) + '">+' + rest.length + ' more</span>';
 }
 
 // The form has many duplicate submissions from the same person re-applying
@@ -221,8 +242,8 @@ function populateFilterOptions() {
   const subjectSel = document.getElementById('f-subject');
   const branches = new Set(), subjects = new Set();
   APPLICANTS.forEach(a => {
-    a.branches.split(',').map(s => s.trim()).filter(Boolean).forEach(b => branches.add(b));
-    a.subjects.split(',').map(s => s.trim()).filter(Boolean).forEach(s => subjects.add(s));
+    splitBranches(a.branches).forEach(b => branches.add(b));
+    splitSubjects(a.subjects).forEach(s => subjects.add(s));
   });
   if (session.campusId === 'ALL') {
     [...branches].sort().forEach(b => branchSel.appendChild(new Option(b, b)));
@@ -278,12 +299,11 @@ function render() {
     <tr data-row="${a.row}">
       <td class="name-cell">
         <b>${escapeHtml(a.name)}</b>
-        <span>${escapeHtml(a.phone || '')} · ${escapeHtml(a.gender || '')}</span>
+        <span>${escapeHtml(a.phone || '')} · ${escapeHtml(a.gender || '')}${a.age ? ' · ' + escapeHtml(a.age) : ''}</span>
         ${contactLinks(a.phone)}
       </td>
-      <td>${escapeHtml(a.age || '')}</td>
-      <td>${a.subjects.split(',').map(s => s.trim()).filter(Boolean).map(s => '<span class="tag">' + escapeHtml(s) + '</span>').join('')}</td>
-      <td>${a.branches.split(',').map(s => s.trim()).filter(Boolean).map(s => '<span class="tag">' + escapeHtml(s) + '</span>').join('')}</td>
+      <td>${tagsHtml(splitSubjects(a.subjects), 3)}</td>
+      <td>${tagsHtml(splitBranches(a.branches), 3)}</td>
       <td>${escapeHtml(a.qualification || '')}<br><span class="muted" style="font-size:10px">${escapeHtml(a.bed || '')}</span></td>
       <td>${a.cv ? '<a class="cv-link" href="' + escapeHtml(a.cv) + '" target="_blank" rel="noopener">View CV ↗</a>' : '<span class="muted">None</span>'}</td>
       <td>${statusSelectHtml(a)}</td>
