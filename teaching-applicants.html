@@ -57,6 +57,11 @@ input.notes-inp{font-size:11px;padding:4px 6px;border-radius:5px;border:1px soli
 .hired-btn{display:inline-block;margin-top:5px;font-size:10px;font-weight:700;color:var(--green);background:var(--green-lt);border:1px solid #bbf7d0;padding:3px 8px;border-radius:10px;text-decoration:none;white-space:nowrap}
 .hired-btn:hover{opacity:.8}
 .saving{opacity:.5}
+.next-hint{font-size:10px;color:var(--gray);margin-top:4px;line-height:1.4}
+.save-note{display:block;font-size:10px;margin-top:4px;min-height:12px}
+.save-pending{color:var(--gray)}
+.save-ok{color:var(--green);font-weight:600}
+.save-err{color:var(--red-h);font-weight:600}
 .err-banner{background:#fff0f0;border:1px solid #fecaca;color:var(--red-h);border-radius:8px;padding:12px 14px;font-size:11.5px;margin-bottom:14px}
 
 @media(max-width:700px){
@@ -129,14 +134,22 @@ input.notes-inp{font-size:11px;padding:4px 6px;border-radius:5px;border:1px soli
         <label>Status</label>
         <select id="f-status">
           <option value="">All</option>
-          <option value="NEW">New / Untouched</option>
-          <option value="Contacted">Contacted</option>
-          <option value="Interview Scheduled">Interview Scheduled</option>
-          <option value="Interviewed">Interviewed</option>
-          <option value="Offered">Offered</option>
-          <option value="Hired">Hired</option>
-          <option value="Rejected">Rejected</option>
-          <option value="Not Responding">Not Responding</option>
+          <optgroup label="Screening &amp; Hiring pipeline">
+            <option value="NEW">New / Untouched</option>
+            <option value="Contacted">Contacted</option>
+            <option value="Interview Scheduled">Interview Scheduled</option>
+            <option value="Interviewed">Interviewed</option>
+            <option value="Documentation Submitted">Documentation Submitted</option>
+            <option value="Assessment Completed">Assessment Completed</option>
+            <option value="Evaluation Filed">Evaluation Filed</option>
+            <option value="Pending MD Approval">Pending MD Approval</option>
+            <option value="Offered">Offered</option>
+            <option value="Hired">Hired</option>
+          </optgroup>
+          <optgroup label="Outcome">
+            <option value="Rejected">Rejected</option>
+            <option value="Not Responding">Not Responding</option>
+          </optgroup>
         </select>
       </div>
       <div class="fgrp">
@@ -171,7 +184,34 @@ input.notes-inp{font-size:11px;padding:4px 6px;border-radius:5px;border:1px soli
 const API_URL = 'https://script.google.com/macros/s/AKfycbyMKB1uYUGJ_kl5Wd10YJTnWbB1Nkd5Ww7zNpBFT40P9XpF03CPIM8KO0nA-YFZgN7b/exec';
 
 const SESSION_KEY = 'lmcs_principal_session';
-const STATUS_OPTIONS = ['', 'Contacted', 'Interview Scheduled', 'Interviewed', 'Offered', 'Hired', 'Rejected', 'Not Responding'];
+
+// Mirrors LMCS's actual documented process (Bye Laws → Employee Conduct →
+// School Staff → Staff Screening's 7-step pipeline, followed by Staff
+// Hiring): Initial Application (this sheet) → Principal Interview →
+// Documentation Submission → Academic Assessment + Teaching Questionnaire
+// → Formal Evaluation Report → Executive Authorisation (MD Academics) →
+// Offer → Hiring Form/Appointment Letter/onboarding → Hired.
+const STATUS_PIPELINE = ['', 'Contacted', 'Interview Scheduled', 'Interviewed', 'Documentation Submitted', 'Assessment Completed', 'Evaluation Filed', 'Pending MD Approval', 'Offered', 'Hired'];
+const STATUS_OUTCOMES = ['Rejected', 'Not Responding'];
+const STATUS_ALL = STATUS_PIPELINE.concat(STATUS_OUTCOMES);
+
+// What the principal should actually do at each stage — shown under the
+// dropdown so a status is a next action, not just an inert label.
+const STATUS_NEXT_ACTION = {
+  '': 'Call or WhatsApp to schedule a Principal Interview.',
+  'Contacted': 'Schedule the Principal Interview.',
+  'Interview Scheduled': 'Conduct the interview, then mark Interviewed.',
+  'Interviewed': 'Collect Bio Data, certificates, ID proof and photo (Documentation Submission).',
+  'Documentation Submitted': 'Schedule the Academic Assessment and Teaching Candidate Questionnaire.',
+  'Assessment Completed': 'File the Formal Evaluation Report for MD Academics.',
+  'Evaluation Filed': 'Awaiting Executive Authorisation from MD Academics.',
+  'Pending MD Approval': 'Once approved, prepare the offer.',
+  'Offered': 'Complete the Hiring Form, Appointment Letter and document collection, then mark Hired.',
+  'Hired': 'Onboarding — use Send to Salary Slip to continue to payroll.',
+  'Rejected': 'No further action.',
+  'Not Responding': 'No further action unless they reach back out.',
+};
+
 // Legacy free-text values already present in the sheet from before this
 // dashboard existed — normalized to the closest new status on first load.
 const LEGACY_STATUS_MAP = { 'CALL FOR INTERVIEW': 'Interview Scheduled', 'Not responding': 'Not Responding' };
@@ -280,17 +320,29 @@ function contactLinks(phone) {
     '</div>';
 }
 
+function statusOptionHtml(value, selected) {
+  return '<option value="' + value + '"' + (value === selected ? ' selected' : '') + '>' + (value || 'New / Untouched') + '</option>';
+}
+
 function statusSelectHtml(a) {
   const raw = a.status || '';
   const normalized = LEGACY_STATUS_MAP[raw] !== undefined ? LEGACY_STATUS_MAP[raw] : raw;
-  const options = STATUS_OPTIONS.includes(normalized) ? STATUS_OPTIONS : [normalized, ...STATUS_OPTIONS];
+  // A value already in the sheet that isn't one of ours (e.g. hand-typed
+  // text) is kept as a selectable option rather than silently discarded.
+  const pipeline = STATUS_ALL.includes(normalized) || STATUS_PIPELINE.includes(normalized)
+    ? STATUS_PIPELINE
+    : [normalized, ...STATUS_PIPELINE];
+  const hint = STATUS_NEXT_ACTION[normalized];
   return '<select class="status-sel" data-row="' + a.row + '">' +
-    options.map(o => '<option value="' + o + '"' + (o === normalized ? ' selected' : '') + '>' + (o || 'New / Untouched') + '</option>').join('') +
+      '<optgroup label="Screening &amp; Hiring pipeline">' + pipeline.map(o => statusOptionHtml(o, normalized)).join('') + '</optgroup>' +
+      '<optgroup label="Outcome">' + STATUS_OUTCOMES.map(o => statusOptionHtml(o, normalized)).join('') + '</optgroup>' +
     '</select>' +
-    (normalized === 'Hired' ? '<a class="hired-btn" href="dashboard.html?principal=1&name=' + encodeURIComponent(a.name) + '" target="_blank" rel="noopener">→ Send to Salary Slip</a>' : '');
+    (hint ? '<div class="next-hint">Next: ' + escapeHtml(hint) + '</div>' : '') +
+    (normalized === 'Hired' ? '<a class="hired-btn" href="dashboard.html?principal=1&name=' + encodeURIComponent(a.name) + '" target="_blank" rel="noopener">→ Send to Salary Slip</a>' : '') +
+    '<span class="save-note" data-row="' + a.row + '"></span>';
 }
 
-function render() {
+function matchesFilters(a) {
   const branch = document.getElementById('f-branch').value;
   const subject = document.getElementById('f-subject').value;
   const qual = document.getElementById('f-qual').value;
@@ -298,21 +350,19 @@ function render() {
   const search = document.getElementById('f-search').value.trim().toLowerCase();
   const campusLock = session.campusId !== 'ALL' ? campusTag(session.campusId) : null;
 
-  const filtered = APPLICANTS.filter(a => {
-    if (campusLock && a.branches.indexOf(campusLock) === -1) return false;
-    if (branch && a.branches.indexOf(branch) === -1) return false;
-    if (subject && a.subjects.indexOf(subject) === -1) return false;
-    if (qual && a.qualification !== qual) return false;
-    const normalizedStatus = LEGACY_STATUS_MAP[a.status] !== undefined ? LEGACY_STATUS_MAP[a.status] : a.status;
-    if (status === 'NEW' && normalizedStatus !== '') return false;
-    if (status && status !== 'NEW' && normalizedStatus !== status) return false;
-    if (search && a.name.toLowerCase().indexOf(search) === -1) return false;
-    return true;
-  });
+  if (campusLock && a.branches.indexOf(campusLock) === -1) return false;
+  if (branch && a.branches.indexOf(branch) === -1) return false;
+  if (subject && a.subjects.indexOf(subject) === -1) return false;
+  if (qual && a.qualification !== qual) return false;
+  const normalizedStatus = LEGACY_STATUS_MAP[a.status] !== undefined ? LEGACY_STATUS_MAP[a.status] : a.status;
+  if (status === 'NEW' && normalizedStatus !== '') return false;
+  if (status && status !== 'NEW' && normalizedStatus !== status) return false;
+  if (search && a.name.toLowerCase().indexOf(search) === -1) return false;
+  return true;
+}
 
-  document.getElementById('f-count').textContent = filtered.length + ' of ' + APPLICANTS.length + ' applicants';
-
-  document.getElementById('rows').innerHTML = filtered.map(a => `
+function rowHtml(a) {
+  return `
     <tr data-row="${a.row}">
       <td class="name-cell">
         <b>${escapeHtml(a.name)}</b>
@@ -326,31 +376,67 @@ function render() {
       <td data-label="Status">${statusSelectHtml(a)}</td>
       <td data-label="Notes"><input class="notes-inp" data-row="${a.row}" value="${escapeHtml(a.notes || '')}" placeholder="Add a note..."></td>
     </tr>
-  `).join('');
+  `;
+}
 
-  document.querySelectorAll('.status-sel').forEach(sel => {
+function bindRowEvents(scope) {
+  scope.querySelectorAll('.status-sel').forEach(sel => {
     sel.addEventListener('change', () => saveRow(sel.closest('tr')));
   });
-  document.querySelectorAll('.notes-inp').forEach(inp => {
+  scope.querySelectorAll('.notes-inp').forEach(inp => {
     inp.addEventListener('change', () => saveRow(inp.closest('tr')));
   });
+}
+
+function render() {
+  const filtered = APPLICANTS.filter(matchesFilters);
+  document.getElementById('f-count').textContent = filtered.length + ' of ' + APPLICANTS.length + ' applicants';
+  const rowsEl = document.getElementById('rows');
+  rowsEl.innerHTML = filtered.map(rowHtml).join('');
+  bindRowEvents(rowsEl);
 }
 
 async function saveRow(tr) {
   const row = tr.dataset.row;
   const status = tr.querySelector('.status-sel').value;
   const notes = tr.querySelector('.notes-inp').value;
+  const indicator = tr.querySelector('.save-note');
   tr.classList.add('saving');
+  indicator.textContent = 'Saving…';
+  indicator.className = 'save-note save-pending';
   try {
     const data = await apiCall({ action: 'updateStatus', row, status, notes });
     if (!data.success) throw new Error(data.error || 'Save failed');
     const applicant = APPLICANTS.find(a => String(a.row) === String(row));
     if (applicant) { applicant.status = status; applicant.notes = notes; }
-  } catch (err) {
-    showError('Could not save: ' + err.message + '. Your session may have expired — try signing in again via Principal Dashboard.');
-  } finally {
+    indicator.textContent = '✓ Saved';
+    indicator.className = 'save-note save-ok';
     tr.classList.remove('saving');
-    render();
+    // Only this row refreshes (picks up the Hired button / next-step hint
+    // and re-checks whether it still matches the active filters) — a full
+    // render() here would also wipe out any *other* row's still-pending
+    // "Saving…" or persisted "Save failed" state, since render() rebuilds
+    // the whole table from scratch.
+    setTimeout(() => {
+      if (!applicant) return;
+      if (!matchesFilters(applicant)) {
+        tr.remove();
+        document.getElementById('f-count').textContent =
+          document.querySelectorAll('#rows tr').length + ' of ' + APPLICANTS.length + ' applicants';
+        return;
+      }
+      const statusTd = tr.querySelector('[data-label="Status"]');
+      statusTd.innerHTML = statusSelectHtml(applicant);
+      // Only rebind the element that was just replaced — bindRowEvents(tr)
+      // would also re-bind the untouched .notes-inp, double-firing saveRow
+      // on its next change.
+      statusTd.querySelector('.status-sel').addEventListener('change', () => saveRow(tr));
+    }, 1200);
+  } catch (err) {
+    indicator.textContent = '⚠ Save failed — check connection and retry';
+    indicator.className = 'save-note save-err';
+    tr.classList.remove('saving');
+    showError('Could not save: ' + err.message + '. Your session may have expired — try signing in again via Principal Dashboard.');
   }
 }
 
