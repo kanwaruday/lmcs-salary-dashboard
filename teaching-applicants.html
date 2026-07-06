@@ -276,27 +276,13 @@ function tagsHtml(items, max) {
   return shown + '<span class="tag tag-more" title="' + escapeHtml(rest.join(', ')) + '">+' + rest.length + ' more</span>';
 }
 
-// The form has many duplicate submissions from the same person re-applying
-// with tweaked answers. Keep the most recent submission per phone number,
-// but backfill a CV link from an older duplicate if the latest is missing one.
-function dedupe(applicants) {
-  const byPhone = {};
-  applicants.forEach(a => {
-    const key = normalizePhone(a.phone) || ('name:' + a.name.toLowerCase());
-    if (!byPhone[key] || new Date(a.timestamp) > new Date(byPhone[key].timestamp)) {
-      byPhone[key] = a;
-    }
-  });
-  Object.keys(byPhone).forEach(key => {
-    const latest = byPhone[key];
-    if (!latest.cv) {
-      const withCv = applicants
-        .filter(a => (normalizePhone(a.phone) || ('name:' + a.name.toLowerCase())) === key && a.cv)
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
-      if (withCv) latest.cv = withCv.cv;
-    }
-  });
-  return Object.values(byPhone).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+// Every row from the sheet is shown — including repeat submissions from
+// the same person (common in this form) — since collapsing them by phone
+// number was hiding genuine applicants (e.g. two different people who
+// happen to share a phone, such as family members) as well as earlier
+// submissions from repeat applicants. Newest first.
+function sortByRecency(applicants) {
+  return applicants.slice().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 }
 
 async function apiCall(params) {
@@ -679,7 +665,7 @@ async function init() {
   try {
     const data = await apiCall({ action: 'list' });
     if (!data.success) throw new Error(data.error || 'Could not load applicants');
-    APPLICANTS = dedupe(data.applicants);
+    APPLICANTS = sortByRecency(data.applicants);
     populateFilterOptions();
     render();
     ['f-branch', 'f-subject', 'f-qual', 'f-status', 'f-search'].forEach(id =>
