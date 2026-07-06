@@ -64,6 +64,24 @@ input.notes-inp{font-size:11px;padding:4px 6px;border-radius:5px;border:1px soli
 .save-err{color:var(--red-h);font-weight:600}
 .err-banner{background:#fff0f0;border:1px solid #fecaca;color:var(--red-h);border-radius:8px;padding:12px 14px;font-size:11.5px;margin-bottom:14px}
 
+/* Status-specific extras: interview scheduling, report/document warnings, Staff Master handoff */
+.dt-row{margin-top:6px;display:flex;flex-direction:column;gap:4px}
+input.dt-input{font-size:10.5px;padding:4px 6px;border-radius:5px;border:1px solid var(--border);font-family:inherit;width:100%}
+.cal-link{font-size:10px;color:var(--red);text-decoration:none}
+.cal-link:hover{text-decoration:underline}
+.check-loading{font-size:10px;color:#9ca3af;margin-top:4px}
+.warn-box{font-size:10px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:5px 7px;margin-top:5px;line-height:1.4}
+.ok-box{font-size:10px;color:var(--green);margin-top:5px}
+.staffmaster-btn{display:inline-block;margin-top:5px;font-size:10px;font-weight:700;color:#4338ca;background:#eef2ff;border:1px solid #c7d2fe;padding:3px 8px;border-radius:10px;cursor:pointer}
+.staffmaster-btn:hover{opacity:.8}
+.sm-form{margin-top:6px;background:var(--lgray);border:1px solid var(--border);border-radius:6px;padding:8px;display:flex;flex-direction:column;gap:5px}
+.sm-form label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--gray)}
+.sm-form input{font-size:10.5px;padding:4px 6px;border-radius:5px;border:1px solid var(--border);font-family:inherit;width:100%}
+.sm-form-actions{display:flex;gap:6px;margin-top:2px}
+.sm-btn{font-size:10px;font-weight:700;padding:4px 9px;border-radius:6px;border:none;cursor:pointer}
+.sm-btn.confirm{background:var(--green);color:#fff}
+.sm-btn.cancel{background:#e5e7eb;color:var(--dark)}
+
 @media(max-width:700px){
   .hdr{padding:10px 14px;height:auto}
   .hdr p{display:none}
@@ -324,22 +342,206 @@ function statusOptionHtml(value, selected) {
   return '<option value="' + value + '"' + (value === selected ? ' selected' : '') + '>' + (value || 'New / Untouched') + '</option>';
 }
 
-function statusSelectHtml(a) {
+function normalizedStatusOf(a) {
   const raw = a.status || '';
-  const normalized = LEGACY_STATUS_MAP[raw] !== undefined ? LEGACY_STATUS_MAP[raw] : raw;
+  return LEGACY_STATUS_MAP[raw] !== undefined ? LEGACY_STATUS_MAP[raw] : raw;
+}
+
+// First campus an applicant applied to, from "LMS-4 Bhangrotu, Nerchowk..." → "LMS4".
+function campusFromBranches(branches) {
+  const m = String(branches || '').match(/LMS-(\d)/);
+  return m ? 'LMS' + m[1] : null;
+}
+
+// A campus-locked principal's own campus is unambiguous; an ALL-access
+// user gets a best guess (the applicant's first applied branch) which
+// they can correct in the Add-to-Staff-Master form itself.
+function resolveCampusId(a) {
+  return session.campusId !== 'ALL' ? session.campusId : campusFromBranches(a.branches);
+}
+
+function isoToLocalInputValue(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  const pad = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
+// Prefilled Google Calendar "create event" link — the actual event is
+// still created by whoever schedules it (typically the campus's fee
+// clerk, per how this works today), this just saves them re-typing details.
+function googleCalendarLink(name, localDatetimeStr) {
+  const start = new Date(localDatetimeStr);
+  if (isNaN(start)) return '#';
+  const end = new Date(start.getTime() + 30 * 60000);
+  const fmt = d => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+    '&text=' + encodeURIComponent('Interview: ' + name) +
+    '&dates=' + fmt(start) + '/' + fmt(end) +
+    '&details=' + encodeURIComponent('Teaching Applicant interview, scheduled via the LMCS Hiring Dashboard.');
+}
+
+function statusSelectHtml(a) {
+  const normalized = normalizedStatusOf(a);
   // A value already in the sheet that isn't one of ours (e.g. hand-typed
   // text) is kept as a selectable option rather than silently discarded.
   const pipeline = STATUS_ALL.includes(normalized) || STATUS_PIPELINE.includes(normalized)
     ? STATUS_PIPELINE
     : [normalized, ...STATUS_PIPELINE];
   const hint = STATUS_NEXT_ACTION[normalized];
+  const salarySlipBtn = '<a class="hired-btn" href="dashboard.html?principal=1&name=' + encodeURIComponent(a.name) + '" target="_blank" rel="noopener">→ Send to Salary Slip</a>';
+
+  let extra = '';
+  if (normalized === 'Interview Scheduled') {
+    const dtVal = isoToLocalInputValue(a.interviewAt);
+    extra += '<div class="dt-row">' +
+        '<input type="datetime-local" class="dt-input" data-row="' + a.row + '" value="' + dtVal + '">' +
+        (dtVal
+          ? '<a class="cal-link" href="' + googleCalendarLink(a.name, dtVal) + '" target="_blank" rel="noopener">📅 Add to Google Calendar</a>'
+          : '<span class="check-loading">Pick a date to get a calendar link for whoever is scheduling it (usually the fee clerk)</span>') +
+      '</div>';
+  }
+  if (normalized === 'Interviewed') {
+    extra += '<div class="check-slot check-loading" data-check="interview">Checking Interview Report…</div>';
+  }
+  if (normalized === 'Offered' || normalized === 'Hired') {
+    extra += salarySlipBtn;
+  }
+  if (normalized === 'Hired') {
+    extra += '<div class="check-slot check-loading" data-check="documents">Checking documents…</div>' +
+      '<button type="button" class="staffmaster-btn" data-row="' + a.row + '">+ Add to Staff Master</button>' +
+      '<div class="sm-form-wrap" data-row="' + a.row + '"></div>';
+  }
+
   return '<select class="status-sel" data-row="' + a.row + '">' +
       '<optgroup label="Screening &amp; Hiring pipeline">' + pipeline.map(o => statusOptionHtml(o, normalized)).join('') + '</optgroup>' +
       '<optgroup label="Outcome">' + STATUS_OUTCOMES.map(o => statusOptionHtml(o, normalized)).join('') + '</optgroup>' +
     '</select>' +
     (hint ? '<div class="next-hint">Next: ' + escapeHtml(hint) + '</div>' : '') +
-    (normalized === 'Hired' ? '<a class="hired-btn" href="dashboard.html?principal=1&name=' + encodeURIComponent(a.name) + '" target="_blank" rel="noopener">→ Send to Salary Slip</a>' : '') +
+    extra +
     '<span class="save-note" data-row="' + a.row + '"></span>';
+}
+
+async function runInterviewReportCheck(tr, a) {
+  const slot = tr.querySelector('.check-slot[data-check="interview"]');
+  if (!slot) return;
+  try {
+    const data = await apiCall({ action: 'checkInterviewReport', phone: a.phone });
+    if (!data.success) throw new Error(data.error || 'Check failed');
+    if (data.result.found) {
+      slot.className = 'ok-box';
+      slot.textContent = '✓ Interview Report on file' + (data.result.remarks ? (' — "' + data.result.remarks + '"') : '');
+    } else {
+      slot.className = 'warn-box';
+      slot.textContent = '⚠ No Interview Report found yet for this phone number.';
+    }
+  } catch (err) {
+    slot.className = 'warn-box';
+    slot.textContent = '⚠ Could not check Interview Report (' + err.message + ')';
+  }
+}
+
+async function runDocumentsCheck(tr, a) {
+  const slot = tr.querySelector('.check-slot[data-check="documents"]');
+  if (!slot) return;
+  const campusId = resolveCampusId(a);
+  if (!campusId) {
+    slot.className = 'warn-box';
+    slot.textContent = '⚠ Could not determine which campus\'s document tracker to check.';
+    return;
+  }
+  try {
+    const data = await apiCall({ action: 'checkDocuments', campusId, name: a.name });
+    if (!data.success) throw new Error(data.error || 'Check failed');
+    if (!data.result.found) {
+      slot.className = 'warn-box';
+      slot.textContent = '⚠ No document submission found for "' + a.name + '" in ' + campusId + '\'s tracker.';
+    } else if (data.result.complete) {
+      slot.className = 'ok-box';
+      slot.textContent = '✓ All required documents on file.';
+    } else {
+      slot.className = 'warn-box';
+      slot.textContent = '⚠ Missing: ' + data.result.missing.join(', ');
+    }
+  } catch (err) {
+    slot.className = 'warn-box';
+    slot.textContent = '⚠ Could not check documents (' + err.message + ')';
+  }
+}
+
+function runStatusChecks(tr, a) {
+  if (!tr) return;
+  const normalized = normalizedStatusOf(a);
+  if (normalized === 'Interviewed') runInterviewReportCheck(tr, a);
+  if (normalized === 'Hired') runDocumentsCheck(tr, a);
+}
+
+async function openStaffMasterForm(tr, a) {
+  const wrap = tr.querySelector('.sm-form-wrap');
+  if (!wrap || wrap.dataset.open === '1') return;
+  wrap.dataset.open = '1';
+  const campusId = resolveCampusId(a) || '';
+  const todayIso = new Date().toISOString().slice(0, 10);
+  wrap.innerHTML =
+    '<div class="sm-form">' +
+      '<label>Campus</label><input class="sm-campus" value="' + escapeHtml(campusId) + '" placeholder="e.g. LMS1">' +
+      '<label>Date of Joining</label><input class="sm-doj" type="date" value="' + todayIso + '">' +
+      '<label>Employee Code (suggested — verify before confirming)</label><input class="sm-code" placeholder="Loading…">' +
+      '<div class="sm-form-actions">' +
+        '<button type="button" class="sm-btn confirm">Confirm &amp; Add</button>' +
+        '<button type="button" class="sm-btn cancel">Cancel</button>' +
+      '</div>' +
+      '<div class="sm-status"></div>' +
+    '</div>';
+
+  const codeInp = wrap.querySelector('.sm-code');
+  const statusEl = wrap.querySelector('.sm-status');
+
+  async function refreshSuggestion() {
+    const c = wrap.querySelector('.sm-campus').value.trim().toUpperCase();
+    const doj = wrap.querySelector('.sm-doj').value;
+    if (!c) return;
+    const data = await apiCall({ action: 'suggestStaffCode', campusId: c, doj });
+    if (data.success && data.result && data.result.employeeCode) {
+      codeInp.value = data.result.employeeCode;
+      codeInp.dataset.systemId = data.result.systemId;
+    } else {
+      codeInp.value = '';
+      codeInp.placeholder = (data.result && data.result.error) || 'Unknown campus';
+    }
+  }
+  wrap.querySelector('.sm-campus').addEventListener('change', refreshSuggestion);
+  wrap.querySelector('.sm-doj').addEventListener('change', refreshSuggestion);
+  refreshSuggestion();
+
+  wrap.querySelector('.cancel').addEventListener('click', () => {
+    wrap.innerHTML = '';
+    wrap.dataset.open = '';
+  });
+
+  wrap.querySelector('.confirm').addEventListener('click', async () => {
+    const c = wrap.querySelector('.sm-campus').value.trim().toUpperCase();
+    const doj = wrap.querySelector('.sm-doj').value;
+    const code = codeInp.value.trim();
+    const systemId = codeInp.dataset.systemId;
+    if (!c || !doj || !code || !systemId) {
+      statusEl.textContent = 'Fill in campus and date of joining to get a suggested code first.';
+      statusEl.style.color = 'var(--red-h)';
+      return;
+    }
+    statusEl.textContent = 'Adding…';
+    statusEl.style.color = 'var(--gray)';
+    try {
+      const data = await apiCall({ action: 'addStaffMaster', name: a.name, campusId: c, doj, systemId, employeeCode: code });
+      if (!data.success) throw new Error(data.error || 'Failed to add');
+      statusEl.textContent = '✓ Added to Staff Master as ' + code;
+      statusEl.style.color = 'var(--green)';
+    } catch (err) {
+      statusEl.textContent = '⚠ ' + err.message;
+      statusEl.style.color = 'var(--red-h)';
+    }
+  });
 }
 
 function matchesFilters(a) {
@@ -386,6 +588,16 @@ function bindRowEvents(scope) {
   scope.querySelectorAll('.notes-inp').forEach(inp => {
     inp.addEventListener('change', () => saveRow(inp.closest('tr')));
   });
+  scope.querySelectorAll('.dt-input').forEach(inp => {
+    inp.addEventListener('change', () => saveRow(inp.closest('tr')));
+  });
+  scope.querySelectorAll('.staffmaster-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tr = btn.closest('tr');
+      const applicant = APPLICANTS.find(x => String(x.row) === String(tr.dataset.row));
+      if (applicant) openStaffMasterForm(tr, applicant);
+    });
+  });
 }
 
 function render() {
@@ -394,21 +606,31 @@ function render() {
   const rowsEl = document.getElementById('rows');
   rowsEl.innerHTML = filtered.map(rowHtml).join('');
   bindRowEvents(rowsEl);
+  filtered.forEach(a => runStatusChecks(rowsEl.querySelector('tr[data-row="' + a.row + '"]'), a));
 }
 
 async function saveRow(tr) {
   const row = tr.dataset.row;
   const status = tr.querySelector('.status-sel').value;
   const notes = tr.querySelector('.notes-inp').value;
+  // Only present when status is "Interview Scheduled" — sending '' when
+  // absent is safe, the backend skips writing on a blank interviewAt so an
+  // unrelated status/notes save can't accidentally clear a saved date.
+  const dtInput = tr.querySelector('.dt-input');
+  const interviewAt = dtInput ? dtInput.value : '';
   const indicator = tr.querySelector('.save-note');
   tr.classList.add('saving');
   indicator.textContent = 'Saving…';
   indicator.className = 'save-note save-pending';
   try {
-    const data = await apiCall({ action: 'updateStatus', row, status, notes });
+    const data = await apiCall({ action: 'updateStatus', row, status, notes, interviewAt });
     if (!data.success) throw new Error(data.error || 'Save failed');
     const applicant = APPLICANTS.find(a => String(a.row) === String(row));
-    if (applicant) { applicant.status = status; applicant.notes = notes; }
+    if (applicant) {
+      applicant.status = status;
+      applicant.notes = notes;
+      if (interviewAt) applicant.interviewAt = new Date(interviewAt).toISOString();
+    }
     indicator.textContent = '✓ Saved';
     indicator.className = 'save-note save-ok';
     tr.classList.remove('saving');
@@ -427,10 +649,11 @@ async function saveRow(tr) {
       }
       const statusTd = tr.querySelector('[data-label="Status"]');
       statusTd.innerHTML = statusSelectHtml(applicant);
-      // Only rebind the element that was just replaced — bindRowEvents(tr)
-      // would also re-bind the untouched .notes-inp, double-firing saveRow
-      // on its next change.
-      statusTd.querySelector('.status-sel').addEventListener('change', () => saveRow(tr));
+      // Scoped to just the replaced cell — bindRowEvents(tr) would also
+      // re-bind the untouched .notes-inp, double-firing saveRow on its
+      // next change.
+      bindRowEvents(statusTd);
+      runStatusChecks(tr, applicant);
     }, 1200);
   } catch (err) {
     indicator.textContent = '⚠ Save failed — check connection and retry';
