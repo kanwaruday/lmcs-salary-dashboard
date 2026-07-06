@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMCS — Teaching Applicants</title>
+<style>
+:root{--red:#CE0000;--red-h:#a50000;--red-lt:rgba(206,0,0,.07);--dark:#1a1a1a;--gray:#555;--lgray:#f5f5f5;--border:#ddd;--white:#fff;--green:#15803d;--green-lt:#dcfce7}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--lgray);color:var(--dark);font-size:12px;min-height:100vh}
+
+/* HEADER */
+.hdr{background:var(--red);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--red-h)}
+.hdr-brand{display:flex;align-items:center;gap:10px}
+.hdr-logo{width:32px;height:32px;border-radius:4px;object-fit:cover;flex-shrink:0}
+.hdr h1{font-size:14px;font-weight:700;letter-spacing:.3px}
+.hdr p{font-size:9.5px;opacity:.75;margin-top:1px}
+.hdr-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.92);padding:5px 12px;border-radius:4px;font-size:11px;font-weight:600;text-decoration:none;white-space:nowrap}
+.hdr-btn:hover{background:rgba(255,255,255,.22)}
+
+.main{padding:16px 24px 40px;max-width:1440px;margin:0 auto}
+
+/* GATE / STATE MESSAGES */
+.gate{max-width:460px;margin:60px auto 0;background:var(--white);border:1px solid var(--border);border-radius:8px;padding:32px;text-align:center}
+.gate p{color:var(--gray);line-height:1.6;margin-bottom:16px;font-size:12.5px}
+.gate a.btn{display:inline-block;background:var(--red);color:#fff;text-decoration:none;padding:9px 18px;border-radius:6px;font-weight:600;font-size:12px}
+
+/* WELCOME */
+.welcome{display:flex;align-items:center;justify-content:space-between;background:var(--white);border:1px solid var(--border);border-radius:6px;padding:12px 16px;margin-bottom:14px;flex-wrap:wrap;gap:8px;font-size:11.5px;color:var(--gray)}
+.welcome b{color:var(--dark)}
+
+/* FILTER BAR */
+.filters{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.fgrp{display:flex;flex-direction:column;gap:4px}
+.fgrp label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--gray)}
+.fgrp input,.fgrp select{font-size:11.5px;padding:6px 8px;border-radius:5px;border:1px solid var(--border);font-family:inherit;min-width:140px}
+.fcount{margin-left:auto;font-size:11px;color:var(--gray);align-self:center}
+
+/* TABLE */
+.tbl-wrap{background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:11.5px}
+th{background:var(--lgray);text-align:left;padding:9px 10px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--gray);border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0}
+td{padding:9px 10px;border-bottom:1px solid #eee;vertical-align:top}
+tr:hover td{background:#fafafa}
+.name-cell b{display:block;color:var(--dark);font-size:12px}
+.name-cell span{color:#9ca3af;font-size:10px}
+.contact-links{display:flex;gap:6px;margin-top:3px}
+.contact-links a{font-size:10px;text-decoration:none;color:var(--red);border:1px solid var(--red-lt);background:var(--red-lt);padding:2px 6px;border-radius:10px}
+.contact-links a:hover{background:var(--red);color:#fff}
+.tag{display:inline-block;background:var(--lgray);border:1px solid var(--border);border-radius:10px;padding:1px 7px;font-size:10px;margin:1px 2px 1px 0;white-space:nowrap}
+.cv-link{color:var(--red);text-decoration:none;font-size:11px}
+.cv-link:hover{text-decoration:underline}
+.muted{color:#bbb}
+select.status-sel{font-size:11px;padding:4px 6px;border-radius:5px;border:1px solid var(--border);font-family:inherit;width:100%}
+input.notes-inp{font-size:11px;padding:4px 6px;border-radius:5px;border:1px solid var(--border);font-family:inherit;width:100%;min-width:120px}
+.hired-btn{display:inline-block;margin-top:5px;font-size:10px;font-weight:700;color:var(--green);background:var(--green-lt);border:1px solid #bbf7d0;padding:3px 8px;border-radius:10px;text-decoration:none;white-space:nowrap}
+.hired-btn:hover{opacity:.8}
+.saving{opacity:.5}
+.err-banner{background:#fff0f0;border:1px solid #fecaca;color:var(--red-h);border-radius:8px;padding:12px 14px;font-size:11.5px;margin-bottom:14px}
+
+@media(max-width:700px){
+  .main{padding:14px}
+  .fgrp input,.fgrp select{min-width:110px}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-brand">
+    <img src="logo.png" class="hdr-logo" alt="LMS logo">
+    <div>
+      <h1>Teaching Applicants</h1>
+      <p>Screening &amp; outreach — from the Teaching Applicants form</p>
+    </div>
+  </div>
+  <a href="hiring.html" class="hdr-btn">🏫 Hiring Dashboard</a>
+</div>
+
+<div class="main">
+
+  <!-- SIGN-IN REQUIRED -->
+  <div class="gate" id="gate" style="display:none">
+    <p>This page shows applicants' phone numbers and CVs, so it requires a signed-in Principal Dashboard session.</p>
+    <a href="principal.html" class="btn">Sign in via Principal Dashboard</a>
+  </div>
+
+  <div id="app" style="display:none">
+
+    <div class="welcome" id="welcome"></div>
+    <div class="err-banner" id="err" style="display:none"></div>
+
+    <div class="filters">
+      <div class="fgrp">
+        <label>Branch</label>
+        <select id="f-branch"><option value="">All branches</option></select>
+      </div>
+      <div class="fgrp">
+        <label>Subject</label>
+        <select id="f-subject"><option value="">All subjects</option></select>
+      </div>
+      <div class="fgrp">
+        <label>Qualification</label>
+        <select id="f-qual">
+          <option value="">All</option>
+          <option value="Bachelors">Bachelors</option>
+          <option value="Masters">Masters</option>
+        </select>
+      </div>
+      <div class="fgrp">
+        <label>Status</label>
+        <select id="f-status">
+          <option value="">All</option>
+          <option value="NEW">New / Untouched</option>
+          <option value="Contacted">Contacted</option>
+          <option value="Interview Scheduled">Interview Scheduled</option>
+          <option value="Interviewed">Interviewed</option>
+          <option value="Offered">Offered</option>
+          <option value="Hired">Hired</option>
+          <option value="Rejected">Rejected</option>
+          <option value="Not Responding">Not Responding</option>
+        </select>
+      </div>
+      <div class="fgrp">
+        <label>Search name</label>
+        <input type="text" id="f-search" placeholder="Type a name...">
+      </div>
+      <div class="fcount" id="f-count"></div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Applicant</th>
+            <th>Age</th>
+            <th>Subjects</th>
+            <th>Branches applied</th>
+            <th>Qualification</th>
+            <th>CV</th>
+            <th style="width:150px">Status</th>
+            <th style="width:160px">Notes</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// TODO: paste the deployed teaching-applicants.gs Web App URL here.
+const API_URL = 'REPLACE_WITH_APPS_SCRIPT_URL';
+
+const SESSION_KEY = 'lmcs_principal_session';
+const STATUS_OPTIONS = ['', 'Contacted', 'Interview Scheduled', 'Interviewed', 'Offered', 'Hired', 'Rejected', 'Not Responding'];
+// Legacy free-text values already present in the sheet from before this
+// dashboard existed — normalized to the closest new status on first load.
+const LEGACY_STATUS_MAP = { 'CALL FOR INTERVIEW': 'Interview Scheduled', 'Not responding': 'Not Responding' };
+
+function getSession() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    if (!s || !s.campusId || !s.idToken) return null;
+    if (s.expiresAt && Date.now() >= s.expiresAt) return null;
+    return s;
+  } catch (_) { return null; }
+}
+
+const session = getSession();
+let APPLICANTS = [];
+
+function campusTag(campusId) {
+  return 'LMS-' + campusId.replace(/[^0-9]/g, '');
+}
+
+function normalizePhone(p) {
+  const digits = (p || '').replace(/\D/g, '');
+  return digits.length >= 10 ? digits.slice(-10) : digits;
+}
+
+// The form has many duplicate submissions from the same person re-applying
+// with tweaked answers. Keep the most recent submission per phone number,
+// but backfill a CV link from an older duplicate if the latest is missing one.
+function dedupe(applicants) {
+  const byPhone = {};
+  applicants.forEach(a => {
+    const key = normalizePhone(a.phone) || ('name:' + a.name.toLowerCase());
+    if (!byPhone[key] || new Date(a.timestamp) > new Date(byPhone[key].timestamp)) {
+      byPhone[key] = a;
+    }
+  });
+  Object.keys(byPhone).forEach(key => {
+    const latest = byPhone[key];
+    if (!latest.cv) {
+      const withCv = applicants
+        .filter(a => (normalizePhone(a.phone) || ('name:' + a.name.toLowerCase())) === key && a.cv)
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+      if (withCv) latest.cv = withCv.cv;
+    }
+  });
+  return Object.values(byPhone).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+}
+
+async function apiCall(params) {
+  params.idToken = session.idToken;
+  const qs = new URLSearchParams(params).toString();
+  const res = await fetch(API_URL + '?' + qs, { cache: 'no-store' });
+  return res.json();
+}
+
+function showError(msg) {
+  const el = document.getElementById('err');
+  el.textContent = msg;
+  el.style.display = '';
+}
+
+function populateFilterOptions() {
+  const branchSel = document.getElementById('f-branch');
+  const subjectSel = document.getElementById('f-subject');
+  const branches = new Set(), subjects = new Set();
+  APPLICANTS.forEach(a => {
+    a.branches.split(',').map(s => s.trim()).filter(Boolean).forEach(b => branches.add(b));
+    a.subjects.split(',').map(s => s.trim()).filter(Boolean).forEach(s => subjects.add(s));
+  });
+  if (session.campusId === 'ALL') {
+    [...branches].sort().forEach(b => branchSel.appendChild(new Option(b, b)));
+  } else {
+    document.querySelector('.fgrp:has(#f-branch)').style.display = 'none';
+  }
+  [...subjects].sort().forEach(s => subjectSel.appendChild(new Option(s, s)));
+}
+
+function contactLinks(phone) {
+  const first = (phone || '').split(',')[0].trim();
+  const digits = normalizePhone(first);
+  if (!digits) return '<span class="muted">No phone</span>';
+  return '<div class="contact-links">' +
+    '<a href="tel:' + digits + '">📞 Call</a>' +
+    '<a href="https://wa.me/91' + digits + '" target="_blank" rel="noopener">💬 WhatsApp</a>' +
+    '</div>';
+}
+
+function statusSelectHtml(a) {
+  const raw = a.status || '';
+  const normalized = LEGACY_STATUS_MAP[raw] !== undefined ? LEGACY_STATUS_MAP[raw] : raw;
+  const options = STATUS_OPTIONS.includes(normalized) ? STATUS_OPTIONS : [normalized, ...STATUS_OPTIONS];
+  return '<select class="status-sel" data-row="' + a.row + '">' +
+    options.map(o => '<option value="' + o + '"' + (o === normalized ? ' selected' : '') + '>' + (o || 'New / Untouched') + '</option>').join('') +
+    '</select>' +
+    (normalized === 'Hired' ? '<a class="hired-btn" href="dashboard.html?principal=1&name=' + encodeURIComponent(a.name) + '" target="_blank" rel="noopener">→ Send to Salary Slip</a>' : '');
+}
+
+function render() {
+  const branch = document.getElementById('f-branch').value;
+  const subject = document.getElementById('f-subject').value;
+  const qual = document.getElementById('f-qual').value;
+  const status = document.getElementById('f-status').value;
+  const search = document.getElementById('f-search').value.trim().toLowerCase();
+  const campusLock = session.campusId !== 'ALL' ? campusTag(session.campusId) : null;
+
+  const filtered = APPLICANTS.filter(a => {
+    if (campusLock && a.branches.indexOf(campusLock) === -1) return false;
+    if (branch && a.branches.indexOf(branch) === -1) return false;
+    if (subject && a.subjects.indexOf(subject) === -1) return false;
+    if (qual && a.qualification !== qual) return false;
+    const normalizedStatus = LEGACY_STATUS_MAP[a.status] !== undefined ? LEGACY_STATUS_MAP[a.status] : a.status;
+    if (status === 'NEW' && normalizedStatus !== '') return false;
+    if (status && status !== 'NEW' && normalizedStatus !== status) return false;
+    if (search && a.name.toLowerCase().indexOf(search) === -1) return false;
+    return true;
+  });
+
+  document.getElementById('f-count').textContent = filtered.length + ' of ' + APPLICANTS.length + ' applicants';
+
+  document.getElementById('rows').innerHTML = filtered.map(a => `
+    <tr data-row="${a.row}">
+      <td class="name-cell">
+        <b>${escapeHtml(a.name)}</b>
+        <span>${escapeHtml(a.phone || '')} · ${escapeHtml(a.gender || '')}</span>
+        ${contactLinks(a.phone)}
+      </td>
+      <td>${escapeHtml(a.age || '')}</td>
+      <td>${a.subjects.split(',').map(s => s.trim()).filter(Boolean).map(s => '<span class="tag">' + escapeHtml(s) + '</span>').join('')}</td>
+      <td>${a.branches.split(',').map(s => s.trim()).filter(Boolean).map(s => '<span class="tag">' + escapeHtml(s) + '</span>').join('')}</td>
+      <td>${escapeHtml(a.qualification || '')}<br><span class="muted" style="font-size:10px">${escapeHtml(a.bed || '')}</span></td>
+      <td>${a.cv ? '<a class="cv-link" href="' + escapeHtml(a.cv) + '" target="_blank" rel="noopener">View CV ↗</a>' : '<span class="muted">None</span>'}</td>
+      <td>${statusSelectHtml(a)}</td>
+      <td><input class="notes-inp" data-row="${a.row}" value="${escapeHtml(a.notes || '')}" placeholder="Add a note..."></td>
+    </tr>
+  `).join('');
+
+  document.querySelectorAll('.status-sel').forEach(sel => {
+    sel.addEventListener('change', () => saveRow(sel.closest('tr')));
+  });
+  document.querySelectorAll('.notes-inp').forEach(inp => {
+    inp.addEventListener('change', () => saveRow(inp.closest('tr')));
+  });
+}
+
+async function saveRow(tr) {
+  const row = tr.dataset.row;
+  const status = tr.querySelector('.status-sel').value;
+  const notes = tr.querySelector('.notes-inp').value;
+  tr.classList.add('saving');
+  try {
+    const data = await apiCall({ action: 'updateStatus', row, status, notes });
+    if (!data.success) throw new Error(data.error || 'Save failed');
+    const applicant = APPLICANTS.find(a => String(a.row) === String(row));
+    if (applicant) { applicant.status = status; applicant.notes = notes; }
+  } catch (err) {
+    showError('Could not save: ' + err.message + '. Your session may have expired — try signing in again via Principal Dashboard.');
+  } finally {
+    tr.classList.remove('saving');
+    render();
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+async function init() {
+  if (!session) {
+    document.getElementById('gate').style.display = '';
+    return;
+  }
+  document.getElementById('app').style.display = '';
+  document.getElementById('welcome').innerHTML =
+    'Signed in as <b>' + escapeHtml(session.name) + '</b> — <b>' + escapeHtml(session.campusId === 'ALL' ? 'All Campuses' : session.campusName) + '</b>';
+
+  try {
+    const data = await apiCall({ action: 'list' });
+    if (!data.success) throw new Error(data.error || 'Could not load applicants');
+    APPLICANTS = dedupe(data.applicants);
+    populateFilterOptions();
+    render();
+    ['f-branch', 'f-subject', 'f-qual', 'f-status', 'f-search'].forEach(id =>
+      document.getElementById(id).addEventListener('input', render));
+  } catch (err) {
+    showError(err.message + '. Try signing in again via Principal Dashboard.');
+  }
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMCS — Hiring Dashboard</title>
+<style>
+:root{--red:#CE0000;--red-h:#a50000;--red-lt:rgba(206,0,0,.07);--dark:#1a1a1a;--gray:#555;--lgray:#f5f5f5;--border:#ddd;--white:#fff}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(--dark);min-height:100vh;display:flex;flex-direction:column}
+
+/* HEADER */
+.hdr{background:var(--red);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--red-h)}
+.hdr-brand{display:flex;align-items:center;gap:10px}
+.hdr-logo{width:32px;height:32px;border-radius:4px;object-fit:cover;flex-shrink:0}
+.hdr h1{font-size:14px;font-weight:700;letter-spacing:.3px}
+.hdr p{font-size:9.5px;opacity:.75;margin-top:1px}
+.hdr-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.92);padding:5px 12px;border-radius:4px;font-size:11px;font-weight:600;text-decoration:none;white-space:nowrap}
+.hdr-btn:hover{background:rgba(255,255,255,.22)}
+
+/* MAIN */
+.main{padding:28px 24px 40px;max-width:900px;margin:0 auto;width:100%;flex:1}
+
+.welcome{display:flex;align-items:center;justify-content:space-between;background:var(--lgray);border:1px solid var(--border);border-radius:6px;padding:14px 18px;margin-bottom:28px;flex-wrap:wrap;gap:10px}
+.welcome-text{font-size:12.5px;color:var(--gray)}
+.welcome-text b{color:var(--dark)}
+
+/* SECTION LABEL */
+.sec-lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--gray);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.sec-lbl::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* CARDS GRID */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:32px}
+
+/* CARD */
+.card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:20px;display:flex;flex-direction:column;gap:12px;text-decoration:none;color:inherit;transition:border-color .15s,transform .15s,box-shadow .15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.08);border-color:var(--red)}
+.card.disabled{opacity:.5;cursor:default;pointer-events:none}
+
+.card-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px;background:var(--red-lt)}
+
+.card-top{display:flex;align-items:center;gap:10px}
+.card-badge{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:2px 7px;border-radius:20px;margin-left:auto;flex-shrink:0}
+.badge-live{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
+.badge-soon{background:#f3f4f6;color:#6b7280;border:1px solid var(--border)}
+
+.card-title{font-size:13px;font-weight:700;color:var(--dark);line-height:1.3}
+.card-desc{font-size:11px;color:var(--gray);line-height:1.55;flex:1}
+.card-footer{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding-top:10px;margin-top:2px}
+.card-url{font-family:monospace;font-size:10px;color:#9ca3af;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px}
+.card-arrow{color:#9ca3af;font-size:14px;transition:transform .15s,color .15s;flex-shrink:0}
+.card:hover .card-arrow{transform:translateX(3px);color:var(--red)}
+
+/* FOOTER */
+.footer{text-align:center;padding:16px 28px;border-top:1px solid var(--border);color:#9ca3af;font-size:10.5px}
+.footer a{color:var(--gray);text-decoration:none}.footer a:hover{color:var(--red)}
+
+@media(max-width:600px){
+  .main{padding:20px 16px 32px}
+  .cards{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-brand">
+    <img src="logo.png" class="hdr-logo" alt="LMS logo">
+    <div>
+      <h1>Hiring Dashboard</h1>
+      <p>From application to payroll — Academic Year 2025–26</p>
+    </div>
+  </div>
+  <a href="principal.html" class="hdr-btn">🏫 Principal Dashboard</a>
+</div>
+
+<div class="main">
+
+  <div class="welcome" id="welcome" style="display:none">
+    <div class="welcome-text">Signed in as <b id="welcome-name"></b> — <b id="welcome-campus"></b></div>
+  </div>
+
+  <div class="sec-lbl">Recruitment</div>
+  <div class="cards">
+
+    <a href="teaching-applicants.html" class="card" data-tool="teaching-applicants.html">
+      <div class="card-top">
+        <div class="card-icon">📋</div>
+        <div class="card-badge badge-live">Live</div>
+      </div>
+      <div>
+        <div class="card-title">Teaching Applicants</div>
+        <div class="card-desc">Every applicant from the Teaching Applicants form. Filter by campus, subject and qualification, track outreach status, and mark candidates as hired.</div>
+      </div>
+      <div class="card-footer">
+        <span class="card-url">teaching-applicants.html</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <div class="card disabled">
+      <div class="card-top">
+        <div class="card-icon">💬</div>
+        <div class="card-badge badge-soon">Coming soon</div>
+      </div>
+      <div>
+        <div class="card-title">Interview Talking Points</div>
+        <div class="card-desc">Suggested questions and discussion points tailored to the applicant's subject and campus.</div>
+      </div>
+    </div>
+
+    <div class="card disabled">
+      <div class="card-top">
+        <div class="card-icon">📝</div>
+        <div class="card-badge badge-soon">Coming soon</div>
+      </div>
+      <div>
+        <div class="card-title">Interview Report Formatting</div>
+        <div class="card-desc">A standard, fillable interview report format for panel feedback and comparison across candidates.</div>
+      </div>
+    </div>
+
+    <div class="card disabled">
+      <div class="card-top">
+        <div class="card-icon">✅</div>
+        <div class="card-badge badge-soon">Coming soon</div>
+      </div>
+      <div>
+        <div class="card-title">Employee Hiring Points</div>
+        <div class="card-desc">Final checklist before an offer goes out — documents, references, and approvals.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="sec-lbl">Payroll</div>
+  <div class="cards">
+
+    <a href="dashboard.html" class="card" data-tool="dashboard.html">
+      <div class="card-top">
+        <div class="card-icon">🧾</div>
+        <div class="card-badge badge-live">Live</div>
+      </div>
+      <div>
+        <div class="card-title">Salary Slip</div>
+        <div class="card-desc">Salary calculator for new hires at your campus. Select designation, experience and kid details to get a full salary breakdown across Y1–Y3.</div>
+      </div>
+      <div class="card-footer">
+        <span class="card-url">dashboard.html</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <div class="card disabled">
+      <div class="card-top">
+        <div class="card-icon">📊</div>
+        <div class="card-badge badge-soon">Coming soon</div>
+      </div>
+      <div>
+        <div class="card-title">Employee Salary Dashboard</div>
+        <div class="card-desc">Network-wide compensation view across all existing employees, not just new-hire calculations.</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="footer">
+  La Montessori Chain of Schools &nbsp;&middot;&nbsp; Hiring Dashboard &nbsp;&middot;&nbsp; Internal &amp; Confidential
+</div>
+
+<script>
+// Mirrors principal.html's session shape — if a principal signed in there,
+// carry the campus lock (?principal=1) into this hub's live tools too.
+const SESSION_KEY = 'lmcs_principal_session';
+(function () {
+  try {
+    const s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    if (!s || !s.campusId || (s.expiresAt && Date.now() >= s.expiresAt)) return;
+    document.getElementById('welcome-name').textContent = s.name;
+    document.getElementById('welcome-campus').textContent = s.campusId === 'ALL' ? 'All Campuses' : s.campusName;
+    document.getElementById('welcome').style.display = '';
+    if (s.campusId !== 'ALL') {
+      document.querySelectorAll('.card[data-tool]').forEach(a => {
+        a.setAttribute('href', a.dataset.tool + '?principal=1');
+      });
+    }
+  } catch (_) {}
+})();
+</script>
+</body>
+</html>

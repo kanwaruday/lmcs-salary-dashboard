@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LMCS Hiring Dashboard 2026</title>
+<title>LMCS Salary Slip 2026</title>
 <style>
 :root{--red:#CE0000;--red-h:#a50000;--red-lt:rgba(206,0,0,.07);--dark:#1a1a1a;--gray:#555;--lgray:#f5f5f5;--border:#ddd;--white:#fff}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -164,10 +164,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <img src="logo.png" class="hdr-logo" alt="LMS logo">
     <div>
       <h1>La Montessori Chain of Schools</h1>
-      <p>Principal Hiring Dashboard &mdash; Pay Scale 2026</p>
+      <p>Salary Slip &mdash; Pay Scale 2026</p>
     </div>
   </div>
-  <a href="principal.html" class="hdr-btn">🏫 Principal Dashboard</a>
+  <a href="hiring.html" class="hdr-btn">🏫 Hiring Dashboard</a>
   <div class="hdr-meta"><strong>Confidential &middot; Internal Use Only</strong>Academic Year 2025&ndash;26</div>
 </div>
 
@@ -788,6 +788,12 @@ window.addEventListener('DOMContentLoaded',()=>{
     onSchoolChange();
     document.getElementById('inp-designation').value='PRT';
   }
+
+  // Forwarded from Teaching Applicants ("Send to Salary Slip" on a hired
+  // applicant) — prefills the name so it doesn't need retyping.
+  const fwdName=params.get('name');
+  if(fwdName)document.getElementById('inp-name').value=fwdName;
+
   compute();
 });
 </script>

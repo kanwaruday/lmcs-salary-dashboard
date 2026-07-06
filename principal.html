@@ -104,17 +104,17 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--white);color:var(-
     <div class="sec-lbl">Your Tools</div>
     <div class="cards">
 
-      <a href="dashboard.html" class="card" data-tool="dashboard.html">
+      <a href="hiring.html" class="card" data-tool="hiring.html">
         <div class="card-top">
           <div class="card-icon">👤</div>
           <div class="card-badge badge-live">Live</div>
         </div>
         <div>
           <div class="card-title">Hiring Dashboard</div>
-          <div class="card-desc">Salary calculator for new hires at your campus. Select designation, experience and kid details to get a full salary breakdown across Y1–Y3.</div>
+          <div class="card-desc">Teaching applicants, interview tracking, and salary calculation for new hires at your campus — from first application through to payroll.</div>
         </div>
         <div class="card-footer">
-          <span class="card-url">dashboard.html</span>
+          <span class="card-url">hiring.html</span>
           <span class="card-arrow">→</span>
         </div>
       </a>
@@ -276,7 +276,7 @@ async function onGoogleSignIn(response) {
   }
 
   const now = Date.now();
-  const session = { email, campusId: match.campusId, campusName: match.campusName, name: match.name, ts: now, expiresAt: nextSixPM(now) };
+  const session = { email, campusId: match.campusId, campusName: match.campusName, name: match.name, ts: now, expiresAt: nextSixPM(now), idToken: response.credential };
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   showDashboard(session);
 }
