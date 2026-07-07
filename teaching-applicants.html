@@ -44,6 +44,7 @@ td{padding:8px 8px;border-bottom:1px solid #eee;vertical-align:top;overflow-wrap
 tr:hover td{background:#fafafa}
 .name-cell b{display:block;color:var(--dark);font-size:12px;overflow-wrap:break-word}
 .name-cell span{color:#9ca3af;font-size:10px}
+.applied-date{display:block;color:#9ca3af;font-size:10px;margin-top:1px}
 .contact-links{display:flex;gap:6px;margin-top:3px;flex-wrap:wrap}
 .contact-links a{font-size:10px;text-decoration:none;color:var(--red);border:1px solid var(--red-lt);background:var(--red-lt);padding:2px 6px;border-radius:10px;white-space:nowrap}
 .contact-links a:hover{background:var(--red);color:#fff}
@@ -346,6 +347,13 @@ function resolveCampusId(a) {
   return session.campusId !== 'ALL' ? session.campusId : campusFromBranches(a.branches);
 }
 
+function formatAppliedDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 function isoToLocalInputValue(iso) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -555,6 +563,7 @@ function rowHtml(a) {
       <td class="name-cell">
         <b>${escapeHtml(a.name)}</b>
         <span>${escapeHtml(a.phone || '')} · ${escapeHtml(a.gender || '')}${a.age ? ' · ' + escapeHtml(a.age) : ''}</span>
+        <span class="applied-date">Applied ${escapeHtml(formatAppliedDate(a.timestamp)) || 'date unknown'}</span>
         ${contactLinks(a.phone)}
       </td>
       <td data-label="Subjects">${tagsHtml(splitSubjects(a.subjects), 3)}</td>
