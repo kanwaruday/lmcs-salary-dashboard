@@ -34,7 +34,11 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--lgray);color:var(-
 .fgrp{display:flex;flex-direction:column;gap:4px;flex:1 1 130px;min-width:130px}
 .fgrp label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--gray)}
 .fgrp input,.fgrp select{font-size:11.5px;padding:6px 8px;border-radius:5px;border:1px solid var(--border);font-family:inherit;width:100%}
-.fcount{flex:0 0 auto;font-size:11px;color:var(--gray);align-self:center;white-space:nowrap;margin-left:auto}
+.fcount{flex:0 0 auto;font-size:11px;color:var(--gray);align-self:center;white-space:nowrap}
+.show-btn{flex:0 0 auto;background:var(--red);color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;align-self:flex-end}
+.show-btn:hover{background:var(--red-h)}
+.show-btn:disabled{opacity:.6;cursor:default}
+.pre-load-hint{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:16px;font-size:11.5px;color:var(--gray);line-height:1.6}
 
 /* TABLE */
 .tbl-wrap{background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:auto}
@@ -136,15 +140,23 @@ input.dt-input{font-size:10.5px;padding:4px 6px;border-radius:5px;border:1px sol
     <div class="filters">
       <div class="fgrp">
         <label>Branch</label>
-        <select id="f-branch"><option value="">All branches</option></select>
+        <select id="f-branch" autocomplete="off">
+          <option value="">All branches</option>
+          <option value="LMS1">LMS-1 Dhalpur</option>
+          <option value="LMS2">LMS-2 Kelheli</option>
+          <option value="LMS3">LMS-3 Dunkhra</option>
+          <option value="LMS4">LMS-4 Ner Chowk</option>
+          <option value="LMS5">LMS-5 Sayoli</option>
+          <option value="LMS6">LMS-6 Jogindernagar</option>
+        </select>
       </div>
       <div class="fgrp">
         <label>Subject</label>
-        <select id="f-subject"><option value="">All subjects</option></select>
+        <input type="text" id="f-subject" placeholder="e.g. Mathematics">
       </div>
       <div class="fgrp">
         <label>Qualification</label>
-        <select id="f-qual">
+        <select id="f-qual" autocomplete="off">
           <option value="">All</option>
           <option value="Bachelors">Bachelors</option>
           <option value="Masters">Masters</option>
@@ -152,7 +164,7 @@ input.dt-input{font-size:10.5px;padding:4px 6px;border-radius:5px;border:1px sol
       </div>
       <div class="fgrp">
         <label>Status</label>
-        <select id="f-status">
+        <select id="f-status" autocomplete="off">
           <option value="">All</option>
           <optgroup label="Screening &amp; Hiring pipeline">
             <option value="NEW">New / Untouched</option>
@@ -176,10 +188,15 @@ input.dt-input{font-size:10.5px;padding:4px 6px;border-radius:5px;border:1px sol
         <label>Search name</label>
         <input type="text" id="f-search" placeholder="Type a name...">
       </div>
+      <button type="button" id="show-btn" class="show-btn">Show Applicants</button>
       <div class="fcount" id="f-count"></div>
     </div>
 
-    <div class="tbl-wrap">
+    <div class="pre-load-hint" id="pre-load-hint">
+      Choose filters above — branch, subject, status, whatever narrows it down for you — then click <b>Show Applicants</b>. Loading is faster the more specific your filters are, since fewer applicants means fewer background checks (Interview Report / Documents) to run.
+    </div>
+
+    <div class="tbl-wrap" id="tbl-wrap" style="display:none">
       <table>
         <thead>
           <tr>
@@ -300,20 +317,13 @@ function showError(msg) {
   el.style.display = '';
 }
 
-function populateFilterOptions() {
-  const branchSel = document.getElementById('f-branch');
-  const subjectSel = document.getElementById('f-subject');
-  const branches = new Set(), subjects = new Set();
-  APPLICANTS.forEach(a => {
-    splitBranches(a.branches).forEach(b => branches.add(b));
-    splitSubjects(a.subjects).forEach(s => subjects.add(s));
-  });
-  if (session.campusId === 'ALL') {
-    [...branches].sort().forEach(b => branchSel.appendChild(new Option(b, b)));
-  } else {
+// Branch options are a fixed, known list (the 6 campuses) and Subject is
+// free text, so neither needs applicant data to populate — the filter bar
+// can render immediately on page load, before anything is fetched.
+function applyCampusLockToFilters() {
+  if (session.campusId !== 'ALL') {
     document.querySelector('.fgrp:has(#f-branch)').style.display = 'none';
   }
-  [...subjects].sort().forEach(s => subjectSel.appendChild(new Option(s, s)));
 }
 
 function contactLinks(phone) {
@@ -565,16 +575,16 @@ async function openStaffMasterForm(tr, a) {
 }
 
 function matchesFilters(a) {
-  const branch = document.getElementById('f-branch').value;
-  const subject = document.getElementById('f-subject').value;
+  const branch = document.getElementById('f-branch').value; // "LMS1".."LMS6" or ""
+  const subject = document.getElementById('f-subject').value.trim().toLowerCase();
   const qual = document.getElementById('f-qual').value;
   const status = document.getElementById('f-status').value;
   const search = document.getElementById('f-search').value.trim().toLowerCase();
   const campusLock = session.campusId !== 'ALL' ? campusTag(session.campusId) : null;
 
   if (campusLock && a.branches.indexOf(campusLock) === -1) return false;
-  if (branch && a.branches.indexOf(branch) === -1) return false;
-  if (subject && a.subjects.indexOf(subject) === -1) return false;
+  if (branch && a.branches.indexOf(campusTag(branch)) === -1) return false;
+  if (subject && a.subjects.toLowerCase().indexOf(subject) === -1) return false;
   if (qual && a.qualification !== qual) return false;
   const normalizedStatus = LEGACY_STATUS_MAP[a.status] !== undefined ? LEGACY_STATUS_MAP[a.status] : a.status;
   if (status === 'NEW' && normalizedStatus !== '') return false;
@@ -701,6 +711,37 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+let LOADED = false;
+
+// Fetching the full applicant list is the slow step — each Interviewed/
+// Hired row also fires its own separate Apps Script call (the Interview
+// Report / Documents checks) as soon as it renders. Deferring this fetch
+// until the principal has chosen filters means only the rows they
+// actually asked to see trigger those extra calls, instead of every
+// Interviewed/Hired applicant network-wide firing at once on page load.
+async function loadApplicants() {
+  const btn = document.getElementById('show-btn');
+  btn.disabled = true;
+  btn.textContent = LOADED ? 'Refreshing…' : 'Loading…';
+  try {
+    const data = await apiCall({ action: 'list' });
+    if (!data.success) throw new Error(data.error || 'Could not load applicants');
+    APPLICANTS = sortByRecency(data.applicants);
+    if (!LOADED) {
+      document.getElementById('pre-load-hint').style.display = 'none';
+      document.getElementById('tbl-wrap').style.display = '';
+    }
+    LOADED = true;
+    render();
+    btn.textContent = '↻ Refresh';
+  } catch (err) {
+    showError(err.message + '. Try signing in again via Principal Dashboard.');
+    btn.textContent = LOADED ? '↻ Refresh' : 'Show Applicants';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 async function init() {
   if (!session) {
     document.getElementById('gate').style.display = '';
@@ -710,17 +751,12 @@ async function init() {
   document.getElementById('welcome').innerHTML =
     'Signed in as <b>' + escapeHtml(session.name) + '</b> — <b>' + escapeHtml(session.campusId === 'ALL' ? 'All Campuses' : session.campusName) + '</b>';
 
-  try {
-    const data = await apiCall({ action: 'list' });
-    if (!data.success) throw new Error(data.error || 'Could not load applicants');
-    APPLICANTS = sortByRecency(data.applicants);
-    populateFilterOptions();
-    render();
-    ['f-branch', 'f-subject', 'f-qual', 'f-status', 'f-search'].forEach(id =>
-      document.getElementById(id).addEventListener('input', render));
-  } catch (err) {
-    showError(err.message + '. Try signing in again via Principal Dashboard.');
-  }
+  applyCampusLockToFilters();
+  document.getElementById('show-btn').addEventListener('click', loadApplicants);
+  // Filters are interactive immediately (they don't need data loaded to
+  // work), but only re-render — never re-fetch — once data is in.
+  ['f-branch', 'f-subject', 'f-qual', 'f-status', 'f-search'].forEach(id =>
+    document.getElementById(id).addEventListener('input', () => { if (LOADED) render(); }));
 }
 
 init();
