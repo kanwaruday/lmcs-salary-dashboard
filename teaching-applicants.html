@@ -152,7 +152,7 @@ input.dt-input{font-size:10.5px;padding:4px 6px;border-radius:5px;border:1px sol
       </div>
       <div class="fgrp">
         <label>Subject</label>
-        <input type="text" id="f-subject" placeholder="e.g. Mathematics">
+        <select id="f-subject" autocomplete="off"><option value="">All subjects</option></select>
       </div>
       <div class="fgrp">
         <label>Qualification</label>
@@ -231,6 +231,41 @@ const SESSION_KEY = 'lmcs_principal_session';
 const STATUS_PIPELINE = ['', 'Contacted', 'Interview Scheduled', 'Interviewed', 'Documentation Submitted', 'Assessment Completed', 'Evaluation Filed', 'Pending MD Approval', 'Offered', 'Hired'];
 const STATUS_OUTCOMES = ['Rejected', 'Not Responding'];
 const STATUS_ALL = STATUS_PIPELINE.concat(STATUS_OUTCOMES);
+
+// Straight from each campus's real Course Mapping sheet (Class 1-12 tabs'
+// Subject column, read via a one-time script — see vault note). "Genral
+// Knowledge" was a typo in the LMS2/LMS3 source data, merged into
+// "General Knowledge" here rather than shown as a separate option.
+const SUBJECTS_BY_CAMPUS = {
+  LMS1: ['Accounting', 'Biology', 'Business Studies', 'Chemistry', 'Civics', 'Computer', 'EVS', 'Economics', 'English', 'General Knowledge', 'Geography', 'Hindi', 'History', 'Math', 'Physical Education', 'Physics', 'Political Science', 'Sanskrit', 'Science', 'Social Science', 'Social Studies'],
+  LMS2: ['Accounting', 'Biology', 'Business Studies', 'Chemistry', 'Computer', 'EVS', 'Economics', 'English', 'General Knowledge', 'Hindi', 'History', 'Information Technology', 'Math', 'Physical Education', 'Physics', 'Political Science', 'Sanskrit', 'Science', 'Social Science', 'Social Studies'],
+  LMS3: ['Accounting', 'Biology', 'Business Studies', 'Chemistry', 'Computer', 'EVS', 'Economics', 'English', 'General Knowledge', 'Hindi', 'History', 'Information Technology', 'Math', 'Physical Education', 'Physics', 'Political Science', 'Sanskrit', 'Science', 'Social Science', 'Social Studies'],
+  LMS4: ['Accounting', 'Biology', 'Business Studies', 'Chemistry', 'Civics', 'Computer', 'EVS', 'Economics', 'English', 'General Knowledge', 'Geography', 'Hindi', 'History', 'Information Technology', 'Math', 'Physical Education', 'Physics', 'Political Science', 'Sanskrit', 'Science', 'Social Science', 'Social Studies'],
+  LMS5: ['Accounting', 'Biology', 'Business Studies', 'Chemistry', 'Civics', 'Computer', 'EVS', 'Economics', 'English', 'General Knowledge', 'Geography', 'Hindi', 'History', 'Information Technology', 'Math', 'Physical Education', 'Physics', 'Political Science', 'Sanskrit', 'Science', 'Social Science', 'Social Studies'],
+  LMS6: ['Accounting', 'Biology', 'Business Studies', 'Chemistry', 'Civics', 'Computer', 'EVS', 'Economics', 'English', 'General Knowledge', 'Geography', 'Hindi', 'History', 'Information Technology', 'Math', 'Physical Education', 'Physics', 'Political Science', 'Sanskrit', 'Science', 'Social Science', 'Social Studies'],
+};
+// Roles real applicants apply for that Course Mapping doesn't cover
+// (it only tracks Class 1-12 academic curriculum) — not campus-specific,
+// always offered regardless of the Branch filter.
+const EXTRA_ROLES = ['Music', 'Dance', 'Fine Arts', 'NTT', 'Librarian', 'Sociology', 'Psychology'];
+
+function populateSubjectOptions(campusId) {
+  const sel = document.getElementById('f-subject');
+  const current = sel.value;
+  const campusSubjects = campusId && SUBJECTS_BY_CAMPUS[campusId]
+    ? SUBJECTS_BY_CAMPUS[campusId]
+    : [...new Set(Object.values(SUBJECTS_BY_CAMPUS).flat())].sort();
+  sel.innerHTML = '<option value="">All subjects</option>' +
+    '<optgroup label="' + (campusId ? campusId : 'All campuses') + ' curriculum">' +
+      campusSubjects.map(s => '<option value="' + s + '">' + s + '</option>').join('') +
+    '</optgroup>' +
+    '<optgroup label="Other roles (not in Course Mapping)">' +
+      EXTRA_ROLES.map(s => '<option value="' + s + '">' + s + '</option>').join('') +
+    '</optgroup>';
+  // Keep the previous selection if it still exists in the new list
+  // (e.g. "Music" survives a Branch change); otherwise reset to "All".
+  sel.value = [...sel.options].some(o => o.value === current) ? current : '';
+}
 
 // What the principal should actually do at each stage — shown under the
 // dropdown so a status is a next action, not just an inert label.
@@ -323,6 +358,10 @@ function showError(msg) {
 function applyCampusLockToFilters() {
   if (session.campusId !== 'ALL') {
     document.querySelector('.fgrp:has(#f-branch)').style.display = 'none';
+    populateSubjectOptions(session.campusId);
+  } else {
+    populateSubjectOptions(null);
+    document.getElementById('f-branch').addEventListener('change', e => populateSubjectOptions(e.target.value));
   }
 }
 
