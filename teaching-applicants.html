@@ -376,6 +376,22 @@ function googleCalendarLink(name, localDatetimeStr) {
     '&details=' + encodeURIComponent('Teaching Applicant interview, scheduled via the LMCS Hiring Dashboard.');
 }
 
+// Prefilled Interview Report Form link — Name and Contact Number carry
+// over exactly as recorded here, so whoever fills in the report never
+// retypes them (and can't introduce the kind of typo that would break
+// runInterviewReportCheck()'s phone-number match against this same data).
+// Entry IDs read directly off the live form via FormApp; Branch/Subject
+// are deliberately left unfilled since the two forms use different
+// vocabularies for those fields.
+function interviewReportLink(a) {
+  const params = new URLSearchParams({
+    usp: 'pp_url',
+    'entry.1912927700': a.name,
+    'entry.636145173': a.phone,
+  });
+  return 'https://docs.google.com/forms/d/e/1FAIpQLSempUF_QhWrQ8AfoYdXs7o2ACgcec78RyT7ZtuFlFv7pD_cuQ/viewform?' + params.toString();
+}
+
 function statusSelectHtml(a) {
   const normalized = normalizedStatusOf(a);
   // A value already in the sheet that isn't one of ours (e.g. hand-typed
@@ -386,6 +402,8 @@ function statusSelectHtml(a) {
   const hint = STATUS_NEXT_ACTION[normalized];
   const salarySlipBtn = '<a class="hired-btn" href="dashboard.html?principal=1&name=' + encodeURIComponent(a.name) + '" target="_blank" rel="noopener">→ Send to Salary Slip</a>';
 
+  const reportLinkBtn = '<a class="cal-link" href="' + interviewReportLink(a) + '" target="_blank" rel="noopener">📝 Fill Interview Report (name &amp; phone prefilled)</a>';
+
   let extra = '';
   if (normalized === 'Interview Scheduled') {
     const dtVal = isoToLocalInputValue(a.interviewAt);
@@ -394,10 +412,11 @@ function statusSelectHtml(a) {
         (dtVal
           ? '<a class="cal-link" href="' + googleCalendarLink(a.name, dtVal) + '" target="_blank" rel="noopener">📅 Add to Google Calendar</a>'
           : '<span class="check-loading">Pick a date to get a calendar link for whoever is scheduling it (usually the fee clerk)</span>') +
+        reportLinkBtn +
       '</div>';
   }
   if (normalized === 'Interviewed') {
-    extra += '<div class="check-slot check-loading" data-check="interview">Checking Interview Report…</div>';
+    extra += '<div class="check-slot check-loading" data-check="interview">Checking Interview Report…</div>' + reportLinkBtn;
   }
   if (normalized === 'Offered' || normalized === 'Hired') {
     extra += salarySlipBtn;
