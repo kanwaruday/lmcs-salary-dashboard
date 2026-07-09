@@ -68,8 +68,9 @@ input.notes-inp{font-size:11px;padding:4px 6px;border-radius:5px;border:1px soli
 /* Status-specific extras: interview scheduling, report/document warnings, Staff Master handoff */
 .dt-row{margin-top:6px;display:flex;flex-direction:column;gap:4px}
 input.dt-input{font-size:10.5px;padding:4px 6px;border-radius:5px;border:1px solid var(--border);font-family:inherit;width:100%}
-.cal-link{font-size:10px;color:var(--red);text-decoration:none}
+.cal-link{font-size:10px;color:var(--red);text-decoration:none;display:inline-block;margin-top:2px}
 .cal-link:hover{text-decoration:underline}
+.cal-link-btn{background:none;border:none;padding:0;font-family:inherit;cursor:pointer;display:block}
 .check-loading{font-size:10px;color:#9ca3af;margin-top:4px}
 .warn-box{font-size:10px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:5px 7px;margin-top:5px;line-height:1.4}
 .ok-box{font-size:10px;color:var(--green);margin-top:5px}
@@ -365,15 +366,21 @@ function isoToLocalInputValue(iso) {
 // Prefilled Google Calendar "create event" link — the actual event is
 // still created by whoever schedules it (typically the campus's fee
 // clerk, per how this works today), this just saves them re-typing details.
-function googleCalendarLink(name, localDatetimeStr) {
+// `position` (asked for at click-time, see bindRowEvents) goes into both
+// the event title and details so it's clear on the calendar itself what
+// role this interview is actually for.
+function googleCalendarLink(name, localDatetimeStr, position) {
   const start = new Date(localDatetimeStr);
   if (isNaN(start)) return '#';
   const end = new Date(start.getTime() + 30 * 60000);
   const fmt = d => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  const title = 'Interview: ' + name + (position ? ' — ' + position : '');
+  const details = 'Teaching Applicant interview, scheduled via the LMCS Hiring Dashboard.' +
+    (position ? ' Position under consideration: ' + position + '.' : '');
   return 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
-    '&text=' + encodeURIComponent('Interview: ' + name) +
+    '&text=' + encodeURIComponent(title) +
     '&dates=' + fmt(start) + '/' + fmt(end) +
-    '&details=' + encodeURIComponent('Teaching Applicant interview, scheduled via the LMCS Hiring Dashboard.');
+    '&details=' + encodeURIComponent(details);
 }
 
 // Prefilled Interview Report Form link — Name and Contact Number carry
@@ -410,7 +417,7 @@ function statusSelectHtml(a) {
     extra += '<div class="dt-row">' +
         '<input type="datetime-local" class="dt-input" data-row="' + a.row + '" value="' + dtVal + '">' +
         (dtVal
-          ? '<a class="cal-link" href="' + googleCalendarLink(a.name, dtVal) + '" target="_blank" rel="noopener">📅 Add to Google Calendar</a>'
+          ? '<button type="button" class="cal-link cal-link-btn" data-row="' + a.row + '">📅 Add to Google Calendar</button>'
           : '<span class="check-loading">Pick a date to get a calendar link for whoever is scheduling it (usually the fee clerk)</span>') +
         reportLinkBtn +
       '</div>';
@@ -610,6 +617,19 @@ function bindRowEvents(scope) {
       const tr = btn.closest('tr');
       const applicant = APPLICANTS.find(x => String(x.row) === String(tr.dataset.row));
       if (applicant) openStaffMasterForm(tr, applicant);
+    });
+  });
+  scope.querySelectorAll('.cal-link-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tr = btn.closest('tr');
+      const applicant = APPLICANTS.find(x => String(x.row) === String(tr.dataset.row));
+      if (!applicant) return;
+      const dtVal = tr.querySelector('.dt-input')?.value;
+      if (!dtVal) return;
+      const suggestedPosition = splitSubjects(applicant.subjects)[0] || '';
+      const position = window.prompt('What position are you considering ' + applicant.name + ' for?', suggestedPosition);
+      if (position === null) return; // cancelled
+      window.open(googleCalendarLink(applicant.name, dtVal, position.trim()), '_blank', 'noopener');
     });
   });
 }
