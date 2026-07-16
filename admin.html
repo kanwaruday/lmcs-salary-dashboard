@@ -769,6 +769,13 @@ function renderAll(){
 
 renderAll();
 
+// open tab from URL hash, e.g. admin.html#log
+(function(){
+  const name = location.hash.slice(1);
+  const btn = name && document.querySelector(`.tab[onclick*="'${name}'"]`);
+  if(btn && document.getElementById('panel-'+name)) showTab(name, btn);
+})();
+
 // ── INTEGRATIONS ────────────────────────────────────────────────
 function initIntegrations(){
   const saved = localStorage.getItem('lmcs_payroll_url') || '';

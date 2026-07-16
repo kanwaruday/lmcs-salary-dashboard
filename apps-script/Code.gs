@@ -59,10 +59,10 @@ function fixMisalignedRows() {
   Logger.log('Fixed ' + fixed + ' row(s).');
 }
 
-// ── Payroll doGet — receives submissions from the hiring dashboard ──
+// ── Payroll submission — receives submissions from the hiring dashboard ──
 // Uses GET + query param because browser POST→Apps Script 302 redirect
 // silently converts to GET, so doPost never fires from cross-origin pages.
-function doGet(e) {
+function handlePayrollSubmission(e) {
   try {
     const data = JSON.parse(e.parameter.data);
     const ss   = SpreadsheetApp.openById(PAYROLL_SHEET_ID);
@@ -118,12 +118,19 @@ const CM_TABS = [
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 // ── Web App entry point ──────────────────────────────────────────
-function doGet() {
+// Single dispatcher: JavaScript keeps only the LAST function declared with a
+// given name, so the file must define exactly one doGet. Requests carrying a
+// ?data= payload are payroll submissions from the hiring dashboard; anything
+// else is a dashboard cache read.
+function doGet(e) {
+  if (e && e.parameter && e.parameter.data) {
+    return handlePayrollSubmission(e);
+  }
   try {
     const json = getOrBuildCache();
     return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
-  } catch(e) {
-    return ContentService.createTextOutput(JSON.stringify({ error: e.toString(), stack: e.stack }))
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({ error: err.toString(), stack: err.stack }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
