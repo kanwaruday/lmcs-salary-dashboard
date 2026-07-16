@@ -9,6 +9,13 @@
 //      Execute as: Me  |  Who has access: Anyone
 //   5. Copy the Web App URL into daily-progress.html  PROXY_URL = '...'
 //   6. Add a time trigger: updateCache() → every 30 minutes
+//
+// This one deployment now serves BOTH purposes via the single doGet
+// dispatcher below (branches on ?data= being present). If you redeploy,
+// also update dashboard.html's PAYROLL_SHEET_URL / lmcs_payroll_url to
+// this same Web App URL — the old AKfycbygESuG... deployment it currently
+// points to is a separate, older frozen deployment and must be retired
+// once this one is confirmed working, to avoid duplicate/divergent targets.
 // ═══════════════════════════════════════════════════════════════════
 
 const CW_SHEET_ID = '1z5hzpMRHMru6ulpYs2lsGZr7quAywwpQ_zySa3rvGUA';
@@ -59,10 +66,11 @@ function fixMisalignedRows() {
   Logger.log('Fixed ' + fixed + ' row(s).');
 }
 
-// ── Payroll submission — receives submissions from the hiring dashboard ──
+// ── Payroll submission handler — receives submissions from the hiring dashboard ──
 // Uses GET + query param because browser POST→Apps Script 302 redirect
 // silently converts to GET, so doPost never fires from cross-origin pages.
-function handlePayrollSubmission(e) {
+// Called from the single doGet dispatcher below when e.parameter.data is present.
+function appendPayrollSubmission(e) {
   try {
     const data = JSON.parse(e.parameter.data);
     const ss   = SpreadsheetApp.openById(PAYROLL_SHEET_ID);
@@ -118,19 +126,18 @@ const CM_TABS = [
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 // ── Web App entry point ──────────────────────────────────────────
-// Single dispatcher: JavaScript keeps only the LAST function declared with a
-// given name, so the file must define exactly one doGet. Requests carrying a
-// ?data= payload are payroll submissions from the hiring dashboard; anything
-// else is a dashboard cache read.
+// Dispatches to the payroll-append handler when the hiring dashboard's
+// "Submit to Accounts" call is present (?data=...), otherwise serves
+// the cached network-wide dashboard JSON.
 function doGet(e) {
   if (e && e.parameter && e.parameter.data) {
-    return handlePayrollSubmission(e);
+    return appendPayrollSubmission(e);
   }
   try {
     const json = getOrBuildCache();
     return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
-  } catch(err) {
-    return ContentService.createTextOutput(JSON.stringify({ error: err.toString(), stack: err.stack }))
+  } catch(e) {
+    return ContentService.createTextOutput(JSON.stringify({ error: e.toString(), stack: e.stack }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
