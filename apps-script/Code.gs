@@ -144,9 +144,20 @@ function doGet(e) {
 
 // ── Time trigger (every 30 min) ──────────────────────────────────
 function updateCache() {
-  const json = JSON.stringify(buildData());
+  const data = buildData();
+  const json = JSON.stringify(data);
   writeCacheFile(json);
   Logger.log('Cache updated: ' + json.length + ' bytes');
+
+  // Chapter Completion Tracker (see ChapterTracker.gs) -- reuses the same
+  // cwRecords/cmData just built, no extra fetching. Wrapped so a failure
+  // here never breaks the main dashboard cache, which everything else
+  // depends on.
+  try {
+    updateChapterTracker(data.cwRecords, data.cmData);
+  } catch (err) {
+    Logger.log('Chapter Tracker update failed: ' + err);
+  }
 }
 
 // ── Cache logic (Google Drive file) ─────────────────────────────
@@ -206,11 +217,18 @@ function buildData() {
   const now       = new Date();
   const ayStartYr = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
   const ayStart   = new Date(ayStartYr, 3, 1);
-  const year      = now.getFullYear();
 
+  // The academic year (Apr ayStartYr - Mar ayStartYr+1) can span two
+  // calendar years. Filtering by just now.getFullYear() (the old code)
+  // silently drops Apr-Dec of ayStartYr every Jan-Mar, since that's a
+  // different calendar year from "now" but still the same academic year --
+  // dormant today (Aug), but a real gap every January. OR across both
+  // calendar years the academic year touches; parseCW's own ayStart check
+  // still does the precise cutoff, this just needs to not exclude valid
+  // rows before that check ever sees them.
   const cwUrl = 'https://docs.google.com/spreadsheets/d/' + CW_SHEET_ID +
     '/gviz/tq?tqx=out:json&tq=' +
-    encodeURIComponent("SELECT * WHERE B CONTAINS '/" + year + "' LIMIT 100000");
+    encodeURIComponent("SELECT * WHERE B CONTAINS '/" + ayStartYr + "' OR B CONTAINS '/" + (ayStartYr + 1) + "' LIMIT 100000");
 
   const cmJobs = CM_SCHOOLS.flatMap((school, idx) =>
     CM_TABS.map(tab => ({
