@@ -128,13 +128,25 @@ function chapterIsSubjectExempt(subject) {
 // entry needed) -- this list only controls how ACTUAL CWA events get
 // grouped before matching against that shared list, so two sections
 // completing the same-named chapter at different real times don't
-// collide under the matcher's one-planned-chapter-one-actual-event rule
-// (confirmed a real case 2026-08-28: Commerce and Humanities XII both
-// logged "Determination of Income and Employment" within a minute of
-// each other -- the second was silently landing as Unmapped). Add a
-// normalized subject name here if another cross-stream collision turns
-// up; everything not listed behaves exactly as before.
-const CHAPTER_STREAM_SENSITIVE_SUBJECTS = ['economics'];
+// collide under the matcher's one-planned-chapter-one-actual-event rule.
+//
+// Confirmed real cases (checked directly against the full daily sheet,
+// not assumed -- 2026-09-01, after 'english' was found missing from an
+// earlier pass that only checked Economics):
+//   - Economics: Commerce + Humanities XII, e.g. both logged "Money &
+//     Banking" CWA within minutes of each other, 2026-06-22.
+//   - English: Commerce + Humanities + Science XII (compulsory across all
+//     three) -- e.g. all three logged "Deep Water" CWA same day,
+//     2026-05-29.
+// Checked and confirmed NOT needed for anything else: History, Political
+// Science, Hindi, Accountancy all looked like they had cross-stream
+// collisions in a first pass, but that was a bug in the CHECK itself (it
+// was conflating "same teacher covering Class 11 AND Class 12 same day" --
+// already handled fine by classMapped, not a real collision -- with an
+// actual same-year cross-stream collision). Re-verify against real data
+// before adding anything here, the same way these two were confirmed;
+// don't add a subject just because it seems plausible.
+const CHAPTER_STREAM_SENSITIVE_SUBJECTS = ['economics', 'english'];
 
 function chapterIsStreamSensitive(subject) {
   return CHAPTER_STREAM_SENSITIVE_SUBJECTS.indexOf(String(subject || '').toLowerCase().trim()) >= 0;
@@ -434,16 +446,38 @@ function buildChapterStatusRows(cwRecords, cmData, ay, now) {
     const byS = (dailyCWA[lmsIdx] || {})[cls];
     if (!byS) return [{ stream: null, arr: [] }];
     const ns = chapterNormalizeSubject(subj);
+
     if (chapterIsStreamSensitive(subj)) {
-      const keys = Object.keys(byS).filter(k => k === ns || k.indexOf(ns + '|') === 0);
-      if (keys.length) return keys.map(k => ({ stream: byS[k][0] ? byS[k][0].stream : null, arr: byS[k] }));
+      const allKeys = Object.keys(byS);
+      const matchingKeys = [];
+      for (let i = 0; i < allKeys.length; i++) {
+        const k = allKeys[i];
+        if (k === ns || k.indexOf(ns + '|') === 0) matchingKeys.push(k);
+      }
+      if (matchingKeys.length > 0) {
+        const groups = [];
+        for (let i = 0; i < matchingKeys.length; i++) {
+          const k = matchingKeys[i];
+          const arr = byS[k];
+          let streamLabel = null;
+          if (arr.length > 0 && arr[0].stream) streamLabel = arr[0].stream;
+          groups.push({ stream: streamLabel, arr: arr });
+        }
+        return groups;
+      }
       // no stream evidence in the data yet -- fall through to the generic
       // single-pass lookup below so this degrades exactly like a normal
       // subject until real per-stream activity shows up.
     }
+
     if (byS[ns]) return [{ stream: null, arr: byS[ns] }];
-    const key = Object.keys(byS).find(k => k === ns || k.includes(ns) || ns.includes(k));
-    return [{ stream: null, arr: key ? byS[key] : [] }];
+    const fallbackKeys = Object.keys(byS);
+    let fallbackKey = null;
+    for (let i = 0; i < fallbackKeys.length; i++) {
+      const k = fallbackKeys[i];
+      if (k === ns || k.indexOf(ns) >= 0 || ns.indexOf(k) >= 0) { fallbackKey = k; break; }
+    }
+    return [{ stream: null, arr: fallbackKey ? byS[fallbackKey] : [] }];
   }
 
   const rows = [];
@@ -491,13 +525,19 @@ function buildChapterStatusRows(cwRecords, cmData, ay, now) {
         // Commerce and Humanities Economics sections completing the same-
         // named chapter at different times both get credited correctly
         // instead of the second one landing as a false Unmapped.
-        getDailyGroups(lmsIdx, cls, chList[0].subject).forEach(({ stream, arr }) => {
-          const actual = arr.slice();
+        const dailyGroups = getDailyGroups(lmsIdx, cls, chList[0].subject);
+        for (let gi = 0; gi < dailyGroups.length; gi++) {
+          const group = dailyGroups[gi];
+          const groupStream = group.stream;
+          const actual = group.arr.slice();
           const used = new Array(actual.length).fill(false);
           // Tag the Subject column so two independently-tracked rows for the
           // same nominal subject read as "Economics (Commerce)" vs
           // "Economics (Humanities)", never as an unexplained duplicate.
-          const streamSuffix = stream ? ' (' + String(stream).replace(/\s*stream\s*$/i, '').trim() + ')' : '';
+          let streamSuffix = '';
+          if (groupStream) {
+            streamSuffix = ' (' + String(groupStream).replace(/\s*stream\s*$/i, '').trim() + ')';
+          }
 
           planned.forEach(ch => {
             const wantName = chapterNormalizeName(ch.chapterName);
@@ -554,7 +594,7 @@ function buildChapterStatusRows(cwRecords, cmData, ay, now) {
               '', '', '', ev.dateStr, 'Unmapped', '', now,
             ]);
           });
-        });
+        }
       });
     });
   });
