@@ -36,9 +36,9 @@ function doGet(e) {
     }
 
     if (action === 'add') {
-      addEntry(e.parameter.email, e.parameter.name, e.parameter.campusId);
+      addEntry(e.parameter.email, e.parameter.name, e.parameter.campusId, e.parameter.role);
     } else if (action === 'edit') {
-      editEntry(e.parameter.email, e.parameter.name, e.parameter.campusId);
+      editEntry(e.parameter.email, e.parameter.name, e.parameter.campusId, e.parameter.role);
     } else if (action === 'delete') {
       deleteEntry(e.parameter.email);
     } else {
@@ -55,16 +55,21 @@ function getSheet() {
   return SpreadsheetApp.openById(SHEET_ID).getSheets()[0];
 }
 
+// Role (column D, added 2026-08-29) is a separate dimension from campusId
+// -- 'Owner' / 'Coordinator' / 'Principal' / 'Teacher', or blank for
+// entries added before this existed (they just don't get any
+// staff-management permission until someone sets it -- fails safe).
 function readEntries() {
   const rows = getSheet().getDataRange().getValues();
   const entries = [];
   for (let i = 1; i < rows.length; i++) {
-    const [email, name, campusId] = rows[i];
+    const [email, name, campusId, role] = rows[i];
     if (email) {
       entries.push({
         email: String(email).trim().toLowerCase(),
         name: String(name || '').trim(),
         campusId: String(campusId || '').trim().toUpperCase(),
+        role: String(role || '').trim(),
       });
     }
   }
@@ -80,19 +85,20 @@ function findRowIndex(sheet, email) {
   return -1;
 }
 
-function addEntry(email, name, campusId) {
+function addEntry(email, name, campusId, role) {
   if (!email || !campusId) throw new Error('email and campusId are required');
   const sheet = getSheet();
   if (findRowIndex(sheet, email) !== -1) throw new Error('That email is already on the list — use edit instead');
-  sheet.appendRow([email.trim().toLowerCase(), name || '', campusId.trim().toUpperCase()]);
+  sheet.appendRow([email.trim().toLowerCase(), name || '', campusId.trim().toUpperCase(), role || '']);
 }
 
-function editEntry(email, name, campusId) {
+function editEntry(email, name, campusId, role) {
   const sheet = getSheet();
   const row = findRowIndex(sheet, email);
   if (row === -1) throw new Error('Email not found: ' + email);
   sheet.getRange(row, 2).setValue(name || '');
   sheet.getRange(row, 3).setValue((campusId || '').trim().toUpperCase());
+  sheet.getRange(row, 4).setValue(role || '');
 }
 
 function deleteEntry(email) {

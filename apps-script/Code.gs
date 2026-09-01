@@ -133,6 +133,14 @@ function doGet(e) {
   if (e && e.parameter && e.parameter.data) {
     return appendPayrollSubmission(e);
   }
+  // cwa-gap-report.html's "Mark as taken" (Coordinator/Owner manual
+  // override) -- see appendChapterOverride in ChapterTracker.gs, same
+  // project. Same GET-with-JSON-param dispatch pattern as the payroll
+  // branch above, for the same reason (POST silently becomes GET after
+  // Apps Script's redirect on a cross-origin request).
+  if (e && e.parameter && e.parameter.overrideData) {
+    return appendChapterOverride(e);
+  }
   try {
     const json = getOrBuildCache();
     return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
@@ -279,9 +287,29 @@ function mapClass(cls, section) {
     if (ROMAN[s]===3||s==='3') return 'M-III';
     return 'M-I';
   }
+  // "XII Commerce Stream" / "XI Science Stream" etc. -- extract leading Roman
+  // numeral. Without this, EVERY Class 11/12 row (that's the only way those
+  // two classes are ever entered) mapped to null -- invisible to the Chapter
+  // Tracker and flagged "Class Not Specified" in the Feed. Found 2026-08-27.
+  const firstWord = c.split(/\s+/)[0];
+  if (firstWord && ROMAN[firstWord] && c.length > firstWord.length) return 'Class ' + ROMAN[firstWord];
   if (ROMAN[c]) return 'Class ' + ROMAN[c];
   const n = parseInt(c);
   return (!isNaN(n) && n >= 1 && n <= 12) ? 'Class ' + n : null;
+}
+
+// Extracts just the stream label, e.g. "XII Commerce Stream" -> "Commerce
+// Stream". Used by ChapterTracker.gs to keep Commerce/Humanities Economics
+// sections from colliding under the shared Class 11/12 Course Mapping list
+// -- see chapterIsStreamSensitive in that file. Returns '' for classes with
+// no stream suffix (everything below Class 11, or Class 10/12 without one).
+function extractStream(cls) {
+  const c = (cls||'').trim().toUpperCase();
+  const firstWord = c.split(/\s+/)[0];
+  if (firstWord && ROMAN[firstWord] && c.length > firstWord.length) {
+    return String(cls).trim().replace(/^\S+\s+/, '').trim();
+  }
+  return '';
 }
 
 function parseCW(table, ayStart) {
@@ -302,7 +330,7 @@ function parseCW(table, ayStart) {
     const dateStr = yr+'-'+String(mo).padStart(2,'0')+'-'+String(da).padStart(2,'0');
     records.push({
       lmsIdx, dateStr, timeMs: dateObj.getTime(),
-      teacher: cell(2), classMapped: mapClass(cell(3), cell(4)), subject: cell(5),
+      teacher: cell(2), classMapped: mapClass(cell(3), cell(4)), stream: extractStream(cell(3)), subject: cell(5),
       cwBook: cell(6), cwChapter: cell(7), cwDesc: cell(8), cwTag: cell(9),
       hwChapter: cell(11), hwDesc: cell(12), hwTag: cell(13),
     });

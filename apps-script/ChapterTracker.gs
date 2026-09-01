@@ -95,6 +95,15 @@ const CHAPTER_TRACKER_HEADERS = [
   'Status', 'Days Late/Overdue', 'Last Updated',
 ];
 
+// "Mark as taken" manual overrides (cwa-gap-report.html, Coordinator/Owner
+// only) -- a separate tab in the same tracker spreadsheet, never touched by
+// the year-tab rewrite in getOrCreateYearTab. See appendChapterOverride and
+// chapterReadOverrides_ below.
+const CHAPTER_OVERRIDES_TAB = 'Overrides';
+const CHAPTER_OVERRIDE_HEADERS = [
+  'Timestamp', 'Email', 'Name', 'AcademicYear', 'School', 'Class', 'Subject', 'ChapterName', 'ActualDate', 'Note',
+];
+
 function chapterNormalizeSubject(s) {
   return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12);
 }
@@ -110,6 +119,25 @@ function chapterNormalizeName(s) {
 function chapterIsSubjectExempt(subject) {
   const sl = String(subject || '').toLowerCase();
   return CHAPTER_CWA_EXEMPT_SUBJECTS.some(e => sl === e || sl.includes(e) || e.includes(sl));
+}
+
+// Subjects taught as the SAME curriculum across multiple Class 11/12
+// streams (e.g. Economics -- identical NCERT books for Commerce and
+// Humanities) but delivered as genuinely separate class sections. Course
+// Mapping keeps ONE shared chapter list per subject (no duplicate data
+// entry needed) -- this list only controls how ACTUAL CWA events get
+// grouped before matching against that shared list, so two sections
+// completing the same-named chapter at different real times don't
+// collide under the matcher's one-planned-chapter-one-actual-event rule
+// (confirmed a real case 2026-08-28: Commerce and Humanities XII both
+// logged "Determination of Income and Employment" within a minute of
+// each other -- the second was silently landing as Unmapped). Add a
+// normalized subject name here if another cross-stream collision turns
+// up; everything not listed behaves exactly as before.
+const CHAPTER_STREAM_SENSITIVE_SUBJECTS = ['economics'];
+
+function chapterIsStreamSensitive(subject) {
+  return CHAPTER_STREAM_SENSITIVE_SUBJECTS.indexOf(String(subject || '').toLowerCase().trim()) >= 0;
 }
 
 function chapterHasCWA(tagStr, subject) {
@@ -341,8 +369,14 @@ function chapterPendingStatus(now, plannedDate, monthEnd, termDeadline) {
 function buildChapterStatusRows(cwRecords, cmData, ay, now) {
   const deadlineSets = chapterBuildDeadlineSets(ay); // one CalendarApp pass for the whole run
   const teacherCanon  = chapterFetchRosterCanon();   // one Roster Proxy fetch for the whole run
+  const overrides     = chapterReadOverrides_(ay);   // Coordinator/Owner manual "mark as taken" entries
 
-  // dailyCWA[lmsIdx][classMapped][normSubject] -> list of {dateObj,dateStr,chapter,teacher,subject}
+  // dailyCWA[lmsIdx][classMapped][bucketKey] -> list of
+  // {dateObj,dateStr,chapter,teacher,subject,stream}. bucketKey is just the
+  // normalized subject EXCEPT for stream-sensitive subjects (see
+  // chapterIsStreamSensitive above), where it's "subject|stream" -- e.g.
+  // "economics|commercestream" and "economics|humanitiesstream" end up as
+  // separate buckets instead of one merged one.
   const dailyCWA = {};
   cwRecords.forEach(r => {
     if (!chapterHasCWA(r.cwTag, r.subject)) return;
@@ -350,11 +384,13 @@ function buildChapterStatusRows(cwRecords, cmData, ay, now) {
     if (d < ay.start || d > ay.end) return;
     if (!r.classMapped) return;
     const ns = chapterNormalizeSubject(r.subject);
+    const bucketKey = (chapterIsStreamSensitive(r.subject) && r.stream)
+      ? ns + '|' + chapterNormalizeSubject(r.stream) : ns;
     if (!dailyCWA[r.lmsIdx]) dailyCWA[r.lmsIdx] = {};
     if (!dailyCWA[r.lmsIdx][r.classMapped]) dailyCWA[r.lmsIdx][r.classMapped] = {};
-    if (!dailyCWA[r.lmsIdx][r.classMapped][ns]) dailyCWA[r.lmsIdx][r.classMapped][ns] = [];
-    dailyCWA[r.lmsIdx][r.classMapped][ns].push({
-      dateObj: d, dateStr: r.dateStr, chapter: r.cwChapter, teacher: r.teacher, subject: r.subject,
+    if (!dailyCWA[r.lmsIdx][r.classMapped][bucketKey]) dailyCWA[r.lmsIdx][r.classMapped][bucketKey] = [];
+    dailyCWA[r.lmsIdx][r.classMapped][bucketKey].push({
+      dateObj: d, dateStr: r.dateStr, chapter: r.cwChapter, teacher: r.teacher, subject: r.subject, stream: r.stream,
     });
   });
   Object.keys(dailyCWA).forEach(li => Object.keys(dailyCWA[li]).forEach(cls =>
@@ -389,13 +425,25 @@ function buildChapterStatusRows(cwRecords, cmData, ay, now) {
     });
     return fKey ? [...teacherIndex[fKey].values()].join(', ') : '';
   }
-  function getDailyArr(lmsIdx, cls, subj) {
+  // Returns one {stream, arr} entry per stream bucket for stream-sensitive
+  // subjects (so each stream's actual CWA events get matched independently
+  // against the same Course Mapping chapter list -- see
+  // chapterIsStreamSensitive above); for everything else, a single
+  // {stream:null, arr} entry, exactly the old getDailyArr() behavior.
+  function getDailyGroups(lmsIdx, cls, subj) {
     const byS = (dailyCWA[lmsIdx] || {})[cls];
-    if (!byS) return [];
+    if (!byS) return [{ stream: null, arr: [] }];
     const ns = chapterNormalizeSubject(subj);
-    if (byS[ns]) return byS[ns];
+    if (chapterIsStreamSensitive(subj)) {
+      const keys = Object.keys(byS).filter(k => k === ns || k.indexOf(ns + '|') === 0);
+      if (keys.length) return keys.map(k => ({ stream: byS[k][0] ? byS[k][0].stream : null, arr: byS[k] }));
+      // no stream evidence in the data yet -- fall through to the generic
+      // single-pass lookup below so this degrades exactly like a normal
+      // subject until real per-stream activity shows up.
+    }
+    if (byS[ns]) return [{ stream: null, arr: byS[ns] }];
     const key = Object.keys(byS).find(k => k === ns || k.includes(ns) || ns.includes(k));
-    return key ? byS[key] : [];
+    return [{ stream: null, arr: key ? byS[key] : [] }];
   }
 
   const rows = [];
@@ -434,49 +482,78 @@ function buildChapterStatusRows(cwRecords, cmData, ay, now) {
 
         processedCombos[lmsIdx + '|' + cls + '|' + ns] = true;
 
-        const actual = getDailyArr(lmsIdx, cls, chList[0].subject).slice();
         const teacher = lookupTeacher(lmsIdx, cls, chList[0].subject);
-        const used = new Array(actual.length).fill(false);
+        // For most subjects this is a single {stream:null, arr} group, same
+        // as the old getDailyArr() -- identical behavior. For stream-
+        // sensitive subjects with real per-stream data (chapterIsStreamSensitive
+        // above), this runs the SAME planned-chapter matching independently
+        // once per stream, each with its own used[] tracker, so e.g.
+        // Commerce and Humanities Economics sections completing the same-
+        // named chapter at different times both get credited correctly
+        // instead of the second one landing as a false Unmapped.
+        getDailyGroups(lmsIdx, cls, chList[0].subject).forEach(({ stream, arr }) => {
+          const actual = arr.slice();
+          const used = new Array(actual.length).fill(false);
+          // Tag the Subject column so two independently-tracked rows for the
+          // same nominal subject read as "Economics (Commerce)" vs
+          // "Economics (Humanities)", never as an unexplained duplicate.
+          const streamSuffix = stream ? ' (' + String(stream).replace(/\s*stream\s*$/i, '').trim() + ')' : '';
 
-        planned.forEach(ch => {
-          const wantName = chapterNormalizeName(ch.chapterName);
-          let matchIdx = -1;
-          if (wantName) {
-            for (let j = 0; j < actual.length; j++) {
-              if (used[j]) continue;
-              if (chapterNormalizeName(actual[j].chapter) === wantName) { matchIdx = j; break; }
+          planned.forEach(ch => {
+            const wantName = chapterNormalizeName(ch.chapterName);
+            let matchIdx = -1;
+            if (wantName) {
+              for (let j = 0; j < actual.length; j++) {
+                if (used[j]) continue;
+                if (chapterNormalizeName(actual[j].chapter) === wantName) { matchIdx = j; break; }
+              }
             }
-          }
-          const monthEnd = chapterMonthEnd(ch.cwaDateObj);
-          const termDeadline = chapterEffectiveDeadline(ch.term, ch.cwaDateObj, deadlines);
-          let status, actualDateStr = '', daysVal = '';
-          if (matchIdx >= 0) {
-            used[matchIdx] = true;
-            const ev = actual[matchIdx];
-            actualDateStr = ev.dateStr;
-            const daysLate = Math.round((ev.dateObj - ch.cwaDateObj) / 86400000);
-            status = daysLate > 0 ? 'Late' : 'OnTime';
-            daysVal = daysLate > 0 ? daysLate : 0;
-          } else {
-            const pending = chapterPendingStatus(now, ch.cwaDateObj, monthEnd, termDeadline);
-            status = pending.status;
-            daysVal = pending.days;
-          }
-          rows.push([
-            schoolName, cls, ch.subject, ch.chapterNo || '', ch.chapterName || '', teacher,
-            ch.term || '(blank)', ch.cwaDate, chapterDateToStr(termDeadline), actualDateStr,
-            status, daysVal, now,
-          ]);
-        });
+            const monthEnd = chapterMonthEnd(ch.cwaDateObj);
+            const termDeadline = chapterEffectiveDeadline(ch.term, ch.cwaDateObj, deadlines);
+            let status, actualDateStr = '', daysVal = '';
+            if (matchIdx >= 0) {
+              used[matchIdx] = true;
+              const ev = actual[matchIdx];
+              actualDateStr = ev.dateStr;
+              const daysLate = Math.round((ev.dateObj - ch.cwaDateObj) / 86400000);
+              status = daysLate > 0 ? 'Late' : 'OnTime';
+              daysVal = daysLate > 0 ? daysLate : 0;
+            } else {
+              // No daily-log match -- but a Coordinator/Owner may have
+              // manually confirmed this chapter WAS actually covered (see
+              // appendChapterOverride below, driven by cwa-gap-report.html's
+              // "Mark as taken"). Deliberately its own status, 'Verified',
+              // not folded into OnTime/Late -- a coordinator confirming
+              // coverage after the fact isn't the same as the teacher having
+              // logged it on time, but it should still stop counting as a gap.
+              const overrideKey = [schoolName, cls, ch.subject, chapterNormalizeName(ch.chapterName)].join('|');
+              const override = overrides[overrideKey];
+              if (override) {
+                status = 'Verified';
+                actualDateStr = String(override.actualDate || '');
+                daysVal = '';
+              } else {
+                const pending = chapterPendingStatus(now, ch.cwaDateObj, monthEnd, termDeadline);
+                status = pending.status;
+                daysVal = pending.days;
+              }
+            }
+            rows.push([
+              schoolName, cls, ch.subject + streamSuffix, ch.chapterNo || '', ch.chapterName || '', teacher,
+              ch.term || '(blank)', ch.cwaDate, chapterDateToStr(termDeadline), actualDateStr,
+              status, daysVal, now,
+            ]);
+          });
 
-        // Actual CWA events for this subject that didn't match any planned
-        // chapter by name -- genuinely unmapped, not guessed at.
-        actual.forEach((ev, j) => {
-          if (used[j]) return;
-          rows.push([
-            schoolName, cls, ev.subject || chList[0].subject, '', ev.chapter || '', ev.teacher || '',
-            '', '', '', ev.dateStr, 'Unmapped', '', now,
-          ]);
+          // Actual CWA events for this subject/stream that didn't match any
+          // planned chapter by name -- genuinely unmapped, not guessed at.
+          actual.forEach((ev, j) => {
+            if (used[j]) return;
+            rows.push([
+              schoolName, cls, (ev.subject || chList[0].subject) + streamSuffix, '', ev.chapter || '', ev.teacher || '',
+              '', '', '', ev.dateStr, 'Unmapped', '', now,
+            ]);
+          });
         });
       });
     });
@@ -486,15 +563,24 @@ function buildChapterStatusRows(cwRecords, cmData, ay, now) {
   // that has NO Course Mapping data at all -- previously silently invisible
   // (skipped entirely, since the first pass only iterates cmData). This is
   // real signal: e.g. Class 6 Hindi has this gap at every campus.
+  //
+  // bucketKey here may be stream-suffixed ("economics|commercestream") for
+  // stream-sensitive subjects -- processedCombos was only ever recorded
+  // under the BASE subject (Course Mapping has no stream info), so this
+  // must strip the suffix before checking, or every stream-sensitive
+  // subject that DOES have Course Mapping data (already handled correctly
+  // in the first pass, per-stream) would wrongly look unprocessed here and
+  // get pushed a second time as a duplicate Unmapped row.
   Object.keys(dailyCWA).forEach(lmsIdxStr => {
     const lmsIdx = +lmsIdxStr;
     const schoolName = 'LMS ' + (lmsIdx + 1);
     Object.keys(dailyCWA[lmsIdx]).forEach(cls => {
       if (cls.indexOf('Class') !== 0) return; // Montessori has no CWA by design
-      Object.keys(dailyCWA[lmsIdx][cls]).forEach(ns => {
-        const comboKey = lmsIdx + '|' + cls + '|' + ns;
+      Object.keys(dailyCWA[lmsIdx][cls]).forEach(bucketKey => {
+        const baseNs = bucketKey.split('|')[0];
+        const comboKey = lmsIdx + '|' + cls + '|' + baseNs;
         if (processedCombos[comboKey]) return; // already handled in the first pass
-        dailyCWA[lmsIdx][cls][ns].forEach(ev => {
+        dailyCWA[lmsIdx][cls][bucketKey].forEach(ev => {
           rows.push([
             schoolName, cls, ev.subject || '', '', ev.chapter || '', ev.teacher || '',
             '', '', '', ev.dateStr, 'Unmapped', '', now,
@@ -534,6 +620,72 @@ function getOrCreateYearTab(ss, label) {
   const junk = ss.getSheetByName('Sheet1');
   if (junk && ss.getSheets().length > 1) ss.deleteSheet(junk);
   return sheet;
+}
+
+/** Reads the Overrides tab into a lookup keyed by
+ *  "school|class|subject|normalizedChapterName" -> {actualDate, note}.
+ *  Only rows matching the current academic year label are included (an
+ *  override entered for a chapter, entered while a different year's tab
+ *  is active, shouldn't leak into this year's rows). If two overrides
+ *  exist for the same chapter, the LAST one in the sheet wins -- appendRow
+ *  always adds to the bottom, so that's the most recent entry. */
+function chapterReadOverrides_(ay) {
+  const map = {};
+  try {
+    const ss = getOrCreateTrackerSpreadsheet();
+    const tab = ss.getSheetByName(CHAPTER_OVERRIDES_TAB);
+    if (!tab || tab.getLastRow() < 2) return map;
+    const rows = tab.getDataRange().getValues();
+    const header = rows[0];
+    const col = name => header.indexOf(name);
+    const cAY = col('AcademicYear'), cSchool = col('School'), cCls = col('Class'),
+          cSubj = col('Subject'), cChap = col('ChapterName'), cDate = col('ActualDate'), cNote = col('Note');
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r[cSchool]) continue;
+      if (ay.label && String(r[cAY] || '') !== ay.label) continue;
+      const key = [r[cSchool], r[cCls], r[cSubj], chapterNormalizeName(r[cChap])].join('|');
+      map[key] = { actualDate: r[cDate], note: r[cNote] || '' };
+    }
+  } catch (e) {
+    Logger.log('[ChapterTracker] Overrides read failed (tracker still builds without it): ' + e);
+  }
+  return map;
+}
+
+/** Handles ?overrideData=... from cwa-gap-report.html's "Mark as taken"
+ *  action (Coordinator/Owner only -- gated client-side there; see this
+ *  file's DEADLINE MODEL/TEACHER NAMES notes at the top for the same
+ *  "acceptable because it sits behind Google Sign-In + the allowlist"
+ *  reasoning already used for appendPayrollSubmission in Code.gs).
+ *  Appends one row to the Overrides tab; chapterReadOverrides_ above picks
+ *  it up on the next rebuild. Dispatched from Code.gs's doGet() -- same
+ *  GET-with-JSON-param pattern as appendPayrollSubmission, since a browser
+ *  POST to an Apps Script web app silently becomes a GET after the 302
+ *  redirect, so doPost never actually fires from a cross-origin page. */
+function appendChapterOverride(e) {
+  try {
+    const data = JSON.parse(e.parameter.overrideData);
+    if (!data.school || !data.cls || !data.subject || !data.chapterName || !data.actualDate) {
+      throw new Error('Missing required field (school/cls/subject/chapterName/actualDate)');
+    }
+    const ss = getOrCreateTrackerSpreadsheet();
+    let tab = ss.getSheetByName(CHAPTER_OVERRIDES_TAB);
+    if (!tab) {
+      tab = ss.insertSheet(CHAPTER_OVERRIDES_TAB);
+      tab.getRange(1, 1, 1, CHAPTER_OVERRIDE_HEADERS.length).setValues([CHAPTER_OVERRIDE_HEADERS]);
+      tab.setFrozenRows(1);
+    }
+    tab.appendRow([
+      new Date(), data.email || '', data.name || '', data.academicYear || '',
+      data.school, data.cls, data.subject, data.chapterName, data.actualDate, data.note || '',
+    ]);
+    return ContentService.createTextOutput(JSON.stringify({ success: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 }
 
 /** Called from updateCache() in Code.gs, reusing the cwRecords/cmData it

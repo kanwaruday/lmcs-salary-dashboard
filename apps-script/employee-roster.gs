@@ -24,6 +24,15 @@
 // more sensitive than "so-and-so teaches Class 3 Science at LMS 6",
 // which was already visible in the (also public) old Allocation Sheet.
 //
+// STATUS FILTERING (2026-08-29): EmpMaster has a Status column (blank or
+// "Active" = still employed, anything else e.g. "Left" = departed).
+// readDepartedCodes_() reads it once per request and both readEmployees()
+// and readRosterRows() exclude anyone marked departed -- so flipping one
+// employee's Status in EmpMaster cascades everywhere this proxy feeds
+// (Missing Uploads, Course Mapping teacher assignment, the Chapter
+// Tracker's teacher lookup) without hunting down every place their name
+// might still appear.
+//
 // SETUP:
 //   1. script.google.com -> New project -> paste this file
 //   2. Deploy -> New deployment -> Web App
@@ -81,19 +90,69 @@ function doGet(e) {
   try {
     if (action === 'roster') return jsonOut({ success: true, rows: readRosterRows() });
     if (action === 'employees') return jsonOut({ success: true, employees: readEmployees() });
+    if (action === 'designations') return jsonOut({ success: true, designations: readDesignationSummary() });
     return jsonOut({ success: false, error: 'Unknown action: ' + action });
   } catch (err) {
     return jsonOut({ success: false, error: err.message });
   }
 }
 
+/** Distinct Designation values from EmpSalary, with counts -- NEVER any
+ *  name, email, or other per-employee field. Built 2026-09-01 so Claude
+ *  could see the real job-title taxonomy (for designing the
+ *  PortalAccessTier mapping) without needing raw access to the workbook,
+ *  which is intentionally Restricted -- this is a read of the same narrow
+ *  shape as everything else in this file, just aggregated instead of
+ *  per-row. */
+function readDesignationSummary() {
+  const rows = openWorkbook_().getSheetByName('EmpSalary').getDataRange().getValues();
+  const header = rows[0];
+  const desigCol = header.indexOf('Designation');
+  const deptCol = header.indexOf('Department');
+  const statusCol = header.indexOf('Status');
+  const counts = {}; // "Designation|Department" -> {designation, department, count, active, inactive}
+  for (let i = 1; i < rows.length; i++) {
+    const designation = String(rows[i][desigCol] || '').trim();
+    if (!designation) continue;
+    const department = deptCol >= 0 ? String(rows[i][deptCol] || '').trim() : '';
+    const status = statusCol >= 0 ? String(rows[i][statusCol] || '').trim() : '';
+    const key = designation + '|' + department;
+    if (!counts[key]) counts[key] = { designation, department, count: 0, active: 0, inactive: 0 };
+    counts[key].count++;
+    if (status.toLowerCase() === 'active' || !status) counts[key].active++;
+    else counts[key].inactive++;
+  }
+  return Object.values(counts).sort((a, b) => b.count - a.count);
+}
+
 function openWorkbook_() {
   return SpreadsheetApp.openById(EMP_ROSTER_SHEET_ID);
 }
 
+/** EmpMaster's Status column -> {EmployeeCode: true} for everyone marked
+ *  departed (anything other than blank/"Active", case-insensitively).
+ *  Read once per request; shared by readEmployees() and readRosterRows()
+ *  below -- see STATUS FILTERING note at the top of this file. */
+function readDepartedCodes_() {
+  const rows = openWorkbook_().getSheetByName('EmpMaster').getDataRange().getValues();
+  const header = rows[0];
+  const codeCol = header.indexOf('EmployeeCode');
+  const statusCol = header.indexOf('Status');
+  const departed = {};
+  if (statusCol < 0) return departed; // no Status column -- nothing to exclude
+  for (let i = 1; i < rows.length; i++) {
+    const code = String(rows[i][codeCol] || '').trim();
+    if (!code) continue;
+    const status = String(rows[i][statusCol] || '').trim().toLowerCase();
+    if (status && status !== 'active') departed[code] = true;
+  }
+  return departed;
+}
+
 /** EmpMaster: EmployeeCode -> {name, school}. Never reads AuthEmail/ReportsTo
- *  or any other tab -- deliberately narrow. */
+ *  or any other tab -- deliberately narrow. Excludes departed staff. */
 function readEmployees() {
+  const departed = readDepartedCodes_();
   const rows = openWorkbook_().getSheetByName('EmpMaster').getDataRange().getValues();
   const header = rows[0];
   const codeCol = header.indexOf('EmployeeCode');
@@ -101,7 +160,7 @@ function readEmployees() {
   const out = [];
   for (let i = 1; i < rows.length; i++) {
     const code = String(rows[i][codeCol] || '').trim();
-    if (!code) continue;
+    if (!code || departed[code]) continue;
     const prefix = code.split('/')[0];
     out.push({
       employeeCode: code,
@@ -114,8 +173,11 @@ function readEmployees() {
 
 /** EmpAcademic, flattened to one row per (school, class, subject, teacher) --
  *  same shape as the old Allocation Sheet's rows, so it's a drop-in
- *  replacement in the client's matching logic. */
+ *  replacement in the client's matching logic. Excludes departed staff'
+ *  class/subject rows too, not just their name in the roster list -- a
+ *  Status flip in EmpMaster is enough, no need to also clear EmpAcademic. */
 function readRosterRows() {
+  const departed = readDepartedCodes_();
   const rows = openWorkbook_().getSheetByName('EmpAcademic').getDataRange().getValues();
   const header = rows[0];
   const codeCol = header.indexOf('EmployeeCode');
@@ -129,7 +191,7 @@ function readRosterRows() {
   const out = [];
   for (let i = 1; i < rows.length; i++) {
     const code = String(rows[i][codeCol] || '').trim();
-    if (!code) continue;
+    if (!code || departed[code]) continue;
     const prefix = code.split('/')[0];
     const school = EMP_PREFIX_TO_SCHOOL[prefix];
     if (!school) continue; // unknown prefix -- skip rather than mis-attribute
