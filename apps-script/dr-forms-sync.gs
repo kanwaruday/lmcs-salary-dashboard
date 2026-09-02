@@ -40,6 +40,33 @@ const DR_PREFIX_TO_SCHOOL = {
   KUL: 'LMS 1', KEL: 'LMS 2', DUN: 'LMS 3', NCM: 'LMS 4', SAY: 'LMS 5', JOG: 'LMS 6',
 };
 
+// KNOWN DATA-QUALITY CAVEAT (2026-09-02, from the "Designation & Department
+// Tags" audit): EmpSalary's Department column is the canonical 3-way split
+// (Teaching / Non-Teaching / Administrative), joined here by EmployeeCode --
+// same join key EmpAcademic already uses against EmpMaster. BUT as of the
+// audit, a handful of clearly-teaching records (some TGT, a PTI "Games
+// Teacher") had a BLANK Department cell instead of "Teaching", not yet
+// corrected. If a real teacher unexpectedly disappears from a campus's
+// dropdown after this filter went live, check their EmpSalary row's
+// Department cell first before assuming a bug here.
+function getDepartmentByCode_() {
+  const rows = SpreadsheetApp.openById(DR_EMP_SHEET_ID)
+    .getSheetByName('EmpSalary')
+    .getDataRange()
+    .getValues();
+  const header = rows[0];
+  const codeCol = header.indexOf('EmployeeCode');
+  const deptCol = header.indexOf('Department');
+  const map = {};
+  if (codeCol < 0 || deptCol < 0) return map; // sheet shape unexpected -- fail open to empty, not a crash
+  for (let i = 1; i < rows.length; i++) {
+    const code = String(rows[i][codeCol] || '').trim();
+    if (!code) continue;
+    map[code] = String(rows[i][deptCol] || '').trim();
+  }
+  return map;
+}
+
 // ── Role configs ──────────────────────────────────────────────────
 // Each entry describes ONE DR form family. `perCampus: true` means one
 // form per school (keyed 'LMS 1'..'LMS 6', like Teacher); `perCampus:
@@ -76,12 +103,12 @@ const DR_ROLE_CONFIGS = {
     // Per-campus form -> its name-question title is literally that
     // campus's label + ' Teacher Name' (matches the live forms exactly).
     nameFieldTitle: function (school) { return school + ' Teacher Name'; },
-    // Which EmpMaster rows count as "a Teacher" for this campus. No
-    // Designation filter yet (EmpSalary join not needed) — every Active
-    // employee at that campus is treated as eligible, matching how the
-    // dropdown already behaved (a flat per-campus staff list). Revisit
-    // if Uday wants this narrowed to a specific Designation.
-    matchesEmployee: function (empRow, school) { return empRow.school === school; },
+    // Which EmpMaster rows count as "a Teacher" for this campus: same
+    // campus AND EmpSalary.Department === 'Teaching' (case-insensitive,
+    // trimmed -- see the data-quality caveat above getDepartmentByCode_()).
+    matchesEmployee: function (empRow, school) {
+      return empRow.school === school && empRow.department.toLowerCase() === 'teaching';
+    },
   },
 
   // ── TODO stubs — fill in once Uday finalizes each role's form ──
@@ -156,6 +183,7 @@ function syncOneDRRole_(config) {
 /** EmpMaster -> "EmployeeCode Name" strings, Active only, filtered
  *  through the role's matchesEmployee(), sorted by name. */
 function getActiveEmployeeChoices_(config, formKey) {
+  const departmentByCode = getDepartmentByCode_();
   const rows = SpreadsheetApp.openById(DR_EMP_SHEET_ID)
     .getSheetByName('EmpMaster')
     .getDataRange()
@@ -175,7 +203,12 @@ function getActiveEmployeeChoices_(config, formKey) {
     const status = statusCol >= 0 ? String(rows[i][statusCol] || '').trim().toLowerCase() : '';
     if (status && status !== 'active') continue; // departed/transferred — exclude
 
-    const empRow = { code: code, name: String(rows[i][nameCol] || '').trim(), school: school };
+    const empRow = {
+      code: code,
+      name: String(rows[i][nameCol] || '').trim(),
+      school: school,
+      department: departmentByCode[code] || '',
+    };
     if (!config.matchesEmployee(empRow, formKey)) continue;
     out.push(empRow.code + ' ' + empRow.name);
   }
