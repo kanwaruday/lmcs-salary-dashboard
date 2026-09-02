@@ -28,13 +28,12 @@
 // pattern as staff-management-api.gs, just for reads. A caller's own
 // campus only, unless Owner (sees all 6).
 //
-// NOT JUST TEACHER SS (2026-09-02): this is the project's only doGet
-// (Apps Script allows one per project), so it also dispatches
-// action=monthactivities for the Principal DR tab's "Activities of the
-// Month" card -- but that's ALL this file does for Principal DR. Every
-// bit of Principal-DR-specific logic/data lives in the companion file
-// principal-dr.gs (in the same project), not here -- per Uday, keep it
-// that way so Principal DR code stays easy to find in one place.
+// TEACHER SS ONLY (2026-09-02): Principal DR (the "Activities of the
+// Month" card, etc.) is a SEPARATE Apps Script project entirely --
+// see apps-script/principal-dr.gs's own header. Don't add Principal DR
+// actions/logic to this file or this project; per Uday, each of
+// Teacher SS and Principal DR should have everything associated with
+// it in its own project.
 //
 // SETUP:
 //   1. script.google.com -> "LMCS Teacher SS Backend" project ->
@@ -72,21 +71,6 @@ function doGet(e) {
   try {
     const caller = verifySSDashboardToken_(e.parameter.idToken);
     if (!caller) return tssJsonOut_({ success: false, error: 'Not authorized' });
-
-    const action = (e.parameter.action || 'stats').toLowerCase();
-
-    // Principal DR's "Activities of the Month" card -- Apps Script only
-    // allows one doGet per project, so this file stays the single Web
-    // App entry point, but the actual logic/data (PDR_SCHOOL_CALENDAR_IDS,
-    // pdrReadNextMonthActivities_) lives entirely in principal-dr.gs per
-    // Uday 2026-09-02 -- keep it that way, don't pull it back in here.
-    if (action === 'monthactivities') {
-      const campusId = String(e.parameter.campusId || '').trim().toUpperCase();
-      if (caller.campusId !== 'ALL' && campusId !== caller.campusId) {
-        return tssJsonOut_({ success: false, error: 'Not authorized for that campus' });
-      }
-      return tssJsonOut_({ success: true, activities: pdrReadNextMonthActivities_(campusId) });
-    }
 
     const campuses = caller.campusId === 'ALL' ? Object.keys(TSS_CAMPUS_TO_TAB) : [caller.campusId];
     const byCampus = {};
