@@ -32,6 +32,20 @@ const PDR_SCHOOL_CALENDAR_IDS = {
   LMS6: 'c_3db6cb2edb78d889cf166771c426f0fe3ba78b04cf9ca8e566329c888d023635@group.calendar.google.com',
 };
 
+// Each Principal's OWN PERSONAL Calendar (their email doubles as the
+// Calendar id) -- confirmed 2026-09-02. Support Sessions are logged
+// here, tagged "SS" per the tag convention (MA/DISP/SS/NBK/MEET).
+// LMS5 and LMS6 principals haven't shared their calendars yet -- those
+// two return 0 until they do, not an error.
+const PDR_PRINCIPAL_PERSONAL_CALENDARS = {
+  LMS1: 'nidhi.kant@lms.org.in',
+  LMS2: 'arti.sharma@lms.org.in',
+  LMS3: 'suresh.prasher@lms.org.in',
+  LMS4: 'nisha.lms@lms.org.in',
+  // LMS5: not yet shared
+  // LMS6: not yet shared
+};
+
 /** Called from main.gs's doGet for action=monthactivities. `caller` is
  *  the already-verified {email, campusId, role} from main.gs. */
 function principalDrMonthActivities_(caller, campusIdParam) {
@@ -87,6 +101,42 @@ function pdrFormatEventDate_(ev) {
     + ' – ' + pdrOrdinal_(end.getDate()) + ' ' + pdrMonthAbbrev_(end.getMonth());
 }
 
+/** Called from main.gs's doGet for action=supportsessionstoday.
+ *  Simple count (and titles) of today's Calendar events tagged "SS" on
+ *  the Principal's own PERSONAL calendar -- NOT yet cross-referenced
+ *  against "LMCS Teacher SS 2026 (Responses)" (that's still blocked on
+ *  the Class/Subject/Teacher naming convention Uday is defining --
+ *  see project_principals_daily_reporting.md). This is intentionally
+ *  the simpler first cut: count real "SS"-tagged Calendar entries,
+ *  nothing parsed out of them yet. */
+function principalDrSupportSessionsToday_(caller, campusIdParam) {
+  const campusId = String(campusIdParam || '').trim().toUpperCase();
+  if (caller.campusId !== 'ALL' && campusId !== caller.campusId) {
+    return { success: false, error: 'Not authorized for that campus' };
+  }
+  return { success: true, sessions: pdrReadTodaysSupportSessions_(campusId) };
+}
+
+/** Today's events on campusId's Principal's PERSONAL Calendar whose
+ *  title contains the "SS" tag as its own token (e.g. "SS - C8
+ *  English - Sushma ma'am") -- word-boundary match so it doesn't false-
+ *  positive on something like "ASSEMBLY". Returns their titles. */
+function pdrReadTodaysSupportSessions_(campusId) {
+  const email = PDR_PRINCIPAL_PERSONAL_CALENDARS[campusId];
+  if (!email) return []; // this campus's principal hasn't shared their calendar yet
+  const cal = CalendarApp.getCalendarById(email);
+  if (!cal) return [];
+
+  const now = new Date();
+  const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1); // exclusive
+
+  const ssTag = /\bSS\b/;
+  return cal.getEvents(dayStart, dayEnd)
+    .filter(function (ev) { return ssTag.test(ev.getTitle()); })
+    .map(function (ev) { return ev.getTitle(); });
+}
+
 function pdrMonthAbbrev_(monthIndex0) {
   return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
     'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][monthIndex0];
@@ -113,4 +163,10 @@ function testCalendarAccess() {
 
 function testMonthActivities() {
   Logger.log(JSON.stringify(pdrReadNextMonthActivities_('LMS3'), null, 2));
+}
+
+function testSupportSessionsToday() {
+  Object.keys(PDR_PRINCIPAL_PERSONAL_CALENDARS).forEach(function (campusId) {
+    Logger.log(campusId + ' -> ' + JSON.stringify(pdrReadTodaysSupportSessions_(campusId)));
+  });
 }

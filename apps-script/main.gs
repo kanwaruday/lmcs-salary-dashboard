@@ -65,6 +65,7 @@ function doGet(e) {
 
     if (action === 'teacherstats') return jsonOut_(teacherSsStats_(caller));
     if (action === 'monthactivities') return jsonOut_(principalDrMonthActivities_(caller, e.parameter.campusId));
+    if (action === 'supportsessionstoday') return jsonOut_(principalDrSupportSessionsToday_(caller, e.parameter.campusId));
 
     return jsonOut_({ success: false, error: 'Unknown action: ' + action });
   } catch (err) {
