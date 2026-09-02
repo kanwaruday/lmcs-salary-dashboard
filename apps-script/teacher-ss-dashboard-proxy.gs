@@ -28,6 +28,14 @@
 // pattern as staff-management-api.gs, just for reads. A caller's own
 // campus only, unless Owner (sees all 6).
 //
+// NOT JUST TEACHER SS (2026-09-02): this is the project's only doGet
+// (Apps Script allows one per project), so it also dispatches
+// action=monthactivities for the Principal DR tab's "Activities of the
+// Month" card -- but that's ALL this file does for Principal DR. Every
+// bit of Principal-DR-specific logic/data lives in the companion file
+// principal-dr.gs (in the same project), not here -- per Uday, keep it
+// that way so Principal DR code stays easy to find in one place.
+//
 // SETUP:
 //   1. script.google.com -> "LMCS Teacher SS Backend" project ->
 //      paste this file in as teacher-ss-dashboard-proxy.gs
@@ -60,21 +68,6 @@ const TSS_RUBRIC_COLUMNS = [
   'Dedication Towards Class',
 ];
 
-// School's OFFICIAL Calendar per campus (2026-09-02, confirmed live/working
-// -- same IDs already proven in ChapterTracker.gs's CHAPTER_CALENDAR_IDS and
-// in WhatsApp Hub's hub-config.json, just re-keyed to this portal's 'LMS1'..
-// 'LMS6' convention instead of ChapterTracker's 1..6). Used by the
-// 'monthactivities' action below. LMS2 and LMS3 deliberately share one
-// calendar (separate one "coming 2027" per hub-config.json's note).
-const TSS_SCHOOL_CALENDAR_IDS = {
-  LMS1: 'c_88402c40e6c9a435cbed4810bfae632d781ac9e7ca167b5435e4a9586bda7595@group.calendar.google.com',
-  LMS2: 'c_25n5qbggh7u9s5o6vq31iho4vc@group.calendar.google.com',
-  LMS3: 'c_25n5qbggh7u9s5o6vq31iho4vc@group.calendar.google.com', // shared with LMS2
-  LMS4: 'lms.org.in_snflpd3f357jv8l380s8sc4ju0@group.calendar.google.com',
-  LMS5: 'c_d367ca2cb9bbab4f6a5b6864d6e03c28fbfccf02b5212621e89daf2f9f3f8523@group.calendar.google.com',
-  LMS6: 'c_3db6cb2edb78d889cf166771c426f0fe3ba78b04cf9ca8e566329c888d023635@group.calendar.google.com',
-};
-
 function doGet(e) {
   try {
     const caller = verifySSDashboardToken_(e.parameter.idToken);
@@ -82,12 +75,17 @@ function doGet(e) {
 
     const action = (e.parameter.action || 'stats').toLowerCase();
 
+    // Principal DR's "Activities of the Month" card -- Apps Script only
+    // allows one doGet per project, so this file stays the single Web
+    // App entry point, but the actual logic/data (PDR_SCHOOL_CALENDAR_IDS,
+    // pdrReadNextMonthActivities_) lives entirely in principal-dr.gs per
+    // Uday 2026-09-02 -- keep it that way, don't pull it back in here.
     if (action === 'monthactivities') {
       const campusId = String(e.parameter.campusId || '').trim().toUpperCase();
       if (caller.campusId !== 'ALL' && campusId !== caller.campusId) {
         return tssJsonOut_({ success: false, error: 'Not authorized for that campus' });
       }
-      return tssJsonOut_({ success: true, activities: readNextMonthActivities_(campusId) });
+      return tssJsonOut_({ success: true, activities: pdrReadNextMonthActivities_(campusId) });
     }
 
     const campuses = caller.campusId === 'ALL' ? Object.keys(TSS_CAMPUS_TO_TAB) : [caller.campusId];
@@ -99,35 +97,6 @@ function doGet(e) {
   } catch (err) {
     return tssJsonOut_({ success: false, error: err.message });
   }
-}
-
-/** Next calendar month's events (not the current month) on a campus's
- *  Official school Calendar, e.g. "3rd — Literary Fair". Confirmed
- *  scope per Uday 2026-09-02: NEXT month, not current. */
-function readNextMonthActivities_(campusId) {
-  const calId = TSS_SCHOOL_CALENDAR_IDS[campusId];
-  if (!calId) return [];
-  const cal = CalendarApp.getCalendarById(calId);
-  if (!cal) return [];
-
-  const now = new Date();
-  const rangeStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const rangeEnd = new Date(now.getFullYear(), now.getMonth() + 2, 1); // exclusive
-
-  const events = cal.getEvents(rangeStart, rangeEnd);
-  events.sort(function (a, b) { return a.getStartTime() - b.getStartTime(); });
-  return events.map(function (ev) {
-    return ordinal_(ev.getStartTime().getDate()) + ' — ' + ev.getTitle();
-  });
-}
-
-function ordinal_(day) {
-  if (day >= 11 && day <= 13) return day + 'th';
-  var lastDigit = day % 10;
-  if (lastDigit === 1) return day + 'st';
-  if (lastDigit === 2) return day + 'nd';
-  if (lastDigit === 3) return day + 'rd';
-  return day + 'th';
 }
 
 // Verified Google ID token -> {email, campusId, role}, re-derived from
