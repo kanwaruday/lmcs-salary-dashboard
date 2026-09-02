@@ -57,15 +57,39 @@ function pdrReadNextMonthActivities_(campusId) {
 
   const events = cal.getEvents(rangeStart, rangeEnd);
   events.sort(function (a, b) { return a.getStartTime() - b.getStartTime(); });
-  const monthName = pdrMonthName_(rangeStart.getMonth());
   return events.map(function (ev) {
-    return pdrOrdinal_(ev.getStartTime().getDate()) + ' ' + monthName + ' — ' + ev.getTitle();
+    return pdrFormatEventDate_(ev) + ' — ' + ev.getTitle();
   });
 }
 
-function pdrMonthName_(monthIndex0) {
-  return ['January', 'February', 'March', 'April', 'May', 'June', 'July',
-    'August', 'September', 'October', 'November', 'December'][monthIndex0];
+/** e.g. "18th Oct" for a single-day event, "18th–20th Oct" for a
+ *  multi-day event within one month, or "29th Sep – 2nd Oct" when it
+ *  spans a month boundary. All-day events store an EXCLUSIVE end (a
+ *  1-day all-day event's getEndTime() is already the next day), so
+ *  that's pulled back a day before comparing against the start. */
+function pdrFormatEventDate_(ev) {
+  const start = ev.getStartTime();
+  const end = ev.isAllDayEvent() ? new Date(ev.getEndTime().getTime() - 1) : ev.getEndTime();
+
+  const sameDay = start.getFullYear() === end.getFullYear()
+    && start.getMonth() === end.getMonth()
+    && start.getDate() === end.getDate();
+  if (sameDay) {
+    return pdrOrdinal_(start.getDate()) + ' ' + pdrMonthAbbrev_(start.getMonth());
+  }
+
+  const sameMonth = start.getFullYear() === end.getFullYear() && start.getMonth() === end.getMonth();
+  if (sameMonth) {
+    return pdrOrdinal_(start.getDate()) + '–' + pdrOrdinal_(end.getDate()) + ' ' + pdrMonthAbbrev_(start.getMonth());
+  }
+
+  return pdrOrdinal_(start.getDate()) + ' ' + pdrMonthAbbrev_(start.getMonth())
+    + ' – ' + pdrOrdinal_(end.getDate()) + ' ' + pdrMonthAbbrev_(end.getMonth());
+}
+
+function pdrMonthAbbrev_(monthIndex0) {
+  return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
+    'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][monthIndex0];
 }
 
 function pdrOrdinal_(day) {
