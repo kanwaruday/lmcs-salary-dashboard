@@ -19,9 +19,12 @@
 //   teacher-ss.gs       -- Teacher SS (Support Session teacher-
 //                         evaluation rubric) dashboard stats.
 //   principal-dr.gs     -- Principal DR (the principal's own daily
-//                         operational report). Stays ONE file even as
-//                         Support Sessions/Tasks/Planned/Submit get
-//                         added -- no further splitting, per Uday.
+//                         operational report): Month Activities,
+//                         Support Session count, Daily Reports
+//                         persistence + the Tasks Completed suggestion
+//                         lookup, Planned Activities CRUD. Stays ONE
+//                         file even as more gets added -- no further
+//                         splitting, per Uday.
 //   ss-forms-sync.gs    -- Run-menu only, no doGet -- fixes/keeps live
 //                         the Google Forms behind Teacher SS (and,
 //                         once built, PTI/IT/Clerk/Helpers SS -- it's
@@ -66,6 +69,36 @@ function doGet(e) {
     if (action === 'teacherstats') return jsonOut_(teacherSsStats_(caller));
     if (action === 'monthactivities') return jsonOut_(principalDrMonthActivities_(caller, e.parameter.campusId));
     if (action === 'supportsessionstoday') return jsonOut_(principalDrSupportSessionsToday_(caller, e.parameter.campusId));
+    if (action === 'plannedactivities') return jsonOut_(principalDrPlannedActivities_(caller, e.parameter.campusId));
+    if (action === 'yesterdaystasks') return jsonOut_(principalDrYesterdaysTasks_(caller, e.parameter.campusId, e.parameter.date));
+
+    return jsonOut_({ success: false, error: 'Unknown action: ' + action });
+  } catch (err) {
+    return jsonOut_({ success: false, error: err.message });
+  }
+}
+
+// Writes (Submit, Planned Activities CRUD) go through doPost as a JSON
+// body instead of doGet query params -- two reasons: (1) Daily Reports
+// payloads carry variable-length arrays (Tasks Completed, Tasks for
+// Tomorrow, etc.) that are awkward/unsafe to URL-encode; (2) the
+// idToken travels in the body instead of the URL, which is marginally
+// better practice for a bearer credential either way. The frontend
+// deliberately sends a plain-text body (no Content-Type header) so
+// browsers treat it as CORS-safelisted and skip a preflight OPTIONS
+// request -- this project has no doOptions, so a preflight would fail.
+function doPost(e) {
+  try {
+    const body = JSON.parse(e.postData.contents);
+    const caller = verifyCallerToken_(body.idToken);
+    if (!caller) return jsonOut_({ success: false, error: 'Not authorized' });
+
+    const action = String(body.action || '').toLowerCase();
+
+    if (action === 'savedailyreport') return jsonOut_(principalDrSaveDailyReport_(caller, body));
+    if (action === 'addplannedactivity') return jsonOut_(principalDrAddPlannedActivity_(caller, body));
+    if (action === 'setplannedactivitycompleted') return jsonOut_(principalDrSetPlannedActivityCompleted_(caller, body));
+    if (action === 'deleteplannedactivity') return jsonOut_(principalDrDeletePlannedActivity_(caller, body));
 
     return jsonOut_({ success: false, error: 'Unknown action: ' + action });
   } catch (err) {
