@@ -57,9 +57,15 @@ function pdrReadNextMonthActivities_(campusId) {
 
   const events = cal.getEvents(rangeStart, rangeEnd);
   events.sort(function (a, b) { return a.getStartTime() - b.getStartTime(); });
+  const monthName = pdrMonthName_(rangeStart.getMonth());
   return events.map(function (ev) {
-    return pdrOrdinal_(ev.getStartTime().getDate()) + ' — ' + ev.getTitle();
+    return pdrOrdinal_(ev.getStartTime().getDate()) + ' ' + monthName + ' — ' + ev.getTitle();
   });
+}
+
+function pdrMonthName_(monthIndex0) {
+  return ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+    'August', 'September', 'October', 'November', 'December'][monthIndex0];
 }
 
 function pdrOrdinal_(day) {
