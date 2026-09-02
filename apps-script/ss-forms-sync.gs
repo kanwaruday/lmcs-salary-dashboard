@@ -42,7 +42,8 @@
 // favor of a Forms-free rebuild without checking with Uday first.
 //
 // SETUP:
-//   1. script.google.com -> "LMCS Teacher SS Backend" project ->
+//   1. script.google.com -> "LMCS Principal's Daily Reporting Backend"
+//      project (2026-09-02: renamed/consolidated, see main.gs's header) ->
 //      paste this file in as ss-forms-sync.gs
 //   2. Run syncAllSSForms() once manually (Run menu) — authorize when
 //      prompted (edit access to the forms in SS_ROLE_CONFIGS, read

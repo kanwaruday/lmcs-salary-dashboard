@@ -1,9 +1,17 @@
 // ═══════════════════════════════════════════════════════════════════
-// Teacher SS Dashboard Proxy — read-only Web App in front of
-// "LMCS Teacher SS 2026 (Responses)" (spreadsheet id
-// 1cP-f8ShSJJPMBXkQCfkSvmajPA1db6fMBOPCbLH3oIc), the response sheet
-// for the 6 campus "LMS N Teacher SS (Qualitative) 2026 for Heads"
-// Google Forms.
+// Teacher SS — dashboard stats for the "Teacher SS" (Support Session
+// teacher-evaluation rubric) part of the Principal's Daily Reporting
+// hub. One concern-specific file inside the single "LMCS Principal's
+// Daily Reporting Backend" project -- see main.gs's header for the
+// full project layout and naming convention. doGet lives in main.gs,
+// which calls teacherSsStats_() below for action=teacherstats.
+//
+// Reads "LMCS Teacher SS 2026 (Responses)", the response sheet for the
+// 6 campus "LMS N Teacher SS (Qualitative) 2026 for Heads" Google
+// Forms -- those Forms stay the real submission mechanism (confirmed
+// by Uday 2026-09-02, correcting an earlier "build fresh, no Forms"
+// direction); this file only aggregates their responses for the
+// portal's Dashboard tab. Never writes to the sheet.
 //
 // TERMINOLOGY (2026-09-02): "DR" (Daily Report) for teachers was
 // renamed to "SS" (Support Session) -- this file, the 6 Forms, and the
@@ -14,41 +22,9 @@
 // themselves isn't reachable with the tools used for everything else
 // here. Don't "fix" TSS_CAMPUS_TO_TAB to say SS without first renaming
 // the actual tabs in the sheet, or every read here breaks.
-//
-// Per Uday (2026-09-02, correcting an earlier "build fresh, no Forms"
-// direction from a different session): the Forms stay as the real
-// submission mechanism — this proxy just aggregates their responses
-// for the portal's Teaching SS dashboard, same "narrow read proxy in
-// front of someone else's Sheet" shape as employee-roster.gs. Never
-// writes to the sheet.
-//
-// GATING: unlike Employee Roster (public), teacher performance scores
-// are more sensitive, so this requires a verified Google ID token and
-// only serves Principal/Coordinator/Owner — same allowlist + token
-// pattern as staff-management-api.gs, just for reads. A caller's own
-// campus only, unless Owner (sees all 6).
-//
-// TEACHER SS ONLY (2026-09-02): Principal DR (the "Activities of the
-// Month" card, etc.) is a SEPARATE Apps Script project entirely --
-// see apps-script/principal-dr.gs's own header. Don't add Principal DR
-// actions/logic to this file or this project; per Uday, each of
-// Teacher SS and Principal DR should have everything associated with
-// it in its own project.
-//
-// SETUP:
-//   1. script.google.com -> "LMCS Teacher SS Backend" project ->
-//      paste this file in as teacher-ss-dashboard-proxy.gs
-//   2. Deploy -> New deployment -> Web App
-//      Execute as: Me | Who has access: Anyone
-//      (Apps Script's own access setting isn't the real gate --
-//      the verified-token check inside is)
-//   3. Copy the Web App URL into teacher-ss/index.html's
-//      DASHBOARD_API_URL constant
 // ═══════════════════════════════════════════════════════════════════
 
 const TSS_RESPONSES_SHEET_ID = '1cP-f8ShSJJPMBXkQCfkSvmajPA1db6fMBOPCbLH3oIc'; // "LMCS Teacher SS 2026 (Responses)"
-const TSS_ALLOWLIST_SHEET_ID = '1NZu0ElismFytG395Nxjz29vAz7OfkmJtZhs70bOwT58'; // "LMCS Principal Allowlist"
-const TSS_GOOGLE_CLIENT_ID = '697999989724-mvi85iobr20g4mm8a8nrjd1rms2o8tf6.apps.googleusercontent.com';
 
 // campusId (as used by the portal, e.g. 'LMS1') -> the exact tab name
 // in the responses sheet. Still "Teacher DR" -- see TERMINOLOGY above.
@@ -67,50 +43,15 @@ const TSS_RUBRIC_COLUMNS = [
   'Dedication Towards Class',
 ];
 
-function doGet(e) {
-  try {
-    const caller = verifySSDashboardToken_(e.parameter.idToken);
-    if (!caller) return tssJsonOut_({ success: false, error: 'Not authorized' });
-
-    const campuses = caller.campusId === 'ALL' ? Object.keys(TSS_CAMPUS_TO_TAB) : [caller.campusId];
-    const byCampus = {};
-    campuses.forEach(function (campusId) {
-      byCampus[campusId] = readCampusStats_(campusId);
-    });
-    return tssJsonOut_({ success: true, rubricParams: TSS_RUBRIC_COLUMNS, campuses: byCampus });
-  } catch (err) {
-    return tssJsonOut_({ success: false, error: err.message });
-  }
-}
-
-// Verified Google ID token -> {email, campusId, role}, re-derived from
-// the allowlist every call. Only Principal/Coordinator/Owner may read;
-// everyone else (e.g. Teacher role, or not on the list) gets null.
-function verifySSDashboardToken_(idToken) {
-  if (!idToken) return null;
-  try {
-    const res = UrlFetchApp.fetch(
-      'https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(idToken),
-      { muteHttpExceptions: true }
-    );
-    if (res.getResponseCode() !== 200) return null;
-    const payload = JSON.parse(res.getContentText());
-    if (payload.aud !== TSS_GOOGLE_CLIENT_ID) return null;
-    if (payload.email_verified !== 'true' && payload.email_verified !== true) return null;
-    const email = (payload.email || '').toLowerCase();
-
-    const rows = SpreadsheetApp.openById(TSS_ALLOWLIST_SHEET_ID).getSheets()[0].getDataRange().getValues();
-    for (let i = 1; i < rows.length; i++) {
-      if (String(rows[i][0] || '').trim().toLowerCase() !== email) continue;
-      const campusId = String(rows[i][2] || '').trim().toUpperCase();
-      const role = String(rows[i][3] || '').trim();
-      if (role !== 'Principal' && role !== 'Coordinator' && role !== 'Owner') return null;
-      return { email: email, campusId: campusId, role: role };
-    }
-    return null; // not on the allowlist at all
-  } catch (err) {
-    return null;
-  }
+/** Called from main.gs's doGet for action=teacherstats. Caller's own
+ *  campus only, unless Owner (sees all 6). */
+function teacherSsStats_(caller) {
+  const campuses = caller.campusId === 'ALL' ? Object.keys(TSS_CAMPUS_TO_TAB) : [caller.campusId];
+  const byCampus = {};
+  campuses.forEach(function (campusId) {
+    byCampus[campusId] = readCampusStats_(campusId);
+  });
+  return { success: true, rubricParams: TSS_RUBRIC_COLUMNS, campuses: byCampus };
 }
 
 /** One campus's tab -> per-teacher aggregates: submission count,
@@ -166,8 +107,4 @@ function readCampusStats_(campusId) {
   teachers.sort(function (a, b) { return a.teacher.localeCompare(b.teacher); });
 
   return { teachers: teachers, responseCount: values.length - 1 };
-}
-
-function tssJsonOut_(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
