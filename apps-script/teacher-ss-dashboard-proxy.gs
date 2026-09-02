@@ -35,8 +35,8 @@
 //      Execute as: Me | Who has access: Anyone
 //      (Apps Script's own access setting isn't the real gate --
 //      the verified-token check inside is)
-//   3. Copy the Web App URL into teacher-dr/index.html's (soon to be
-//      renamed teacher-ss/) DASHBOARD_API_URL constant
+//   3. Copy the Web App URL into teacher-ss/index.html's
+//      DASHBOARD_API_URL constant
 // ═══════════════════════════════════════════════════════════════════
 
 const TSS_RESPONSES_SHEET_ID = '1cP-f8ShSJJPMBXkQCfkSvmajPA1db6fMBOPCbLH3oIc'; // "LMCS Teacher SS 2026 (Responses)"
