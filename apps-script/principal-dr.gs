@@ -35,7 +35,7 @@
 // String(cell) comparison again; (3) every date WRITE forces the
 // target cell's number format to Plain Text ('@') right before
 // setValue, so Sheets stops auto-converting it at all going forward.
-// Run pdrEnsureDateColumnsPlainText_() once after deploying this to
+// Run pdrEnsureDateColumnsPlainText() once after deploying this to
 // also fix the columns' default format for future manual edits.
 // The one real corrupted row from this incident needs deleting/
 // resubmitting by hand -- it can't be un-corrupted from here.
@@ -561,7 +561,7 @@ function pdrFindPlannedActivityRow_(sheet, campusId, id) {
  *  re-applies '@' per-cell on every write as a second line of defense
  *  (e.g. in case someone resets the column format later), but this
  *  fixes the column-wide default too. See the INCIDENT note up top. */
-function pdrEnsureDateColumnsPlainText_() {
+function pdrEnsureDateColumnsPlainText() {
   pdrDailyReportsSheet_().getRange('B2:B').setNumberFormat('@');
   pdrPlannedActivitiesSheet_().getRange('D2:D').setNumberFormat('@');
   Logger.log('Date columns set to Plain Text. The 2026-09-02 corrupted test row still needs deleting/resubmitting by hand -- this only prevents it happening again.');
@@ -569,7 +569,7 @@ function pdrEnsureDateColumnsPlainText_() {
 
 // ── Diagnostics -- safe to keep here indefinitely, or delete once
 //    you're confident everything above is working. Read-only (except
-//    pdrEnsureDateColumnsPlainText_ above, which only changes
+//    pdrEnsureDateColumnsPlainText above, which only changes
 //    formatting, never values); none of these write real data, so
 //    they're safe to run anytime without polluting anything. ────────
 
