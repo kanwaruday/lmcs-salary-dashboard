@@ -11,6 +11,35 @@
 // trigger a CORS preflight that fails -- see the frontend's pdrPost_()
 // comment for the full reasoning.
 //
+// ── INCIDENT (2026-09-02): a real submission got silently corrupted ──
+// Uday submitted a real Daily Report for LMS2, 1 Sept 2026 (typed as
+// "01/09/26", dd/mm/yy, matching every other date field on this page).
+// The next working day, the "Tasks for Tomorrow" suggestions from that
+// report never appeared. Root cause: the Sheet's Timestamp column
+// proved its locale/default date format is US-style (month-first) --
+// a plain string like "01/09/26" that LOOKS like a date is exactly the
+// kind of value Google Sheets auto-converts into a real Date cell on
+// write, and under a month-first locale it reads "01/09/26" as
+// 9 Jan 2026, not 1 Sept 2026 -- silently wrong data, not a crash.
+// Even where that mis-parse doesn't occur, the resulting cell becomes
+// an actual Date object instead of the plain string this code wrote,
+// so a naive `String(cell) === dateStr` comparison breaks anyway (a
+// Date's String() is a verbose timestamp, never "dd/mm/yy").
+//
+// Fix, both layers: (1) every date this file stores switched from
+// "dd/mm/yy" to ISO "yyyy-mm-dd" (pdrParseISO_/pdrFormatISO_) --
+// unambiguous under ANY locale even if a cell still gets auto-
+// converted; (2) every date READ goes through pdrCellDateToISO_(),
+// which normalizes whichever type ended up in the cell (string or
+// Date) to a canonical ISO string before comparing -- never a raw
+// String(cell) comparison again; (3) every date WRITE forces the
+// target cell's number format to Plain Text ('@') right before
+// setValue, so Sheets stops auto-converting it at all going forward.
+// Run pdrEnsureDateColumnsPlainText_() once after deploying this to
+// also fix the columns' default format for future manual edits.
+// The one real corrupted row from this incident needs deleting/
+// resubmitting by hand -- it can't be un-corrupted from here.
+//
 // Implemented so far: Month Activities (School's OFFICIAL Calendar,
 // merged with still-open Planned Activities due the same month, tagged
 // "School Specific"), Support Session count (Principal's PERSONAL
@@ -18,11 +47,17 @@
 // Teacher SS submissions), Daily Reports persistence (Morning Assembly
 // marking, Tasks Completed, Tasks for Tomorrow, Registers Crosschecked,
 // Important Message -- one upserted row per campus per day in the
-// "Daily Reports" tab), the Tasks Completed suggestion lookup (nearest
-// prior WORKING day's Tasks for Tomorrow, skipping Sundays/2nd
-// Saturdays/GH Calendar holidays), and Planned Activities CRUD (its own
-// "Planned Activities" tab, soft-deleted via Status, never row-removed).
-// This stays ONE file per Uday, no further splitting even as more gets
+// "Daily Reports" tab; list-valued cells are comma-joined, not
+// newline-joined, per Uday 2026-09-02, for readability directly in
+// Sheets -- NOTE: an item containing a literal comma will incorrectly
+// split into two on read-back, a known tradeoff of that choice), the
+// Tasks Completed suggestion lookup (nearest prior WORKING day's Tasks
+// for Tomorrow, skipping Sundays/2nd Saturdays/GH Calendar holidays),
+// reading back an existing day's report so a past submission can be
+// reviewed (action=dailyreport, powers the frontend's date-field
+// refresh/reload), and Planned Activities CRUD (its own "Planned
+// Activities" tab, soft-deleted via Status, never row-removed). This
+// stays ONE file per Uday, no further splitting even as more gets
 // added.
 // ═══════════════════════════════════════════════════════════════════
 
@@ -66,16 +101,18 @@ const PDR_PLANNED_ACTIVITIES_TAB = 'Planned Activities';
 // Daily Reports column layout (0-indexed, matches the tab's header row
 // exactly): Timestamp, Date, CampusId, PrincipalEmail, MA_ClassOrHouse,
 // MA_Score, TasksCompleted, TasksForTomorrow, RegistersCrosschecked,
-// ImportantMessage. List-valued cells (TasksCompleted, TasksForTomorrow,
-// RegistersCrosschecked, ImportantMessage) are newline-joined -- plain
-// text, deliberately human-readable directly in Sheets (e.g. for
-// management reading Important Message), not JSON.
+// ImportantMessage. Date is ISO "yyyy-mm-dd" (see the INCIDENT note
+// above -- was dd/mm/yy, changed 2026-09-02). List-valued cells
+// (TasksCompleted, TasksForTomorrow, RegistersCrosschecked,
+// ImportantMessage) are comma-joined, human-readable directly in
+// Sheets for management, not JSON.
 
 // Planned Activities column layout (0-indexed): Id, CampusId, Title,
 // DueDate, Assignee, CreatedAt, CreatedBy, Status, CompletedAt.
-// Status is 'Active' / 'Completed' / 'Deleted' -- three values, not
-// two: the UI has a separate checkbox (complete) and trash icon
-// (delete), and 'Deleted' is a SOFT delete, the row is never removed.
+// DueDate is ISO "yyyy-mm-dd", same reasoning as above. Status is
+// 'Active' / 'Completed' / 'Deleted' -- three values, not two: the UI
+// has a separate checkbox (complete) and trash icon (delete), and
+// 'Deleted' is a SOFT delete, the row is never removed.
 
 function pdrDailyReportsSheet_() {
   return SpreadsheetApp.openById(PDR_DAILY_REPORTS_SHEET_ID).getSheetByName(PDR_DAILY_REPORTS_TAB);
@@ -85,31 +122,47 @@ function pdrPlannedActivitiesSheet_() {
   return SpreadsheetApp.openById(PDR_DAILY_REPORTS_SHEET_ID).getSheetByName(PDR_PLANNED_ACTIVITIES_TAB);
 }
 
-// "dd/mm/yy" -> Date at local midnight, or null if unparseable. Mirrors
-// the frontend's parseDDMMYY() exactly -- keep the two in sync.
-function pdrParseDDMMYY_(s) {
-  var m = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/.exec(String(s || '').trim());
+// "yyyy-mm-dd" -> Date at local midnight, or null if unparseable.
+// Mirrors the frontend's parseISODate() exactly -- keep the two in
+// sync. This is what native <input type="date"> fields produce, so no
+// custom typing/format enforcement is needed client-side any more.
+function pdrParseISO_(s) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || '').trim());
   if (!m) return null;
-  var dd = parseInt(m[1], 10), mm = parseInt(m[2], 10) - 1, yy = parseInt(m[3], 10);
-  if (yy < 100) yy += 2000;
-  var d = new Date(yy, mm, dd);
+  var d = new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
   d.setHours(0, 0, 0, 0);
   return isNaN(d.getTime()) ? null : d;
 }
 
-function pdrFormatDDMMYY_(d) {
-  var dd = String(d.getDate()).padStart(2, '0');
+function pdrFormatISO_(d) {
+  var yyyy = d.getFullYear();
   var mm = String(d.getMonth() + 1).padStart(2, '0');
-  var yy = String(d.getFullYear()).slice(-2);
-  return dd + '/' + mm + '/' + yy;
+  var dd = String(d.getDate()).padStart(2, '0');
+  return yyyy + '-' + mm + '-' + dd;
+}
+
+/** Normalizes a raw Daily-Reports/Planned-Activities date CELL to a
+ *  canonical "yyyy-mm-dd" string, regardless of whether Sheets stored
+ *  it as the plain string this code wrote OR silently auto-converted
+ *  it into a real Date object -- see the INCIDENT note at the top of
+ *  this file. Every date comparison in this file goes through this
+ *  instead of a raw String(cell) call. */
+function pdrCellDateToISO_(cellValue) {
+  if (cellValue instanceof Date) return pdrFormatISO_(cellValue);
+  var parsed = pdrParseISO_(cellValue);
+  return parsed ? pdrFormatISO_(parsed) : String(cellValue || '').trim();
 }
 
 function pdrJoinList_(arr) {
-  return (arr || []).map(function (s) { return String(s || '').trim(); }).filter(Boolean).join('\n');
+  return (arr || []).map(function (s) { return String(s || '').trim(); }).filter(Boolean).join(', ');
 }
 
+/** Splits a comma-joined cell back into an array. NOTE: an item whose
+ *  own text contains a literal comma will incorrectly split into two
+ *  entries here -- accepted tradeoff for readability in the Sheet UI,
+ *  per Uday 2026-09-02. */
 function pdrSplitList_(cellValue) {
-  return String(cellValue || '').split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+  return String(cellValue || '').split(/,\s*/).map(function (s) { return s.trim(); }).filter(Boolean);
 }
 
 // ── Off-day check (Sunday / 2nd Saturday / GH Calendar events) ──────
@@ -176,7 +229,7 @@ function pdrReadMergedMonthActivities_(campusId) {
 
   pdrReadPlannedActivities_(campusId).forEach(function (a) {
     if (a.completed) return; // only still-open planned activities show here
-    const due = pdrParseDDMMYY_(a.date);
+    const due = pdrParseISO_(a.date);
     if (!due || due < range.start || due >= range.end) return;
     items.push({
       sortKey: due,
@@ -237,7 +290,10 @@ function pdrOrdinal_(day) {
  *  the Class/Subject/Teacher naming convention Uday is defining --
  *  see project_principals_daily_reporting.md). This is intentionally
  *  the simpler first cut: count real "SS"-tagged Calendar entries,
- *  nothing parsed out of them yet. */
+ *  nothing parsed out of them yet. KNOWN LIMITATION: this is always
+ *  the server's real "today", not date-parameterized -- viewing a past
+ *  report via loadReportForDate() on the frontend still shows today's
+ *  live SS count alongside it, not that day's historical count. */
 function principalDrSupportSessionsToday_(caller, campusIdParam) {
   const campusId = String(campusIdParam || '').trim().toUpperCase();
   if (caller.campusId !== 'ALL' && campusId !== caller.campusId) {
@@ -266,28 +322,29 @@ function pdrReadTodaysSupportSessions_(campusId) {
     .map(function (ev) { return ev.getTitle(); });
 }
 
-// ── Daily Reports: save (upsert) + the Tasks Completed suggestion lookup ──
+// ── Daily Reports: save (upsert), read-back, + the Tasks Completed suggestion lookup ──
 
 /** Called from main.gs's doPost for action=savedailyreport. Upserts
  *  (not always-appends) the row for (campusId, body.date) -- Timestamp
  *  is always overwritten to "now", so it reflects last-updated time,
  *  not first-submitted time. Support Session count is deliberately NOT
  *  persisted here -- it's Calendar-derived and recomputed live on every
- *  load, not something the Principal edits/submits. */
+ *  load, not something the Principal edits/submits. Forces the Date
+ *  cell to Plain Text before writing -- see the INCIDENT note. */
 function principalDrSaveDailyReport_(caller, body) {
   const campusId = String(body.campusId || '').trim().toUpperCase();
   if (caller.campusId !== 'ALL' && campusId !== caller.campusId) {
     return { success: false, error: 'Not authorized for that campus' };
   }
-  const dateStr = String(body.date || '').trim();
-  if (!pdrParseDDMMYY_(dateStr)) {
-    return { success: false, error: 'Invalid date: "' + dateStr + '" (expected dd/mm/yy)' };
+  const dateISO = String(body.date || '').trim();
+  if (!pdrParseISO_(dateISO)) {
+    return { success: false, error: 'Invalid date: "' + dateISO + '" (expected yyyy-mm-dd)' };
   }
 
   const ma = body.morningAssembly || {};
   const row = [
     new Date(),
-    dateStr,
+    dateISO,
     campusId,
     caller.email,
     String(ma.classHouse || ''),
@@ -299,25 +356,59 @@ function principalDrSaveDailyReport_(caller, body) {
   ];
 
   const sheet = pdrDailyReportsSheet_();
-  const rowIndex = pdrFindDailyReportRowIndex_(sheet, campusId, dateStr);
-  if (rowIndex > 0) {
-    sheet.getRange(rowIndex, 1, 1, row.length).setValues([row]);
-  } else {
-    sheet.appendRow(row);
-  }
+  const rowIndex = pdrFindDailyReportRowIndex_(sheet, campusId, dateISO);
+  const targetRow = rowIndex > 0 ? rowIndex : sheet.getLastRow() + 1;
+  sheet.getRange(targetRow, 2).setNumberFormat('@'); // Date column -- Plain Text, see INCIDENT note
+  sheet.getRange(targetRow, 1, 1, row.length).setValues([row]);
   return { success: true };
 }
 
-/** 1-indexed sheet row number for (campusId, dateStr)'s Daily Reports
+/** 1-indexed sheet row number for (campusId, dateISO)'s Daily Reports
  *  row, or -1 if none exists yet. */
-function pdrFindDailyReportRowIndex_(sheet, campusId, dateStr) {
+function pdrFindDailyReportRowIndex_(sheet, campusId, dateISO) {
   const values = sheet.getDataRange().getValues();
   for (let i = 1; i < values.length; i++) {
-    if (String(values[i][2]).trim() === campusId && String(values[i][1]).trim() === dateStr) {
+    if (String(values[i][2]).trim() === campusId && pdrCellDateToISO_(values[i][1]) === dateISO) {
       return i + 1;
     }
   }
   return -1;
+}
+
+/** Called from main.gs's doGet for action=dailyreport -- reads back an
+ *  existing day's report so the frontend's Date-field refresh/reload
+ *  can show a past submission (Uday 2026-09-02: "Is there a way I can
+ *  see a past report that I have submitted?"). Returns
+ *  {exists:false} rather than an error when nothing's been submitted
+ *  for that day yet -- that's the normal case for most dates. */
+function principalDrGetDailyReport_(caller, campusIdParam, dateParam) {
+  const campusId = String(campusIdParam || '').trim().toUpperCase();
+  if (caller.campusId !== 'ALL' && campusId !== caller.campusId) {
+    return { success: false, error: 'Not authorized for that campus' };
+  }
+  const dateISO = String(dateParam || '').trim();
+  if (!pdrParseISO_(dateISO)) {
+    return { success: false, error: 'Invalid date: "' + dateISO + '" (expected yyyy-mm-dd)' };
+  }
+
+  const values = pdrDailyReportsSheet_().getDataRange().getValues();
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][2]).trim() !== campusId) continue;
+    if (pdrCellDateToISO_(values[i][1]) !== dateISO) continue;
+    return {
+      success: true,
+      report: {
+        exists: true,
+        maClassOrHouse: String(values[i][4] || ''),
+        maScore: String(values[i][5] || ''),
+        tasksCompleted: pdrSplitList_(values[i][6]),
+        tasksForTomorrow: pdrSplitList_(values[i][7]),
+        registersCrosschecked: pdrSplitList_(values[i][8]),
+        importantMessage: pdrSplitList_(values[i][9]),
+      },
+    };
+  }
+  return { success: true, report: { exists: false } };
 }
 
 /** Called from main.gs's doGet for action=yesterdaystasks. `dateParam`
@@ -329,7 +420,7 @@ function principalDrYesterdaysTasks_(caller, campusIdParam, dateParam) {
   if (caller.campusId !== 'ALL' && campusId !== caller.campusId) {
     return { success: false, error: 'Not authorized for that campus' };
   }
-  const refDate = pdrParseDDMMYY_(dateParam) || new Date();
+  const refDate = pdrParseISO_(dateParam) || new Date();
   return { success: true, tasks: pdrFindPriorWorkingDayTasksForTomorrow_(campusId, refDate) };
 }
 
@@ -350,10 +441,10 @@ function pdrFindPriorWorkingDayTasksForTomorrow_(campusId, refDate) {
   for (let i = 0; i < PDR_SUGGESTION_LOOKBACK_DAYS; i++) {
     cursor.setDate(cursor.getDate() - 1);
     if (pdrIsOffDay_(cursor, campusId)) continue;
-    const dateStr = pdrFormatDDMMYY_(cursor);
+    const dateISO = pdrFormatISO_(cursor);
 
     for (let r = 1; r < values.length; r++) {
-      if (String(values[r][2]).trim() !== campusId || String(values[r][1]).trim() !== dateStr) continue;
+      if (String(values[r][2]).trim() !== campusId || pdrCellDateToISO_(values[r][1]) !== dateISO) continue;
       const tasksForTomorrow = pdrSplitList_(values[r][7]);
       if (tasksForTomorrow.length) return tasksForTomorrow.slice(0, 2);
       break; // found the day's row but it's empty -- stop scanning rows, keep walking back
@@ -374,9 +465,11 @@ function principalDrPlannedActivities_(caller, campusIdParam) {
 }
 
 /** All non-Deleted rows (Active + Completed) for a campus, shaped for
- *  the frontend's renderPlannedActivities(). Reused by the Month
- *  Activities merge (which filters out completed ones itself) and by
- *  the Tasks Completed suggestion lookup below. */
+ *  the frontend's renderPlannedActivities(). `date` is normalized to
+ *  ISO via pdrCellDateToISO_ regardless of the raw cell's type -- see
+ *  the INCIDENT note. Reused by the Month Activities merge (which
+ *  filters out completed ones itself) and by the Tasks Completed
+ *  suggestion logic on the frontend. */
 function pdrReadPlannedActivities_(campusId) {
   const values = pdrPlannedActivitiesSheet_().getDataRange().getValues();
   const out = [];
@@ -387,7 +480,7 @@ function pdrReadPlannedActivities_(campusId) {
     if (status === 'Deleted') continue;
     out.push({
       id: String(row[0]),
-      date: String(row[3]),
+      date: pdrCellDateToISO_(row[3]),
       activity: String(row[2]),
       assignee: String(row[4] || ''),
       completed: status === 'Completed',
@@ -396,7 +489,8 @@ function pdrReadPlannedActivities_(campusId) {
   return out;
 }
 
-/** Called from main.gs's doPost for action=addplannedactivity. */
+/** Called from main.gs's doPost for action=addplannedactivity. Forces
+ *  the DueDate cell to Plain Text after writing -- see INCIDENT note. */
 function principalDrAddPlannedActivity_(caller, body) {
   const campusId = String(body.campusId || '').trim().toUpperCase();
   if (caller.campusId !== 'ALL' && campusId !== caller.campusId) {
@@ -408,7 +502,9 @@ function principalDrAddPlannedActivity_(caller, body) {
   const assignee = String(body.assignee || '').trim();
   const id = 'pa-' + new Date().getTime() + '-' + Math.floor(Math.random() * 1000);
 
-  pdrPlannedActivitiesSheet_().appendRow([id, campusId, title, dueDate, assignee, new Date(), caller.email, 'Active', '']);
+  const sheet = pdrPlannedActivitiesSheet_();
+  sheet.appendRow([id, campusId, title, dueDate, assignee, new Date(), caller.email, 'Active', '']);
+  sheet.getRange(sheet.getLastRow(), 4).setNumberFormat('@').setValue(dueDate); // re-enforce Plain Text + re-write, in case appendRow's own write got auto-converted
   return { success: true, activity: { id: id, date: dueDate, activity: title, assignee: assignee, completed: false } };
 }
 
@@ -455,10 +551,27 @@ function pdrFindPlannedActivityRow_(sheet, campusId, id) {
   return -1;
 }
 
+// ── One-time setup ────────────────────────────────────────────────
+
+/** Run ONCE after deploying this file: sets the Date column (Daily
+ *  Reports, col B) and DueDate column (Planned Activities, col D) to
+ *  Plain Text format for their full length, so Sheets stops auto-
+ *  detecting/converting date-looking strings typed into them -- by
+ *  code OR by a human editing the Sheet directly. The code also
+ *  re-applies '@' per-cell on every write as a second line of defense
+ *  (e.g. in case someone resets the column format later), but this
+ *  fixes the column-wide default too. See the INCIDENT note up top. */
+function pdrEnsureDateColumnsPlainText_() {
+  pdrDailyReportsSheet_().getRange('B2:B').setNumberFormat('@');
+  pdrPlannedActivitiesSheet_().getRange('D2:D').setNumberFormat('@');
+  Logger.log('Date columns set to Plain Text. The 2026-09-02 corrupted test row still needs deleting/resubmitting by hand -- this only prevents it happening again.');
+}
+
 // ── Diagnostics -- safe to keep here indefinitely, or delete once
-//    you're confident everything above is working. Read-only; none of
-//    these write to the Daily Reports Sheet, so they're safe to run
-//    anytime without polluting real data. ─────────────────────────────
+//    you're confident everything above is working. Read-only (except
+//    pdrEnsureDateColumnsPlainText_ above, which only changes
+//    formatting, never values); none of these write real data, so
+//    they're safe to run anytime without polluting anything. ────────
 
 function testCalendarAccess() {
   ['nidhi.kant@lms.org.in', 'arti.sharma@lms.org.in', 'suresh.prasher@lms.org.in', 'nisha.lms@lms.org.in'].forEach(function (email) {
@@ -483,4 +596,20 @@ function testPlannedActivities() {
 
 function testYesterdaysTasks() {
   Logger.log(JSON.stringify(pdrFindPriorWorkingDayTasksForTomorrow_('LMS2', new Date()), null, 2));
+}
+
+function testGetDailyReport() {
+  Logger.log(JSON.stringify(principalDrGetDailyReport_({ campusId: 'ALL' }, 'LMS2', pdrFormatISO_(new Date())), null, 2));
+}
+
+/** Run this FIRST when diagnosing any date-matching issue -- shows
+ *  exactly what type each Daily Reports row's Date cell really holds
+ *  (string vs Date object) and what it normalizes to, confirming (or
+ *  ruling out) the class of bug described in the INCIDENT note. */
+function testDailyReportsRawCellTypes() {
+  const values = pdrDailyReportsSheet_().getDataRange().getValues();
+  for (let i = 1; i < values.length; i++) {
+    Logger.log('Row ' + (i + 1) + ': raw=' + values[i][1] + ' | typeof=' + typeof values[i][1]
+      + ' | isDateObject=' + (values[i][1] instanceof Date) + ' | normalizedISO=' + pdrCellDateToISO_(values[i][1]));
+  }
 }
