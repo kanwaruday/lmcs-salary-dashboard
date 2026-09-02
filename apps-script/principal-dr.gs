@@ -281,40 +281,41 @@ function pdrOrdinal_(day) {
   return day + 'th';
 }
 
-// ── Support Sessions today (Principal's PERSONAL Calendar) ──────────
+// ── Support Sessions (Principal's PERSONAL Calendar) ────────────────
 
-/** Called from main.gs's doGet for action=supportsessionstoday.
- *  Simple count (and titles) of today's Calendar events tagged "SS" on
- *  the Principal's own PERSONAL calendar -- NOT yet cross-referenced
- *  against "LMCS Teacher SS 2026 (Responses)" (that's still blocked on
- *  the Class/Subject/Teacher naming convention Uday is defining --
- *  see project_principals_daily_reporting.md). This is intentionally
- *  the simpler first cut: count real "SS"-tagged Calendar entries,
- *  nothing parsed out of them yet. KNOWN LIMITATION: this is always
- *  the server's real "today", not date-parameterized -- viewing a past
- *  report via loadReportForDate() on the frontend still shows today's
- *  live SS count alongside it, not that day's historical count. */
-function principalDrSupportSessionsToday_(caller, campusIdParam) {
+/** Called from main.gs's doGet for action=supportsessionstoday. Simple
+ *  count (and titles) of Calendar events tagged "SS" on the Principal's
+ *  own PERSONAL calendar, for `dateParam` if given (defaults to real
+ *  "today" if absent/unparseable) -- date-parameterized as of
+ *  2026-09-02 so viewing a past report via loadReportForDate() shows
+ *  THAT day's SS count, not always today's (per Uday: "Can this fetch
+ *  the data based on the date selected on the top right"). NOT yet
+ *  cross-referenced against "LMCS Teacher SS 2026 (Responses)" (that's
+ *  still blocked on the Class/Subject/Teacher naming convention Uday is
+ *  defining -- see project_principals_daily_reporting.md). This is
+ *  intentionally the simpler first cut: count real "SS"-tagged
+ *  Calendar entries, nothing parsed out of them yet. */
+function principalDrSupportSessionsToday_(caller, campusIdParam, dateParam) {
   const campusId = String(campusIdParam || '').trim().toUpperCase();
   if (caller.campusId !== 'ALL' && campusId !== caller.campusId) {
     return { success: false, error: 'Not authorized for that campus' };
   }
-  return { success: true, sessions: pdrReadTodaysSupportSessions_(campusId) };
+  const refDate = pdrParseISO_(dateParam) || new Date();
+  return { success: true, sessions: pdrReadSupportSessionsForDate_(campusId, refDate) };
 }
 
-/** Today's events on campusId's Principal's PERSONAL Calendar whose
+/** refDate's events on campusId's Principal's PERSONAL Calendar whose
  *  title contains the "SS" tag as its own token (e.g. "SS - C8
  *  English - Sushma ma'am") -- word-boundary match so it doesn't false-
  *  positive on something like "ASSEMBLY". Returns their titles. */
-function pdrReadTodaysSupportSessions_(campusId) {
+function pdrReadSupportSessionsForDate_(campusId, refDate) {
   const email = PDR_PRINCIPAL_PERSONAL_CALENDARS[campusId];
   if (!email) return []; // this campus's principal hasn't shared their calendar yet
   const cal = CalendarApp.getCalendarById(email);
   if (!cal) return [];
 
-  const now = new Date();
-  const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const dayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1); // exclusive
+  const dayStart = new Date(refDate.getFullYear(), refDate.getMonth(), refDate.getDate());
+  const dayEnd = new Date(refDate.getFullYear(), refDate.getMonth(), refDate.getDate() + 1); // exclusive
 
   const ssTag = /\bSS\b/;
   return cal.getEvents(dayStart, dayEnd)
@@ -586,7 +587,7 @@ function testMonthActivities() {
 
 function testSupportSessionsToday() {
   Object.keys(PDR_PRINCIPAL_PERSONAL_CALENDARS).forEach(function (campusId) {
-    Logger.log(campusId + ' -> ' + JSON.stringify(pdrReadTodaysSupportSessions_(campusId)));
+    Logger.log(campusId + ' -> ' + JSON.stringify(pdrReadSupportSessionsForDate_(campusId, new Date())));
   });
 }
 
