@@ -1,17 +1,33 @@
 // ═══════════════════════════════════════════════════════════════════
-// DR Forms Sync — a generic engine for keeping every LMCS "Daily
-// Report" Google Form correct and its name dropdown live, driven by
-// EmpMaster. One role (Teacher) is fully wired below; the others
-// (PTI, IT/Computer, Fee Clerk cum PRO, Principal Self-DR) are stubbed
-// out — see "ADDING A NEW ROLE" at the bottom.
+// SS Forms Sync — a generic engine for keeping every LMCS "Support
+// Session" (formerly "Daily Report"/DR) Google Form correct and its
+// name dropdown live, driven by EmpMaster. One role (Teacher) is
+// fully wired below; the others (PTI, IT/Computer, Fee Clerk cum PRO,
+// Principal Self-SS) are stubbed out — see "ADDING A NEW ROLE" at the
+// bottom.
 //
-// WHY GENERIC (2026-09-01): per Uday, DR forms are planned for every
-// employee category, not just teachers — see the "Principal's Daily
-// Reporting" project note. The other 4 roles' forms already exist
-// (PTI DR, IT DR, Fee Clerk DR, Principal DR — all single forms
-// covering all 6 campuses via an in-form School question, unlike
-// Teacher's one-form-per-campus layout) but are still on the OLD
-// rubric/structure and are explicitly not-yet-viewable/finalized —
+// TERMINOLOGY (2026-09-02): "DR" (Daily Report) for teachers was
+// renamed to "SS" (Support Session) by Uday. The 6 Teacher Forms and
+// their response sheet's file title have been renamed to match
+// ("LMS N Teacher SS (Qualitative) 2026 for Heads",
+// "LMCS Teacher SS 2026 (Responses)") — only the response SHEET'S
+// internal TAB names ("LMS 1 Teacher DR" etc.) still say DR, since
+// Google Forms doesn't auto-rename an already-linked destination tab
+// and tab renames aren't reachable via the tools used to rename
+// everything else here. teacher-ss-dashboard-proxy.gs's
+// TSS_CAMPUS_TO_TAB still points at the DR-named tabs deliberately —
+// don't "fix" that without renaming the actual tabs first, or the
+// dashboard will break. The OTHER 4 roles' names (PTI DR, IT DR, Fee
+// Clerk DR, Principal DR) were NOT part of this rename — Uday's
+// correction was specifically "for teachers".
+//
+// WHY GENERIC (2026-09-01): per Uday, Support Session forms are
+// planned for every employee category, not just teachers — see the
+// "Principal's Daily Reporting" project note. The other 4 roles' forms
+// already exist (PTI DR, IT DR, Fee Clerk DR, Principal DR — all
+// single forms covering all 6 campuses via an in-form School question,
+// unlike Teacher's one-form-per-campus layout) but are still on the
+// OLD rubric/structure and are explicitly not-yet-viewable/finalized —
 // their rubric, Principal-performance factors, and comms system are
 // deferred to Uday (see project_principals_daily_reporting.md). DO NOT
 // guess their question structure — read the live form with FormApp
@@ -20,23 +36,24 @@
 //
 // IMPORTANT (2026-09-02, confirmed by Uday, correcting an earlier
 // "fresh backend, no Forms" direction from a different session): the
-// 6 Teacher DR Google Forms ARE the real, ongoing submission mechanism
-// for the Teaching-DR portal module — this script and the Forms it
+// 6 Teacher SS Google Forms ARE the real, ongoing submission mechanism
+// for the Teaching-SS portal module — this script and the Forms it
 // fixes are NOT being replaced. Keep this file; do not delete it in
 // favor of a Forms-free rebuild without checking with Uday first.
 //
 // SETUP:
-//   1. script.google.com -> New project -> paste this file
-//   2. Run syncAllDRForms() once manually (Run menu) — authorize when
-//      prompted (edit access to the forms in DR_ROLE_CONFIGS, read
+//   1. script.google.com -> "LMCS Teacher SS Backend" project ->
+//      paste this file in as ss-forms-sync.gs
+//   2. Run syncAllSSForms() once manually (Run menu) — authorize when
+//      prompted (edit access to the forms in SS_ROLE_CONFIGS, read
 //      access to the Employee Master workbook)
-//   3. Run installDailyDRSyncTrigger() once — re-runs syncAllDRForms()
+//   3. Run installDailySSSyncTrigger() once — re-runs syncAllSSForms()
 //      daily so every configured role's teacher list stays live and
 //      any range fixes stay applied.
 // ═══════════════════════════════════════════════════════════════════
 
-const DR_EMP_SHEET_ID = '1OjVMUvpLM8JkdAwjmljCtZUI1VUqGLbic36cW9dm0C0'; // LMCSStaffMasters
-const DR_PREFIX_TO_SCHOOL = {
+const SS_EMP_SHEET_ID = '1OjVMUvpLM8JkdAwjmljCtZUI1VUqGLbic36cW9dm0C0'; // LMCSStaffMasters
+const SS_PREFIX_TO_SCHOOL = {
   KUL: 'LMS 1', KEL: 'LMS 2', DUN: 'LMS 3', NCM: 'LMS 4', SAY: 'LMS 5', JOG: 'LMS 6',
 };
 
@@ -50,7 +67,7 @@ const DR_PREFIX_TO_SCHOOL = {
 // dropdown after this filter went live, check their EmpSalary row's
 // Department cell first before assuming a bug here.
 function getDepartmentByCode_() {
-  const rows = SpreadsheetApp.openById(DR_EMP_SHEET_ID)
+  const rows = SpreadsheetApp.openById(SS_EMP_SHEET_ID)
     .getSheetByName('EmpSalary')
     .getDataRange()
     .getValues();
@@ -68,16 +85,16 @@ function getDepartmentByCode_() {
 }
 
 // ── Role configs ──────────────────────────────────────────────────
-// Each entry describes ONE DR form family. `perCampus: true` means one
+// Each entry describes ONE SS form family. `perCampus: true` means one
 // form per school (keyed 'LMS 1'..'LMS 6', like Teacher); `perCampus:
 // false` means a single form covering all schools (name field doesn't
 // vary by school, and the employee-choice list should span every
 // school this role applies to, typically distinguished by including a
 // School question elsewhere in the form that this engine leaves
 // alone).
-const DR_ROLE_CONFIGS = {
+const SS_ROLE_CONFIGS = {
   teacher: {
-    label: 'Teacher DR',
+    label: 'Teacher SS',
     perCampus: true,
     forms: {
       'LMS 1': '1BvUT49YVbGPAH-BLBdjkZ6FoBmMLnzNDQlRu3j2bIEw',
@@ -101,7 +118,8 @@ const DR_ROLE_CONFIGS = {
     ],
     rubricMax: 10,
     // Per-campus form -> its name-question title is literally that
-    // campus's label + ' Teacher Name' (matches the live forms exactly).
+    // campus's label + ' Teacher Name' (matches the live forms exactly
+    // -- this field's title was NOT part of the DR->SS rename).
     nameFieldTitle: function (school) { return school + ' Teacher Name'; },
     // Which EmpMaster rows count as "a Teacher" for this campus: same
     // campus AND EmpSalary.Department === 'Teaching' (case-insensitive,
@@ -121,32 +139,34 @@ const DR_ROLE_CONFIGS = {
   //          return i.getTitle() + ' [' + i.getType() + ']';
   //        }));
   //   2. Fill in the config below using that real structure.
-  //   3. Add the role's key to ACTIVE_DR_ROLES.
+  //   3. Add the role's key to ACTIVE_SS_ROLES.
   pti: null,              // PTI DR — existing old form: 1oAtyo-Q3bm3bbAcrngoPOcUgYO3jgPd9vcFOCgscJYY
   itComputer: null,       // IT DR — existing old form: 1E1hsC4EDjeeCszK3HviOFK_3NrwZ24E1QMBm04WBcgc
   feeClerkPRO: null,      // Fee Clerk DR — existing old form: 1mpjTQisZ6BwsPRI2tjc2MgNO05-Y63X5blLdRzSUooM
   principalSelfDR: null,  // Principal DR — existing old form: 1IypepIVAQ7n4vR-EvMLAoz4QzjeHoQVeg4JZnL5Vd3o
+  // NOTE: these 4 keep the "DR" label deliberately -- Uday's 2026-09-02
+  // rename was specifically "for teachers", not these roles.
 };
 
 // Which of the keys above actually run. Add a key here once its config
-// above is filled in — keeps syncAllDRForms() from erroring on the
+// above is filled in — keeps syncAllSSForms() from erroring on the
 // still-null stubs.
-const ACTIVE_DR_ROLES = ['teacher'];
+const ACTIVE_SS_ROLES = ['teacher'];
 
 // ── Generic engine — role-agnostic, do not edit per-role ───────────
 
-function syncAllDRForms() {
+function syncAllSSForms() {
   const allResults = {};
-  ACTIVE_DR_ROLES.forEach(function (roleKey) {
-    const config = DR_ROLE_CONFIGS[roleKey];
-    if (!config) throw new Error('ACTIVE_DR_ROLES references unconfigured role: ' + roleKey);
-    allResults[roleKey] = syncOneDRRole_(config);
+  ACTIVE_SS_ROLES.forEach(function (roleKey) {
+    const config = SS_ROLE_CONFIGS[roleKey];
+    if (!config) throw new Error('ACTIVE_SS_ROLES references unconfigured role: ' + roleKey);
+    allResults[roleKey] = syncOneSSRole_(config);
   });
   Logger.log(JSON.stringify(allResults, null, 2));
   return allResults;
 }
 
-function syncOneDRRole_(config) {
+function syncOneSSRole_(config) {
   const results = [];
   Object.keys(config.forms).forEach(function (formKey) {
     // formKey is a school ('LMS 1'..) when perCampus, otherwise a
@@ -184,7 +204,7 @@ function syncOneDRRole_(config) {
  *  through the role's matchesEmployee(), sorted by name. */
 function getActiveEmployeeChoices_(config, formKey) {
   const departmentByCode = getDepartmentByCode_();
-  const rows = SpreadsheetApp.openById(DR_EMP_SHEET_ID)
+  const rows = SpreadsheetApp.openById(SS_EMP_SHEET_ID)
     .getSheetByName('EmpMaster')
     .getDataRange()
     .getValues();
@@ -198,7 +218,7 @@ function getActiveEmployeeChoices_(config, formKey) {
     const code = String(rows[i][codeCol] || '').trim();
     if (!code) continue;
     const prefix = code.split('/')[0];
-    const school = DR_PREFIX_TO_SCHOOL[prefix];
+    const school = SS_PREFIX_TO_SCHOOL[prefix];
     if (!school) continue;
     const status = statusCol >= 0 ? String(rows[i][statusCol] || '').trim().toLowerCase() : '';
     if (status && status !== 'active') continue; // departed/transferred — exclude
@@ -218,24 +238,24 @@ function getActiveEmployeeChoices_(config, formKey) {
 
 /** Run once to keep every active role's name lists synced going
  *  forward — same daily-refresh pattern as Code.gs's updateCache(). */
-function installDailyDRSyncTrigger() {
+function installDailySSSyncTrigger() {
   ScriptApp.getProjectTriggers().forEach(function (t) {
-    if (t.getHandlerFunction() === 'syncAllDRForms') ScriptApp.deleteTrigger(t);
+    if (t.getHandlerFunction() === 'syncAllSSForms') ScriptApp.deleteTrigger(t);
   });
-  ScriptApp.newTrigger('syncAllDRForms')
+  ScriptApp.newTrigger('syncAllSSForms')
     .timeBased()
     .everyDays(1)
     .atHour(5)
     .create();
-  Logger.log('Daily trigger installed: syncAllDRForms() will run once a day around 5 AM.');
+  Logger.log('Daily trigger installed: syncAllSSForms() will run once a day around 5 AM.');
 }
 
 // ── ADDING A NEW ROLE ───────────────────────────────────────────────
 // 1. Get the live form's real question titles (don't assume — see the
 //    Logger.log one-liner in the TODO comment above).
-// 2. Fill in DR_ROLE_CONFIGS.<role> with: forms (id map — one key if
+// 2. Fill in SS_ROLE_CONFIGS.<role> with: forms (id map — one key if
 //    perCampus:false, one per campus if true), rubricTitles,
 //    rubricMax, nameFieldTitle(formKey), matchesEmployee(empRow, formKey).
-// 3. Add '<role>' to ACTIVE_DR_ROLES.
-// 4. Re-run syncAllDRForms() manually once to confirm it applies
+// 3. Add '<role>' to ACTIVE_SS_ROLES.
+// 4. Re-run syncAllSSForms() manually once to confirm it applies
 //    cleanly before relying on the daily trigger for it.
